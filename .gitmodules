@@ -1,0 +1,3 @@
+[submodule "Dependencies/ByteTrackEigen"]
+	path = Dependencies/ByteTrackEigen
+	url = https://github.com/ahsanullah-8bit/ByteTrackEigen.git

@@ -1,0 +1,29 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "dependencies": [
+        {
+            "name": "pkgconf",
+            "version>=": "2.4.3#1"
+        },
+        {
+            "name": "opencv4",
+            "default-features": false,
+            "features": ["fs", "gstreamer", "eigen", "highgui", "jpeg", "png"],
+            "version>=": "4.10.0"
+        },
+        {
+            "name": "ffmpeg",
+            "default-features": false,
+            "features": ["avcodec","avformat","swscale","avdevice","avfilter","swresample","openssl","zlib","x264","x265","freetype","drawtext"],
+            "version>=": "7.1.1#1"
+        },
+        {
+            "name": "tbb",
+            "version>=": "2022.0.0"
+        },
+        {
+            "name": "eigen3",
+            "version>=": "3.4.0"
+        }
+    ]
+}
