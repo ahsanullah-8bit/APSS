@@ -164,6 +164,8 @@ void FFmpegFile::run()
         // Nothing to do
     } catch (const std::exception &e) {
         qCritical() << e.what();
+    } catch (...) {
+        qCritical() << "Uknown exception thrown at" << QThread().currentThread()->objectName() << "thread";
     }
 
     // Free the resources

@@ -10,6 +10,7 @@
 
 Q_IMPORT_QML_PLUGIN(APSSContentPlugin)
 Q_IMPORT_QML_PLUGIN(APSSPlugin)
+Q_IMPORT_QML_PLUGIN(APSS_ComponentsPlugin)
 
 const char mainQmlFile[] = "qrc:/qt/qml/APSSContent/App.qml";
 

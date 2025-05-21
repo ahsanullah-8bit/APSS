@@ -13,9 +13,11 @@ qt6_add_qml_module(APSSContent
         "MainScreen.ui.qml"
         "VideoPlaybackPage.qml"
     RESOURCES
-        "icons/play.svg"
-        "icons/rewind.svg"
-        "icons/forward.svg"
         "icons/pause.svg"
         "icons/stop.svg"
+        "icons/rewind.svg"
+        "icons/forward.svg"
+        "icons/play.svg"
 )
+
+

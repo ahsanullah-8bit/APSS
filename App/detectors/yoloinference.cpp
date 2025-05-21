@@ -34,7 +34,7 @@ YOLOInference::YOLOInference(const std::string &modelPath, const std::string &la
         std::vector<std::string> exec_providers = Ort::GetAvailableProviders();
         qInfo() << "Available providers:" << exec_providers;
 
-#ifdef USE_CUDA_EP
+#ifdef APSS_USE_CUDA_EP
         if (std::find(exec_providers.begin(), exec_providers.end(), "CUDAExecutionProvider")
             != exec_providers.end()) {
             qInfo() << std::format("Inference device {} selected.", "CUDAExecutionProvider");
@@ -46,7 +46,7 @@ YOLOInference::YOLOInference(const std::string &modelPath, const std::string &la
         }
 #endif
 
-#ifdef USE_OPENVINO_EP
+#ifdef APSS_USE_OPENVINO_EP
         if (std::find(exec_providers.begin(), exec_providers.end(), "OpenVINOExecutionProvider")
             != exec_providers.end()) {
             qInfo() << std::format("Inference device {} selected.", "OpenVINOExecutionProvider");

@@ -28,12 +28,4 @@ Rectangle {
 
         visible: false
     }
-
-    Connections {
-        target: videoPlaybackPage
-
-        function onStopped() {
-            pages.pop()
-        }
-    }
 }

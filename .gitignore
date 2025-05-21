@@ -4,9 +4,7 @@
 
 # Ignore build directories
 build
-/build
-/build/*
-./build
+.qtc_clangd
 # Ignore any weights/models downloaded
 scripts/*.onnx
 scripts/*.pt

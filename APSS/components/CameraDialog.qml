@@ -18,45 +18,66 @@ Dialog {
     readonly property list<string> sources: ["Local File", "Remote Camera"]
     readonly property list<string> placeholderForSource: ["Enter file path here", "Enter camera url here"]
 
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 30
+    contentItem: ColumnLayout {
         clip: true
 
         ComboBox {
-            id: sourceComboBox
+            id: sourceCombo
+            model: dialogRoot.sources
+
+            onCurrentIndexChanged: sourceField.clear()
+
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-
-            model: dialogRoot.sources
         }
 
         RowLayout {
-            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-
             TextField {
+                id: sourceField
+                placeholderText: dialogRoot.placeholderForSource[sourceCombo.currentIndex]
+
                 // Layout.fillHeight: true
                 Layout.fillWidth: true
-                placeholderText: dialogRoot.placeholderForSource[sourceComboBox.currentIndex]
             }
 
             Button {
-                Layout.preferredHeight: 40
-
-                visible: sourceComboBox.currentIndex === 0
+                id: browseFile
                 text: "Browse"
+                visible: sourceCombo.currentIndex === 0
                 onClicked: function () {
                     fileDialog.open()
                 }
-            }
 
-            // TODO: Force video file selection by formats
-            FileDialog {
-                id: fileDialog
-
-                currentFolder: StandardPaths.writableLocation(StandardPaths.MoviesLocation)
-                onSelectedFileChanged: dialogRoot.source = fileDialog.selectedFile
+                Layout.preferredHeight: sourceField.height
             }
         }
+
+        Item {
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+        }
+
+        Layout.fillHeight: true
+        Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+    }
+
+    // TODO: Force video file selection by formats
+    FileDialog {
+        id: fileDialog
+
+        currentFolder: StandardPaths.writableLocation(StandardPaths.MoviesLocation)
+        onAccepted: {
+            let sourceFile = sliceFilePrefix(fileDialog.selectedFile)
+
+            console.warn(sourceFile)
+            dialogRoot.source = sourceField.text = sourceFile
+        }
+    }
+
+    function sliceFilePrefix(path: string): string {
+        if (path.startsWith("file:///"))
+            return path.slice(8)
+
+        return path
     }
 }

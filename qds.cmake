@@ -8,4 +8,5 @@ add_subdirectory(Dependencies)
 
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     APSSContentplugin
-    APSSplugin)
+    APSSplugin
+    APSS_Componentsplugin)

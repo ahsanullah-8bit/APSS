@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import QtMultimedia
 import Qt.labs.platform
 import APSS
+import APSS.Components
 
 Page {
     id: playbackRoot
@@ -58,28 +59,24 @@ Page {
 
                 text: "Select"
                 onClicked: function () {
-                    fileDialog.open()
+                    cameraDialog.open()
                 }
             }
 
-            Button {
-                id: selectRemoteCameraButton
+        }
+    }
 
-                text: "Select a Camera"
-                onClicked: function () {
-                    fileDialog.open()
-                }
-            }
+    CameraDialog {
+        id: cameraDialog
 
-            // TODO: Force video file selection by formats
-            FileDialog {
-                id: fileDialog
+        width: 450
+        height: 600
+        anchors.centerIn: parent
 
-                folder: StandardPaths.writableLocation(StandardPaths.MoviesLocation)
-                onFileChanged: function () {
-                    apssEngine.openAFootage(fileDialog.file, videoOutput.videoSink)
-                }
-            }
+        modal: true
+
+        onAccepted: {
+            apssEngine.openAFootage(cameraDialog.source, videoOutput.videoSink)
         }
     }
 }

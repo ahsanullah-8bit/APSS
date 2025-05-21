@@ -10,7 +10,7 @@ Project {
     enableCMakeGeneration: true
     enablePythonGeneration: false
     widgetApp: true
-    importPaths: [ "." ]
+    importPaths: [ ".", "APSS" ]
 
     qdsVersion: "4.6"
     quickVersion: "6.8"
@@ -92,10 +92,6 @@ Project {
 
     Files {
         filter: "*.qsb"
-    }
-
-    Files {
-        filter: "*.json"
     }
 
     Files {
