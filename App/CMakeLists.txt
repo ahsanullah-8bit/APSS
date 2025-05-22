@@ -8,7 +8,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     engine
     utils
 
-    ${OnnxRuntime_INCLUDE_DIR}
+    # ${OnnxRuntime_INCLUDE_DIR}
     "${CMAKE_SOURCE_DIR}/Dependencies/ByteTrackEigen/include"
 )
 
@@ -36,9 +36,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Multimedia
 
     TBB::tbb
-    ${FFMPEG_LIBRARIES} swscale # Don't know why these ones aren't provided in FFMPEG_LIBRARIES
+    ${FFMPEG_LIBRARIES}
     ${OpenCV_LIBS}
-    onnxruntime::onnxruntime
     bytetrackeigen  # Can't use alias, because it's a sub-project
 )
 
