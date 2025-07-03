@@ -67,7 +67,7 @@ function(apss_init_dependencies)
 		######################################
 
 		# odb.exe
-		if (NOT odb_EXECUTABLE OR NOT odb_EXECUTABLE STREQUAL "")
+		if (NOT odb_EXECUTABLE OR odb_EXECUTABLE STREQUAL "")
 			set(ODB_EXE_ARCHIVE "https://www.codesynthesis.com/download/odb/2.5.0/windows/windows10/x86_64/odb-2.5.0-x86_64-windows10.zip")
 
 			FetchContent_Declare(odbexe
