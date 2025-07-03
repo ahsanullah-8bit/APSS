@@ -3,24 +3,14 @@
 #include <onnxruntime_cxx_api.h>
 #include <string>
 
+#include <config/predictorconfig.h>
 #include <apss.h>
-
-/*
-    Common interface for different YOLO models depending on the task
-        * Detect    :   [N, 3, H, W]  ->  [N, num_preds, 1 + 4 + num_classes]
-        * Classify  :   [N, 3, H, W]  ->  [N, num_classes]
-        * Segment   :   [N, 3, H, W]  ->  [N, num_preds, 1 + 4 + num_classes], [N, K, Hm, Wm]
-        * Pose      :   [N, 3, H, W]  ->  [N, num_preds, 5 + num_keypoints * 3 + num_classes]
-        * OBB       :   [N, 3, H, W]  ->  Depends: 5+angle or 8-point polygon etc.
-*/
 
 class YOLOInference
 {
 public:
-    // This constructor only sets up the enviroment, session and classes.
-    // Handling tensors and shapes is children's responsibility.
     explicit YOLOInference(const std::string &modelPath, const std::string &labelsPath = std::string());
-    std::vector<PredictionList> predict(const MatList &images,
+    virtual std::vector<PredictionList> predict(const MatList &images,
                                                  bool followBigDimensions = true,
                                                  float confThreshold = MODEL_OBJECTS_CONFIDENDCE_THRESHOLD,
                                                  float iouThreshold = MODEL_IOU_THRESHOLD);
@@ -46,7 +36,6 @@ public:
 protected:
     virtual cv::Mat preprocess(const cv::Mat &image, float *&imgData, cv::Size inputImageShape);
     virtual std::vector<PredictionList> postprocess(const MatList &originalImages,
-
                                                              const cv::Size &resizedImageShape,
                                                              const std::vector<Ort::Value> &outputTensors,
                                                              float confThreshold, float iouThreshold) = 0;

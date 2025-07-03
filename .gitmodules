@@ -1,6 +1,3 @@
-[submodule "Dependencies/ByteTrackEigen"]
-	path = Dependencies/ByteTrackEigen
+[submodule "ext/ByteTrackEigen"]
+	path = ext/ByteTrackEigen
 	url = https://github.com/ahsanullah-8bit/ByteTrackEigen.git
-[submodule "Dependencies/QxOrm"]
-	path = Dependencies/QxOrm
-	url = https://github.com/QxOrm/QxOrm.git

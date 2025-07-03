@@ -9,7 +9,10 @@ qt6_add_qml_module(APSS_Components
     VERSION 1.0
     RESOURCE_PREFIX "/qt/qml"
     QML_FILES
+        "TabBar.qml"
         "CameraDialog.qml"
+        "TabButton.qml"
+        "LivePlaybackCard.qml"
 )
 
 

@@ -24,5 +24,4 @@ protected:
                                             const cv::Size &resizedImageShape,
                                             const std::vector<Ort::Value> &outputTensors,
                                             float confThreshold, float iouThreshold) override;
-    bool hasVisibility(const std::vector<Prediction>& predictions);
 };

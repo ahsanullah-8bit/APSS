@@ -8,13 +8,12 @@
 #include <QFile>
 #include <QCamera>
 #include <QMediaDevices>
+#include <QSettings>
 
-#include "filestream.h"
-#include "ffmpegfile.h"
-#include "lprsession.h"
-#include "objectdetectorsession.h"
-#include "boundedinformer.h"
-#include "frame.h"
+#include "camera/camerametrics.h"
+#include "config/apssconfig.h"
+#include "models/camerametricsmodel.h"
+#include "utils/frame.h"
 
 #include <tbb_patched.h>
 
@@ -23,31 +22,58 @@ class APSSEngine : public QObject
 {
     Q_OBJECT
     QML_SINGLETON
+    Q_PROPERTY(QSharedPointer<QSettings> apssSettings READ apssSettings FINAL)
+    Q_PROPERTY(SharedCameraMetricsModel cameraMetricsModel READ cameraMetricsModel FINAL)
+
 public:
-    explicit APSSEngine(QObject *parent = nullptr);
+    explicit APSSEngine(APSSConfig *config, QObject *parent = nullptr);
     ~APSSEngine();
-    Q_INVOKABLE void openAFootage(const QString& path, QVideoSink *sink = nullptr);
-    Q_INVOKABLE void addRemoteCamera(const QString& path);
-    Q_INVOKABLE void setCameraFeedSink(const QString& camera_id, QVideoSink *sink);
-    Q_INVOKABLE QVideoSink* getCameraFeed(const QString& camera_id, QVideoSink *defaultValue = nullptr);
-    Q_INVOKABLE QVideoSink* getCameraFeedByPath(const QString& path, QVideoSink *defaultValue = nullptr);
-    Q_INVOKABLE QVideoSink* getCameraFeed(const QCamera &camera, QVideoSink *defaultValue = nullptr);
-    Q_INVOKABLE void start();
-    Q_INVOKABLE void stop();
+    SharedCameraMetricsModel cameraMetricsModel() const;
+    QSharedPointer<QSettings> apssSettings();
 
 public slots:
-    void onFrameChanged(const Frame& frame);
+    void start();
+    void stop();
+    void onFrameChanged(SharedFrame frame);
 
 private:
-    FileStream m_fileStream;
-    FFmpegFile m_ffmpegFileStream;
-    ObjectDetectorSession m_objectDetector;
-    LPRSession m_lprDetectorSession;
-    BoundedInformer m_frameInformer;
+    void ensureDirs();
+    void initCameraMetrics();
+    void initQueues();
+    void initDatabase();
+    void initRecordingManager();
+    // ...
+    void startDetectors();
+    void initEmbeddingsManager();
+    void bindDatabase();
+    void initEmbeddingsClient();
+    void startVideoOutputProcessor();
+    void startDetectedFramesProcessor();
+    void startCameraProcessors();
+    void startCameraCaptureProcesses();
+    void startStorageMaintainer();
+    void startEventProcessor();
+    void startCleanupProcesses();
+    void startAPSSWatchdog();
 
+private:
+
+    // FFmpegFile m_ffmpegFileStream;
     QHash<QString, QVideoSink*> m_cameraOutputFeeds;
+    // SharedFrameBoundedQueue m_unProcessedFrameQueue;
+    // BoundedInformer m_frameInformer;
+    // SharedFrameBoundedQueue m_objDetectedFrameQueue;
+    // SharedFrameBoundedQueue m_lpDetectedFrameQueue;
+    SharedFrameBoundedQueue m_inUnifiedObjDetectorQ;
+    // SharedFrameBoundedQueue m_outUnifiedObjDetectorQ;
+    QHash<QString, QSharedPointer<QWaitCondition>> m_cameraWaitConditions;
 
-    tbb::concurrent_bounded_queue<Frame> m_unProcessedFrameQueue;
-    tbb::concurrent_bounded_queue<Frame> m_objDetectedFrameQueue;
-    tbb::concurrent_bounded_queue<Frame> m_lpDetectedFrameQueue;
+    // New interface
+    APSSConfig *m_config;
+    QSharedPointer<QSettings> m_apssSettings;
+    std::atomic_bool m_stopEvent;
+    SharedFrameBoundedQueue m_detectionQueue;
+    QHash<QString, QSharedPointer<QThread>> m_detectors;
+    QHash<QString, SharedCameraMetrics> m_cameraMetrics;
+    SharedCameraMetricsModel m_cameraMetricsModel;
 };

@@ -7,7 +7,7 @@ import QtQuick.Dialogs
 Dialog {
     id: dialogRoot
 
-    property string source: ""
+    property string source: sourceField.text
 
     implicitHeight: 150
     implicitWidth: 100
@@ -69,8 +69,7 @@ Dialog {
         onAccepted: {
             let sourceFile = sliceFilePrefix(fileDialog.selectedFile)
 
-            console.warn(sourceFile)
-            dialogRoot.source = sourceField.text = sourceFile
+            sourceField.text = sourceFile
         }
     }
 

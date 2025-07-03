@@ -145,7 +145,7 @@ std::vector<prediction_vec> YOLOInference::predict(const mat_vec &images, bool f
     // Model have dynamic shape. Prefer user image sizes
     if (hasDynamicBatch())
         input_tensor_shape[0] = images.size();
-    else if (images.size() != input_tensor_shape[0]) {
+    else if (static_cast<int64_t>(images.size()) != input_tensor_shape[0]) {
         qWarning() << "Batch mismatch for input tensor, ignoring the rest!";
     }
 
@@ -176,7 +176,7 @@ std::vector<prediction_vec> YOLOInference::predict(const mat_vec &images, bool f
     mat_vec preprocessed_images;
     preprocessed_images.reserve(images.size());
 
-    for (size_t i = 0; i < input_tensor_shape[0]; ++i) {
+    for (int64_t i = 0; i < input_tensor_shape[0]; ++i) {
         float *offset_ptr = img_data.data() + i * (3 * input_image_shape.area());
         cv::Mat preprocessed_image = preprocess(images[i], offset_ptr, input_image_shape);
         preprocessed_images.emplace_back(preprocessed_image);

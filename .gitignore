@@ -6,9 +6,11 @@
 build
 .qtc_clangd
 # Ignore any weights/models downloaded
-scripts/*.onnx
-scripts/*.pt
-scripts/.*
+scripts/**
+# Un-ignore scripts itself
+!scripts
+# Un-ignore .py files
+!scripts/*.py
 
 # CMake files
 CMakeCache.txt

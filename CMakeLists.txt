@@ -11,25 +11,25 @@ project(APSSApp VERSION 0.1.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
+enable_testing()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(PKG_CONFIG_EXECUTABLE "${VCPKG_INSTALLED_DIR}/x64-windows/tools/pkgconf/pkgconf.exe")
 
-set(QT_QML_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/qml)
-set(QML_IMPORT_PATH ${QT_QML_OUTPUT_DIRECTORY}
-    CACHE STRING "Import paths for Qt Creator's code model"
-    FORCE
-)
+include(cmake/helpers.cmake)
+apss_init_dependencies()
 
-# Packages
-# The ones provided by vcpkg are here and linked in App/CMakeLists.txt
-# The ones fetched as prebuilt are handled by cmake/dependencies.cmake
-# The submodules are managed at Dependencies/CMakeLists.txt
-find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Qml Quick Multimedia)
+find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Qml Quick Widgets Multimedia)
+find_package(onnxruntime CONFIG REQUIRED)
+find_package(OpenVINO CONFIG REQUIRED)
 find_package(OpenCV 4.10.0 CONFIG REQUIRED)
 find_package(TBB 2022.0.0 CONFIG REQUIRED)
-set(PKG_CONFIG_EXECUTABLE "${VCPKG_INSTALLED_DIR}/x64-windows/tools/pkgconf/pkgconf.exe")
+find_package(Eigen3 3.4.0 CONFIG REQUIRED)
+find_package(reflectcpp CONFIG REQUIRED)
+find_package(GTest CONFIG REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FFMPEG REQUIRED libavcodec libavformat libavutil libavdevice libavfilter libswresample libswscale)
+pkg_check_modules(ODB REQUIRED libodb libodb-qt libodb-sqlite)
 qt_standard_project_setup()
 
 # Qt Policies
@@ -40,14 +40,11 @@ if(QT_KNOWN_POLICY_QTP0004)
     qt_policy(SET QTP0004 NEW)
 endif()
 
-# Confirm FFMPEG
-# message(STATUS "FFMPEG_INCLUDE_DIRS: ${FFMPEG_INCLUDE_DIRS}")
-# message(STATUS "FFMPEG_LIBRARY_DIRS: ${FFMPEG_LIBRARY_DIRS}")
-# message(STATUS "FFMPEG_LIBRARIES: ${FFMPEG_LIBRARIES}")
-
-# Export SCRIPTS_DIR, for the weights to be found.
-set(SCRIPTS_DIR "${CMAKE_SOURCE_DIR}/scripts")
-configure_file(exports.h.in exports.h @ONLY)
+set(QT_QML_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/qml)
+set(QML_IMPORT_PATH ${QT_QML_OUTPUT_DIRECTORY}
+    CACHE STRING "Import paths for Qt Creator's code model"
+    FORCE
+)
 
 qt_add_executable(${CMAKE_PROJECT_NAME})
 qt_add_resources(${CMAKE_PROJECT_NAME} "configuration"
@@ -55,7 +52,9 @@ qt_add_resources(${CMAKE_PROJECT_NAME} "configuration"
     FILES
     qtquickcontrols2.conf)
 
-include(cmake/dependencies.cmake)
+apss_copy_runtime_files()
+
+add_subdirectory(ext)
 include(qds)
 
 if (BUILD_QDS_COMPONENTS)
@@ -80,3 +79,5 @@ elseif (APSS_USE_OPENVINO_EP)
 else()
     target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE APSS_USE_CPU_EP)
 endif()
+
+add_subdirectory(test)

@@ -20,13 +20,6 @@
 class Utils {
 public:
 
-    // System related
-    bool hasGPU() {
-        // TODO: a proper way to look for GPU
-        return false;
-    }
-
-
     /**
      * @brief A robust implementation of a clamp function.
      *        Restricts a value to lie within a specified range [low, high].
@@ -81,10 +74,10 @@ public:
                 classNames.emplace_back(line);
             }
         } else {
-            qCritical() << "Failed to access class name path: " << path;
+            qCritical() << "Failed to access labelmap path: " << path;
         }
 
-        qInfo() << "Loaded " << classNames.size() << " class names from " + path;
+        qInfo() << "Loaded " << classNames.size() << " labels from " + path;
         return classNames;
     }
 
@@ -523,6 +516,99 @@ public:
         }
     }
 
+    /**
+     * @brief Draws bounding boxes, masks, and labels on the image based on detections
+     *
+     * @param image Image to draw on (modified in-place)
+     * @param predictions Vector of detection predictions
+     * @param classNames Class names corresponding to class IDs
+     * @param classColors Colors for each class
+     * @param drawMask Whether to draw semi-transparent masks
+     * @param maskAlpha Transparency level for masks (0-1)
+     * @param drawBoxes Whether to draw bounding boxes
+     * @param drawLabels Whether to draw class labels
+     */
+    static void drawDetections(cv::Mat &image,
+                               const std::vector<Prediction> &predictions,
+                               const std::vector<std::string> &classNames,
+                               const std::vector<cv::Scalar> &classColors,
+                               bool drawMask = false,
+                               float maskAlpha = 0.4f,
+                               bool drawBoxes = true,
+                               bool drawLabels = true) {
+        // Validate inputs
+        if (image.empty()) {
+            qWarning() << "Empty image provided to drawDetections, skipping!";
+            return;
+        }
+
+        const int imgHeight = image.rows;
+        const int imgWidth = image.cols;
+
+        // Precompute dynamic text properties once
+        const double fontSize = std::min(imgHeight, imgWidth) * 0.0006;
+        const int textThickness = std::max(1, static_cast<int>(std::min(imgHeight, imgWidth) * 0.001));
+        const int boxThickness = std::max(1, static_cast<int>(std::min(imgHeight, imgWidth) * 0.002));
+
+        // Create mask layer if needed
+        cv::Mat maskLayer;
+        if (drawMask) {
+            maskLayer = cv::Mat::zeros(image.size(), image.type());
+        }
+
+        // Process each detection
+        for (const auto& pred : predictions) {
+            // Validate class ID
+            if (pred.classId < 0 || static_cast<size_t>(pred.classId) >= classNames.size()) {
+                continue;
+            }
+
+            const cv::Scalar& color = classColors[pred.classId % classColors.size()];
+            const cv::Rect& box = pred.box;
+
+            // Draw mask if enabled
+            if (drawMask) {
+                cv::rectangle(maskLayer, box, color, cv::FILLED);
+            }
+
+            // Draw bounding box if enabled
+            if (drawBoxes) {
+                cv::rectangle(image, box, color, boxThickness, cv::LINE_AA);
+            }
+
+            // Draw label if enabled
+            if (drawLabels) {
+                std::string label = std::format("{}:{} ({}%)",
+                                                classNames[pred.classId],
+                                                pred.trackerId,
+                                                static_cast<int>(pred.conf * 100));
+
+                int baseline = 0;
+                cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX,
+                                                     fontSize, textThickness, &baseline);
+
+                // Calculate label position (avoid going off-screen)
+                int labelY = std::max(box.y, labelSize.height + 2);
+                cv::Point textOrg(box.x, labelY - 2);
+
+                // Draw label background
+                cv::rectangle(image,
+                              cv::Point(box.x, labelY - labelSize.height - 2),
+                              cv::Point(box.x + labelSize.width + 2, labelY + baseline),
+                              color, cv::FILLED);
+
+                // Draw text
+                cv::putText(image, label, textOrg,
+                            cv::FONT_HERSHEY_SIMPLEX, fontSize,
+                            cv::Scalar(255, 255, 255), textThickness, cv::LINE_AA);
+            }
+        }
+
+        // Blend mask layer if created
+        if (drawMask && !maskLayer.empty()) {
+            cv::addWeighted(maskLayer, maskAlpha, image, 1.0f, 0, image);
+        }
+    }
 
     static void drawSegmentationsAndBoxes(cv::Mat &image, const std::vector<Prediction> &predictions,
                                           const std::vector<std::string> &classNames,
@@ -589,6 +675,8 @@ public:
                                   const std::vector<cv::Scalar> &classColors,
                                   float maskAlpha = MODEL_MASK_ALPHA)
     {
+        Q_UNUSED(classNames);
+
         for (const auto &seg : predictions) {
             const cv::Scalar &color = classColors[seg.classId % classColors.size()];
 
@@ -616,6 +704,133 @@ public:
                 // Blend the colored mask with the original image
                 cv::addWeighted(image, 1.0, colored_mask, maskAlpha, 0, image);
             }
+        }
+    }
+
+    /**
+     * @brief Draws segmentation masks, bounding boxes, and labels on the image
+     *
+     * @param image Image to draw on (modified in-place)
+     * @param predictions Vector of detection predictions
+     * @param classNames Class names corresponding to class IDs
+     * @param classColors Colors for each class
+     * @param drawMasks Whether to draw segmentation masks (default true)
+     * @param drawBoxes Whether to draw bounding boxes (default true)
+     * @param drawLabels Whether to draw class labels (default true)
+     * @param maskAlpha Transparency level for masks (0-1, default 0.4)
+     */
+    static void drawsSegmentations(cv::Mat &image,
+                               const std::vector<Prediction> &predictions,
+                               const std::vector<std::string> &classNames,
+                               const std::vector<cv::Scalar> &classColors,
+                               bool drawMasks = true,
+                               float maskAlpha = 0.4f,
+                               bool drawBoxes = true,
+                               bool drawLabels = true) {
+        // Validate input
+        if (image.empty()) {
+            qWarning() << "Empty image provided to drawDetections, skipping!";
+            return;
+        }
+
+        const int imgHeight = image.rows;
+        const int imgWidth = image.cols;
+
+        // Precompute dynamic properties once
+        const double fontScale = std::min(imgHeight, imgWidth) * 0.0006;
+        const int textThickness = std::max(1, static_cast<int>(std::min(imgHeight, imgWidth) * 0.001));
+        const int boxThickness = std::max(1, static_cast<int>(std::min(imgHeight, imgWidth) * 0.002));
+
+        // Create mask layer if needed
+        cv::Mat maskLayer;
+        if (drawMasks) {
+            maskLayer = cv::Mat::zeros(image.size(), image.type());
+        }
+
+        // Process each detection
+        for (const auto& pred : predictions) {
+            // Validate class ID
+            if (pred.classId < 0 || static_cast<size_t>(pred.classId) >= classNames.size()) {
+                continue;
+            }
+
+            const cv::Scalar& color = classColors[pred.classId % classColors.size()];
+            const cv::Rect& box = pred.box;
+
+            // -----------------------------
+            // Process segmentation mask
+            // -----------------------------
+            if (drawMasks && !pred.mask.empty()) {
+                cv::Mat maskGray;
+                // Convert to single channel if needed
+                if (pred.mask.channels() == 3) {
+                    cv::cvtColor(pred.mask, maskGray, cv::COLOR_BGR2GRAY);
+                } else {
+                    maskGray = pred.mask;
+                }
+
+                // Threshold to binary mask
+                cv::Mat maskBinary;
+                cv::threshold(maskGray, maskBinary, 127, 255, cv::THRESH_BINARY);
+
+                // Create colored mask
+                cv::Mat coloredMask;
+                cv::cvtColor(maskBinary, coloredMask, cv::COLOR_GRAY2BGR);
+                coloredMask.setTo(color, maskBinary);
+
+                // Add to mask layer
+                cv::addWeighted(maskLayer, 1.0, coloredMask, 1.0, 0, maskLayer);
+            }
+
+            // -----------------------------
+            // Draw bounding box
+            // -----------------------------
+            if (drawBoxes) {
+                cv::rectangle(image, box, color, boxThickness, cv::LINE_AA);
+            }
+
+            // -----------------------------
+            // Draw label
+            // -----------------------------
+            if (drawLabels) {
+                // Format label text
+                std::string label;
+                if (pred.trackerId >= 0) {
+                    label = std::format("{}:{} ({}%)",
+                                        classNames[pred.classId],
+                                        pred.trackerId,
+                                        static_cast<int>(pred.conf * 100));
+                } else {
+                    label = std::format("{} ({}%)",
+                                        classNames[pred.classId],
+                                        static_cast<int>(pred.conf * 100));
+                }
+
+                // Calculate text size
+                int baseline = 0;
+                cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX,
+                                                     fontScale, textThickness, &baseline);
+
+                // Calculate label position (avoid top edge)
+                int labelY = std::max(box.y, labelSize.height + 2);
+                cv::Point textOrg(box.x, labelY - 2);
+
+                // Draw label background
+                cv::rectangle(image,
+                              cv::Point(box.x, labelY - labelSize.height - 2),
+                              cv::Point(box.x + labelSize.width + 5, labelY + baseline),
+                              color, cv::FILLED);
+
+                // Draw text
+                cv::putText(image, label, textOrg,
+                            cv::FONT_HERSHEY_SIMPLEX, fontScale,
+                            cv::Scalar(255, 255, 255), textThickness, cv::LINE_AA);
+            }
+        }
+
+        // Apply mask layer if created
+        if (drawMasks && !maskLayer.empty()) {
+            cv::addWeighted(maskLayer, maskAlpha, image, 1.0, 0, image);
         }
     }
 
@@ -670,9 +885,9 @@ public:
         // Dynamic sizing parameters
         const int line_thickness = std::max(2, static_cast<int>(3 * scale_factor));
         const int kpt_radius = std::max(3, static_cast<int>(5 * scale_factor));
-        const float font_scale = 0.5f * scale_factor;
-        const int text_thickness = std::max(1, static_cast<int>(1 * scale_factor));
-        const int text_offset = static_cast<int>(10 * scale_factor);
+        // const float font_scale = 0.5f * scale_factor;
+        // const int text_thickness = std::max(1, static_cast<int>(1 * scale_factor));
+        // const int text_offset = static_cast<int>(10 * scale_factor);
 
         // Define per-keypoint color indices (for keypoints 0 to 16)
         static const std::vector<int> kpt_color_indices = {16,16,16,16,16,0,0,0,0,0,0,9,9,9,9,9,9};
@@ -716,6 +931,157 @@ public:
             }
 
             // (Optional) Add text labels such as confidence scores here if desired.
+        }
+    }
+
+    /**
+     * @brief Draws pose estimations including keypoints, skeleton, and optional bounding boxes
+     *
+     * @param image Input/output image
+     * @param predictions Vector of pose predictions
+     * @param classNames Class names for labeling
+     * @param classColors Colors for bounding boxes and labels
+     * @param poseSkeleton Connections between keypoints
+     * @param options Drawing configuration flags
+     * @param posePalette Color palette for keypoints and skeleton
+     */
+    static void drawPoseEstimation(cv::Mat &image,
+                                   const std::vector<Prediction> &predictions,
+                                   const std::vector<std::string> &classNames,
+                                   const std::vector<cv::Scalar> &classColors,
+                                   const std::vector<std::pair<int, int>> &poseSkeleton,
+                                   bool drawBox = false,
+                                   bool drawLabels = false,
+                                   bool drawKeypoints = true,
+                                   bool drawSkeleton = true,
+                                   const std::vector<cv::Scalar> &posePalette = {
+                                       {0,128,255}, {51,153,255}, {102,178,255}, {0,230,230}, {255,153,255},
+                                       {255,204,153}, {255,102,255}, {255,51,255}, {255,178,102}, {255,153,51},
+                                       {153,153,255}, {102,102,255}, {51,51,255}, {153,255,153}, {102,255,102},
+                                       {51,255,51}, {0,255,0}, {255,0,0}, {0,0,255}, {255,255,255}
+                                   })
+    {
+        if (predictions.empty()) return;
+
+        // Calculate dynamic sizes based on image dimensions
+        const float scale_factor = std::min(image.rows, image.cols) / 1280.0f;
+        const int line_thickness = std::max(1, static_cast<int>(2 * scale_factor));
+        const int kpt_radius = std::max(2, static_cast<int>(4 * scale_factor));
+        const double font_scale = 0.6 * scale_factor;
+        const int text_thickness = std::max(1, static_cast<int>(1 * scale_factor));
+
+        // Per-keypoint color indices
+        static const std::vector<int> kpt_color_indices = {
+            16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9, 9
+        };
+
+        // Per-limb color indices
+        static const std::vector<int> limb_color_indices = {
+            9, 9, 9, 9, 7, 7, 7, 0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16, 16
+        };
+
+        for (const auto& pred : predictions) {
+            // Validate class ID
+            const bool validClass = pred.classId >= 0 &&
+                                    static_cast<size_t>(pred.classId) < classNames.size();
+
+            const cv::Scalar& boxColor = validClass ?
+                                             classColors[pred.classId % classColors.size()] : cv::Scalar(0, 255, 0);
+
+            // -----------------------------
+            // Draw bounding box (optional)
+            // -----------------------------
+            if (drawBox) {
+                cv::rectangle(image, pred.box, boxColor, line_thickness);
+            }
+
+            // -----------------------------
+            // Prepare keypoint data
+            // -----------------------------
+            const size_t num_kpts = pred.points.size();
+            std::vector<cv::Point> kpt_points;
+            std::vector<bool> valid_kpt;
+
+            kpt_points.reserve(num_kpts);
+            valid_kpt.reserve(num_kpts);
+
+            for (const auto& pt : pred.points) {
+                const bool valid = pt.x >= 0 && pt.y >= 0;
+                kpt_points.emplace_back(std::round(pt.x), std::round(pt.y));
+                valid_kpt.push_back(valid);
+            }
+
+            // -----------------------------
+            // Draw skeleton connections
+            // -----------------------------
+            if (drawSkeleton) {
+                for (size_t j = 0; j < poseSkeleton.size(); j++) {
+                    const auto& [src_idx, dst_idx] = poseSkeleton[j];
+
+                    if (src_idx < num_kpts && dst_idx < num_kpts &&
+                        valid_kpt[src_idx] && valid_kpt[dst_idx]) {
+
+                        const int color_idx = (j < limb_color_indices.size()) ?
+                                                  limb_color_indices[j] : 0;
+
+                        cv::line(image, kpt_points[src_idx], kpt_points[dst_idx],
+                                 posePalette[color_idx % posePalette.size()],
+                                 line_thickness, cv::LINE_AA);
+                    }
+                }
+            }
+
+            // -----------------------------
+            // Draw keypoints
+            // -----------------------------
+            if (drawKeypoints) {
+                for (size_t i = 0; i < num_kpts; i++) {
+                    if (!valid_kpt[i]) continue;
+
+                    const int color_idx = (i < kpt_color_indices.size()) ?
+                                              kpt_color_indices[i] : 0;
+
+                    cv::circle(image, kpt_points[i], kpt_radius,
+                               posePalette[color_idx % posePalette.size()],
+                               -1, cv::LINE_AA);
+                }
+            }
+
+            // -----------------------------
+            // Draw label (optional)
+            // -----------------------------
+            if (drawLabels && validClass && !pred.box.empty()) {
+                std::string label;
+                if (pred.trackerId >= 0) {
+                    label = std::format("{}:{} ({}%)",
+                                        classNames[pred.classId],
+                                        pred.trackerId,
+                                        static_cast<int>(pred.conf * 100));
+                } else {
+                    label = std::format("{} ({}%)",
+                                        classNames[pred.classId],
+                                        static_cast<int>(pred.conf * 100));
+                }
+
+                // Calculate text position (top center above box)
+                int baseline = 0;
+                cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX,
+                                                     font_scale, text_thickness, &baseline);
+
+                const int textX = pred.box.x + (pred.box.width - labelSize.width) / 2;
+                const int textY = std::max(pred.box.y - 5, labelSize.height + 2);
+
+                // Draw background
+                cv::rectangle(image,
+                              cv::Point(textX - 2, textY - labelSize.height - 2),
+                              cv::Point(textX + labelSize.width + 2, textY + baseline),
+                              boxColor, cv::FILLED);
+
+                // Draw text
+                cv::putText(image, label, cv::Point(textX, textY - 2),
+                            cv::FONT_HERSHEY_SIMPLEX, font_scale,
+                            cv::Scalar(255, 255, 255), text_thickness, cv::LINE_AA);
+            }
         }
     }
 

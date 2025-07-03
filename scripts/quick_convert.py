@@ -98,7 +98,7 @@ if __name__ == "__main__":
     ################################################################
     # Initialize Labelbox client
     # NOTE: This call requires Labelbox's API-key as argument or you should set the LABELBOX_API
-    client = lb.Client(api_key='')
+    client = lb.Client(api_key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbTdxYmVuMzIwN2dqMDd5YjJzanlnZTV1Iiwib3JnYW5pemF0aW9uSWQiOiJjbTdxYmVuMnUwN2dpMDd5Yjc1cGsxeGhsIiwiYXBpS2V5SWQiOiJjbWJmZ2NqanQxNHdrMDd0czRsZWxmdWtxIiwic2VjcmV0IjoiYThhOTc1NDMyNDcxOGM2OWY1OWU2YzUzNWM0YmFiZjYiLCJpYXQiOjE3NDg4OTA2NjcsImV4cCI6MTc0ODg5MjQ2N30.PJR31LzsuG53BVQLy5XrPo5lL3M4XTwioRKpthZsFI4')
     PROJECT_ID = "cm7xlwbmk053507wwcvfz1nuw"
     project_name = "License_Plates"
     # What the names are in LabelBox VS What you want it to be in data.yaml
@@ -137,7 +137,7 @@ if __name__ == "__main__":
         yaml.dump(data_yaml, f, sort_keys=False)
 
     # Process data rows with multithreading
-    max_workers = ThreadPoolExecutor._max_workers  # Adjust based on your system's capabilities
+    max_workers = 8  # Adjust based on your system's capabilities
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [
             executor.submit(

@@ -1,5 +1,9 @@
 {
     "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "name": "ai-powered-surveillance-system",
+    "maintainers": "Ahsan Ullah <CS120212021@kkkuk.edu.pk>",
+    "description": "APSS is an AI Powered (Vehicle) Surveillance System (weird name) for our BS CS FYP",
+    "supports": "windows",
     "dependencies": [
         {
             "name": "pkgconf",
@@ -24,6 +28,16 @@
         {
             "name": "eigen3",
             "version>=": "3.4.0"
+        },
+        {
+            "name": "reflectcpp",
+            "default-features": false,
+            "features": ["yaml"],
+            "version>=": "0.17.0"
+        },
+        {
+            "name": "gtest",
+            "version>=": "1.16.0"
         }
     ]
 }

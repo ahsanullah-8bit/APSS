@@ -10,6 +10,8 @@ YOLOPose::YOLOPose(const std::string &modelPath, const std::string &labelsPath) 
 
 void YOLOPose::drawPredictions(cv::Mat &image, const PredictionList &predictions, float maskAlpha) const
 {
+    Q_UNUSED(maskAlpha);
+
     // Skeleton: top-left -> top-right -> bottom-right -> bottom-left -> top-left
     static const std::vector<std::pair<int, int>> skeleton = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
 
@@ -80,9 +82,9 @@ std::vector<PredictionList> YOLOPose::postprocess(const MatList &originalImages,
     const size_t batch_size = shape0.at(0);
     const size_t num_features = shape0.at(1);
     const size_t num_predictions = shape0.at(2);
-    const int num_classes = classNames().size();
+    const int num_classes = static_cast<int>(classNames().size());
     const int features_per_keypoint = 3;    // This may vary
-    const int num_keypoints = (num_features - num_classes - 4) / features_per_keypoint;
+    const int num_keypoints = static_cast<int>(num_features - num_classes - 4) / features_per_keypoint;
 
     results_list.reserve(batch_size);
     for (size_t b = 0; b < batch_size; ++b) {
@@ -201,9 +203,4 @@ std::vector<PredictionList> YOLOPose::postprocess(const MatList &originalImages,
     }
 
     return results_list;
-}
-
-bool YOLOPose::hasVisibility(const std::vector<Prediction> &predictions)
-{
-    return true;
 }

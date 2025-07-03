@@ -77,6 +77,7 @@ Page {
 
         onAccepted: {
             apssEngine.openAFootage(cameraDialog.source, videoOutput.videoSink)
+            console.log(cameraDialog.source)
         }
     }
 }

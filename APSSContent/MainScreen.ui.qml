@@ -7,8 +7,10 @@ this file manually, you might introduce QML code that is not supported by Qt Des
 Check out https://doc.qt.io/qtcreator/creator-quick-ui-forms.html for details on .ui.qml files.
 */
 import QtQuick
+import QtQuick.Layouts
 import QtQuick.Controls
 import APSS
+import APSS.Components
 
 Rectangle {
     implicitWidth: Constants.width
@@ -16,16 +18,98 @@ Rectangle {
 
     color: Constants.backgroundColor
 
-    StackView {
-        id: pages
+    // Side-bar
+    RowLayout {
         anchors.fill: parent
 
-        initialItem: videoPlaybackPage
-    }
+        Pane {
+            Layout.fillHeight: true
+            Layout.preferredWidth: 70
 
-    VideoPlaybackPage {
-        id: videoPlaybackPage
+            ButtonGroup {
+                buttons: sideBarCol.children
+            }
 
-        visible: false
+            Column {
+                id: sideBarCol
+
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 20
+                padding: 10
+
+                RoundButton {
+                    text: "Home"
+                    checkable: true
+
+                    height: 50
+                    width: 50
+                    radius: 10
+                }
+
+                RoundButton {
+                    text: "Preview"
+                    checkable: true
+
+                    height: 50
+                    width: 50
+                    radius: 10
+                }
+
+                RoundButton {
+                    text: "Recordings"
+                    checkable: true
+
+                    height: 50
+                    width: 50
+                    radius: 10
+                }
+            }
+        }
+
+        GridLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            rows: 2
+            columns: 2
+
+            Repeater {
+                model: Constants.isPreviewMode ? 1 : apssEngine.cameraMetricsModel
+
+                delegate: LivePlaybackCard {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    name: Constants.isPreviewMode ? "uknown" : model.name
+                    visible: true
+
+                    Component.onCompleted: {
+                        // VideoSink must be set, so the engine can forward frames
+                        model.videosink = videoOutput.videoSink
+                    }
+                }
+            }
+
+            // LivePlaybackCard {
+            //     Layout.fillWidth: true
+            //     Layout.fillHeight: true
+
+            //     visible: true
+            // }
+
+            // LivePlaybackCard {
+            //     Layout.fillWidth: true
+            //     Layout.fillHeight: true
+
+            //     visible: true
+            // }
+
+            // LivePlaybackCard {
+            //     Layout.fillWidth: true
+            //     Layout.fillHeight: true
+
+            //     visible: true
+            // }
+        }
     }
 }

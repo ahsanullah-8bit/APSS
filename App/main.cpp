@@ -7,7 +7,10 @@
 
 #include "autogen/environment.h"
 
-#include "apssengine.h"
+#include <rfl/yaml.hpp>
+
+#include "config/apssconfig.h"
+#include "engine/apssengine.h"
 
 int main(int argc, char *argv[])
 {
@@ -16,8 +19,26 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
 
-    APSSEngine apssEngine;
-    engine.rootContext()->setContextProperty("apssEngine", &apssEngine);
+    // APSSEngine Setup -------------
+
+    CameraConfig cam_config;
+    cam_config.enabled = true;
+    cam_config.ffmpeg.inputs.emplace_back(CameraInput( "C:/Users/MadGuy/Videos/ny_street2.mp4", {CameraRoleEnum::Detect}));
+
+    PredictorConfig pred_config;
+    pred_config.model_path = "models/yolo11n.onxx";
+
+    APSSConfig config;
+    config.version = "0.1";
+    config.cameras["local_file"] = cam_config;
+    config.predictors["yolo11_det"] = pred_config;
+
+    APSSEngine *apssEngine = new APSSEngine(&config, &engine);
+    apssEngine->start();
+    engine.rootContext()->setContextProperty("apssEngine", apssEngine);
+    QObject::connect(&app, &QGuiApplication::aboutToQuit, apssEngine, &APSSEngine::stop);
+
+    // --------------------------
 
     const QUrl url(mainQmlFile);
     QObject::connect(

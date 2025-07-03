@@ -16,8 +16,8 @@ qt6_add_qml_module(APSS
     RESOURCE_PREFIX "/qt/qml"
     QML_FILES
         "EventListSimulator.qml"
-        "Constants.qml"
         "EventListModel.qml"
+        "Constants.qml"
 )
 
 

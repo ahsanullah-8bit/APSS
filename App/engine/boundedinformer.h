@@ -5,9 +5,9 @@
 
 #include <tbb_patched.h>
 
-#include "frame.h"
-#include "yolodetection.h"
-#include "yolopose.h"
+#include "utils/frame.h"
+#include "detectors/yolodetection.h"
+#include "detectors/yolopose.h"
 
 /*
  * @brief A Class that informs main thread of a frame update while listening to detector.
@@ -16,36 +16,32 @@
 class BoundedInformer : public QThread {
     Q_OBJECT
 public:
-    BoundedInformer(tbb::concurrent_bounded_queue<Frame> &boundedFrameQueue,
-                    YOLODetection &detector,
-                    YOLOPose &poseEstimator,
+    BoundedInformer(SharedFrameBoundedQueue &boundedFrameQueue,
                     QObject *parent = nullptr)
         : QThread(parent)
-        , m_detector(detector)
-        , m_poseEstimator(poseEstimator)
         , m_boundedFrameQueue(boundedFrameQueue)
     {}
 
-signals:
-    void frameChanged(const Frame &frame);
+Q_SIGNALS:
+    void frameChanged(SharedFrame frame);
 
     // QThread interface
 protected:
     void run() override {
         try {
             while (!QThread::currentThread()->isInterruptionRequested()) {
-                Frame frame;
+                SharedFrame frame;
                 m_boundedFrameQueue.pop(frame);
-                cv::Mat mat = frame.data();
+                cv::Mat mat = frame->data();
 
-                m_detector.drawPredictionsMask(mat, frame.predictions()[Prediction::Type::Objects]);
-                m_poseEstimator.drawPredictionsMask(mat, frame.predictions()[Prediction::Type::LicensePlates]);
+                // m_detector.drawPredictionsMask(mat, frame->predictions()[Prediction::Type::Objects]);
+                // m_poseEstimator.drawPredictionsMask(mat, frame->predictions()[Prediction::Type::LicensePlates]);
                 // qDebug() << "Size" << frame.predictions()[Prediction::Type::LicensePlates].size();
 
-                emit frameChanged(std::move(frame));
+                Q_EMIT frameChanged(frame);
             }
         }
-        catch(const tbb::user_abort &e) {}
+        catch(const tbb::user_abort &) {}
         catch(...) {
             qCritical() << "Uknown/Uncaught exception occurred.";
         }
@@ -54,7 +50,7 @@ protected:
     }
 
 private:
-    tbb::concurrent_bounded_queue<Frame> &m_boundedFrameQueue;
-    YOLODetection &m_detector;
-    YOLOPose &m_poseEstimator;
+    SharedFrameBoundedQueue &m_boundedFrameQueue;
+    // YOLODetection &m_detector;
+    // YOLOPose &m_poseEstimator;
 };

@@ -1,3 +1,0 @@
-#pragma once
-
-#cmakedefine SCRIPTS_DIR "@SCRIPTS_DIR@"

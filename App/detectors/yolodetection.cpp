@@ -8,6 +8,7 @@ YOLODetection::YOLODetection(const std::string &modelPath, const std::string &la
 
 void YOLODetection::drawPredictions(cv::Mat &image, const prediction_vec &predictions, float maskAlpha) const
 {
+    Q_UNUSED(maskAlpha);
     Utils::drawBoundingBox(image, predictions, classNames(), classColors());
 }
 

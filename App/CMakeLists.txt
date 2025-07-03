@@ -1,30 +1,25 @@
+# Every sub-folder has its own configuration. Because of weird modifications QDS do to this file sometimes...
 
-set(${CMAKE_INCLUDE_CURRENT_DIR} ON)
+add_subdirectory(camera)
+add_subdirectory(config)
+add_subdirectory(db)
+add_subdirectory(detectors)
+
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_BINARY_DIR} # For the export.h to be found.
-    camera
-    detectors
-    engine
-    utils
-
-    # ${OnnxRuntime_INCLUDE_DIR}
-    "${CMAKE_SOURCE_DIR}/Dependencies/ByteTrackEigen/include"
+    # camera
+    # config
+    # detectors
+    # engine
+    # utils
 )
 
 target_sources(${CMAKE_PROJECT_NAME} PUBLIC
-    "main.cpp" 
-    camera/filestream.cpp
-    camera/ffmpegcamera.cpp
-    camera/ffmpegfile.cpp
-    detectors/yoloinference.cpp
-    detectors/yolodetection.cpp
-    detectors/yolosegmentation.cpp
-    detectors/yolopose.cpp
     engine/apssengine.cpp
-    engine/objectdetectorsession.cpp
-    engine/lprsession.cpp
-    engine/boundedinformer.h
+
+    models/camerametricsmodel.cpp
+
+    main.cpp
 )
 
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE ${FFMPEG_LIBRARY_DIRS})
@@ -35,10 +30,12 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Qml
     Qt${QT_VERSION_MAJOR}::Multimedia
 
-    TBB::tbb
-    ${FFMPEG_LIBRARIES}
-    ${OpenCV_LIBS}
-    bytetrackeigen  # Can't use alias, because it's a sub-project
-)
+    APSS::Config
 
-add_subdirectory(db)
+    TBB::tbb
+    Eigen3::Eigen
+    ByteTrackEigen::ByteTrack
+    onnxruntime::onnxruntime
+    ${OpenCV_LIBS}
+    ${FFMPEG_LIBRARIES}
+)
