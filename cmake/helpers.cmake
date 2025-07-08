@@ -27,7 +27,7 @@ function(apss_init_dependencies)
 			message(NOTICE "--- Setting up onnxruntime ---")
 
 			FetchContent_Declare(onnxruntime
-				URL "https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/onnxruntime-win-x64-1.21.1-cpu-ov.zip"
+				URL "https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/onnxruntime-win-x64-v5.6-cpu-ov.zip"
 			)
 		    FetchContent_MakeAvailable(onnxruntime)
 			FetchContent_GetProperties(onnxruntime)
@@ -51,7 +51,7 @@ function(apss_init_dependencies)
 			set(OpenVINO_DIR "${OpenVINO_ROOT}/runtime/cmake" CACHE STRING "Path to OpenVINO config files")
 		else()
 			FetchContent_Declare(OpenVINO
-				URL "https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/openvino-2025.1.0-win-x64-auto-cpu-gpu-.zip"
+				URL "https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/openvino-2025.1.0-win-x64-auto-cpu-gpu.zip"
 			)
 		    FetchContent_MakeAvailable(OpenVINO)
 			FetchContent_GetProperties(OpenVINO)
@@ -105,7 +105,7 @@ function(apss_init_dependencies)
 			set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE) # Propagate the variable
 		endif()
 
-		# Chnage the \\ in every .pc files to /, because pkgconf is reading \\..\\.. as .... from the .pc files..
+		# Change the \\ in every .pc files to /, because pkgconf is reading \\..\\.. as .... from the .pc files..
 		apss_rewrite_odb_pc_files(${libodb_ROOT})
 
 		######################################
@@ -118,14 +118,27 @@ function(apss_init_dependencies)
 
 		######################
 
+		# WARNING: These checks are necessary, as the GLOB_RECURSE will search the WHOLE SYSTEM, if the <globbing-expressions> is given as "/*.dll".
+		if (onnxruntime_ROOT AND NOT onnxruntime_ROOT STREQUAL "")
+			file(GLOB_RECURSE	ORT_DLLS			LIST_DIRECTORIES FALSE "${onnxruntime_ROOT}/*.dll") # <dir>/lib/cmake/onnxruntime
+		endif()
+
+		if (OpenVINO_ROOT AND NOT OpenVINO_ROOT STREQUAL "")
+			file(GLOB_RECURSE	OPENVINO_DLLS		LIST_DIRECTORIES FALSE "${OpenVINO_ROOT}/runtime/*.dll")
+			file(GLOB			OPENVINO_JSON		LIST_DIRECTORIES FALSE "${OpenVINO_ROOT}/runtime/bin/intel64/Release/*.json")
+		endif()
+
 		# NOTE: libx264-164.dll used to get copied to the binary dir as of ffmpeg v7.1 but now it doesn't
 		#		https://github.com/microsoft/vcpkg/issues/43802
-		file(GLOB_RECURSE	ORT_DLLS			LIST_DIRECTORIES FALSE "${onnxruntime_ROOT}/*.dll") # <dir>/lib/cmake/onnxruntime
-		file(GLOB_RECURSE	OPENVINO_DLLS		LIST_DIRECTORIES FALSE "${OpenVINO_ROOT}/runtime/*.dll")
-		file(GLOB			OPENVINO_JSON		LIST_DIRECTORIES FALSE "${OpenVINO_ROOT}/runtime/bin/intel64/Release/*.json")
-		file(GLOB			x264_DLLS			LIST_DIRECTORIES FALSE "${VCPKG_INSTALLED_DIR}/x64-windows/tools/x264/bin/*.dll")
-		file(GLOB			ODB_FILES			LIST_DIRECTORIES FALSE "${libodb_ROOT}/bin/*.dll")
+		if (VCPKG_INSTALLED_DIR AND NOT ${VCPKG_INSTALLED_DIR} STREQUAL "")
+			file(GLOB			x264_DLLS			LIST_DIRECTORIES FALSE "${VCPKG_INSTALLED_DIR}/x64-windows/tools/x264/bin/*.dll")
+		endif()
 
+		if (libodb_ROOT AND NOT libodb_ROOT STREQUAL "")
+			file(GLOB			ODB_FILES			LIST_DIRECTORIES FALSE "${libodb_ROOT}/bin/*.dll")
+		endif()
+
+		# Add any list of dlls that you want to get copied to the binary directory
 	    set(temp_postbuild_runtime_files
 			${ORT_DLLS}
 			${OPENVINO_DLLS}
@@ -140,7 +153,7 @@ function(apss_init_dependencies)
 
 	endif() # WIN32
 
-endfunction()
+endfunction() # apss_init_dependencies
 
 # Copies all the necessary files like dlls, models, etc. over to the binary dir. So, they are all available at runtime
 function(apss_copy_runtime_files)
@@ -195,7 +208,7 @@ function(apss_copy_runtime_files)
 			VERBATIM
 		)
     endif()
-endfunction()
+endfunction() # apss_copy_runtime_files
 
 # Scans all the header files of persistent class targets and generates the persistent code
 function(apss_generate_odb_models db_type dst_dir)
@@ -229,10 +242,11 @@ function(apss_generate_odb_models db_type dst_dir)
 	endforeach()
 
 	message(STATUS " --- Conversion finished --- ")
-endfunction()
+endfunction() # apss_generate_odb_models
 
 
 # Scans all the header files of persistent class targets and generates the persistent code
+# A more advanced version of the first. Only operates while if the results don't exist or any changes to the sources.
 function(apss_generate_odb_models3 db_type dst_dir)
 	message(STATUS "\n\t --- Converting persistent classes (Configure Time Check & Cache) --- ")
 
@@ -353,13 +367,131 @@ function(apss_generate_odb_models3 db_type dst_dir)
 	set(ODB_GENERATED_SRCS "${_odb_generated_srcs}" PARENT_SCOPE)
 	set(ODB_GENERATED_HEADERS "${_odb_generated_headers}" PARENT_SCOPE)
 
-endfunction()
+endfunction() # apss_generate_odb_models3
 
-# Changes any \\ in paths to /. Because for some reason, pkgconf is not able to see \\ or something else
-# is going on we get a...., when reading a\\..\\..
+# Scans all the header files of persistent class targets and generates the persistent code
+# A more advanced version of the first. Only operates while if the results don't exist or any changes to the sources.
+function(apss_generate_odb_models4 db_type dst_dir)
+	message(STATUS "\n\t --- Converting persistent classes --- ")
+	execute_process(COMMAND ${odb_EXECUTABLE} --version)
+
+	# Ensure the destination directory exists - create once during configure time
+	message(STATUS "Creating directory: ${dst_dir}")
+	file(MAKE_DIRECTORY ${dst_dir})
+
+	# Locate the Qt headers for odb.exe - run once during configure time
+	execute_process(
+		COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_HEADERS
+		OUTPUT_VARIABLE QT_HEADERS
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+	)
+
+    set(_odb_generated_srcs "")
+	set(_odb_generated_headers "")
+
+	# Run odb.exe for each header conditionally
+	foreach(src_file IN LISTS ARGN) # ARGN contains all extra arguments (.h files)
+		get_filename_component(base_name "${src_file}" NAME_WE) # e.g., "event" from "event.h"
+
+		# Create expected output file paths with their names
+		set(gen_cxx_file "${dst_dir}/${base_name}-odb.cxx")
+		set(gen_hxx_file "${dst_dir}/${base_name}-odb.hxx")
+		set(gen_ixx_file "${dst_dir}/${base_name}-odb.ixx")
+
+		# Collect generated file paths for parent scope regardless of whether they are re-generated
+		list(APPEND _odb_generated_srcs "${gen_cxx_file}")
+		list(APPEND _odb_generated_headers "${gen_hxx_file}" "${gen_ixx_file}")
+
+		set(rebuild_this_file_required FALSE)
+
+		# Create a unique cache variable name for this specific source file's last generation timestamp
+		# We'll use the SHA1 hash of the full source file path to ensure uniqueness and validity for cache naming.
+		string(SHA1 SRC_FILE_HASH "${src_file}")
+		set(CACHE_VAR_NAME "ODB_${base_name}h_LAST_GEN_TIMESTAMP")
+
+		# Load the previous timestamp from cache for this file
+		# If it's not defined, it means this is the first time or cache was cleared.
+		get_property(PREVIOUS_GEN_TIMESTAMP CACHE ${CACHE_VAR_NAME} PROPERTY VALUE)
+
+
+		# 1. Check if output files exist
+		if (NOT EXISTS "${gen_cxx_file}" OR NOT EXISTS "${gen_hxx_file}" OR NOT EXISTS "${gen_ixx_file}")
+			message(STATUS "\t-> Output files for '${src_file}' are missing. Rebuilding.")
+			set(rebuild_this_file_required TRUE)
+		else()
+			# 2. If output files exist, check modification times
+			file(TIMESTAMP "${src_file}" SRC_TIMESTAMP UTC)
+			# message(NOTICE "${src_file}: ${SRC_TIMESTAMP}, ${CACHE_VAR_NAME}: ${PREVIOUS_GEN_TIMESTAMP}")
+
+			if (NOT SRC_TIMESTAMP)
+				message(WARNING "\t-> Could not get timestamp for source file: ${src_file}. Forcing rebuild.")
+				set(rebuild_this_file_required TRUE)
+			else()
+				# Compare source timestamp with the *cached timestamp for this specific file*
+				if (NOT PREVIOUS_GEN_TIMESTAMP OR SRC_TIMESTAMP STRGREATER PREVIOUS_GEN_TIMESTAMP)
+					message(STATUS "\t-> Source '${src_file}' was modified since last generation. Rebuilding.")
+					set(rebuild_this_file_required TRUE)
+				else()
+					# Fallback check: compare source timestamp with actual generated file timestamps.
+					# This covers cases where cache variable might be out of sync (e.g., manual deletion or older CMake versions)
+					file(TIMESTAMP "${gen_cxx_file}" CXX_TIMESTAMP UTC)
+					file(TIMESTAMP "${gen_hxx_file}" HXX_TIMESTAMP UTC)
+					file(TIMESTAMP "${gen_ixx_file}" IXX_TIMESTAMP UTC)
+
+					set(OLDEST_GEN_TIMESTAMP "${CXX_TIMESTAMP}")
+					if (IXX_TIMESTAMP AND IXX_TIMESTAMP VERSION_LESS OLDEST_GEN_TIMESTAMP)
+						set(OLDEST_GEN_TIMESTAMP "${IXX_TIMESTAMP}")
+					endif()
+					if (HXX_TIMESTAMP AND HXX_TIMESTAMP VERSION_LESS OLDEST_GEN_TIMESTAMP)
+						set(OLDEST_GEN_TIMESTAMP "${HXX_TIMESTAMP}")
+					endif()
+
+					if (SRC_TIMESTAMP STRGREATER OLDEST_GEN_TIMESTAMP)
+						message(STATUS "\t-> Source '${src_file}' is newer than existing generated files. Rebuilding.")
+						set(rebuild_this_file_required TRUE)
+					else()
+						message(STATUS "\t-> Files for '${src_file}' are up-to-date. Skipping.")
+					endif()
+				endif()
+			endif()
+		endif()
+
+		# Execute ODB compiler only if rebuild is required
+		if (rebuild_this_file_required)
+			# message(STATUS "\t-- Converting: ${src_file}")
+			execute_process(
+				COMMAND
+				    ${odb_EXECUTABLE} -d ${db_type} -q -s -o ${dst_dir} --profile qt --std c++17
+					-I${libodb_ROOT}/include "${src_file}" -I${QT_HEADERS} # Double-quote QT_HEADERS in case of spaces
+					RESULT_VARIABLE ODB_CONV_RESULT
+			)
+
+		    if (ODB_CONV_RESULT EQUAL 0)
+				# message(STATUS "\tConverted file ${src_file}")
+
+				set(${CACHE_VAR_NAME} ${SRC_TIMESTAMP} CACHE STRING "Timestamp of last ODB generation for ${src_file}" FORCE)
+				# message(STATUS "\t\tUpdated cache for '${src_file}' to ${SRC_TIMESTAMP}")
+			else()
+				message(FATAL_ERROR "\tFailed to convert file: ${src_file} (Error code: ${ODB_CONV_RESULT}). Check ODB output above for details.")
+			endif()
+		endif()
+	endforeach()
+
+	message(STATUS " --- Conversion finished --- ")
+
+	# Pass the generated source and header files back to the parent scope
+	set(ODB_GENERATED_SRCS "${_odb_generated_srcs}" PARENT_SCOPE)
+	set(ODB_GENERATED_HEADERS "${_odb_generated_headers}" PARENT_SCOPE)
+
+endfunction() # apss_generate_odb_models3
+
+
+set(THIS_FILE ${CMAKE_CURRENT_LIST_FILE})
 function(apss_rewrite_odb_pc_files libodb_ROOT)
+	# Changes any \\ in paths to /. Because for some reason, pkgconf is not able to see \\ or something else
+	# is going on and we get ba...., when reading b\\a\\..\\..
 
-	message(NOTICE "Re-writing libodb's .pc files")
+	message(NOTICE "Re-writing libodb's .pc files for windows specific paths (see ${THIS_FILE}: ${CMAKE_CURRENT_LIST_LINE})")
 	file(GLOB	ODB_PC_FILES		LIST_DIRECTORIES FALSE "${libodb_ROOT}/lib/pkgconfig/*.pc")
 	set(temp_pc_files
 		${ODB_PC_FILES}

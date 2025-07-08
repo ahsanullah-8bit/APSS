@@ -1,10 +1,10 @@
 #pragma once
 
 // Hide includes from ODB_COMPILER
-#ifndef ODB_COMPILER
-#include <QtCore/QString>
-#include <QtCore/QDateTime>
-#endif
+// #ifndef ODB_COMPILER
+// #include <QtCore/QString>
+// #include <QtCore/QDateTime>
+// #endif
 
 #pragma db object
 class Event
@@ -38,7 +38,7 @@ public:
     void setId(const QString &newId);
     void setLabel(const QString &newLabel);
     void setSubLabel(const QString &newSubLabel);
-    void setcamera(const QString &newCamera);
+    void setCamera(const QString &newCamera);
     void setStartTime(const QDateTime &newStartTime);
     void setEndTime(const QDateTime &newEndTime);
     void setTopScore(float newTopScore);
@@ -67,18 +67,18 @@ private:
     QString m_camera;
     QDateTime m_startTime;
     QDateTime m_endTime;
-    float m_topScore;
-    float m_score;
-    bool m_falsePositive;
+    float m_topScore = 0.0f;
+    float m_score = 0.0f;
+    bool m_falsePositive = false;
     QString m_zones;
     QString m_thumbnail;
-    bool m_hasClip;
-    bool m_hasSnapshot;
+    bool m_hasClip = false;
+    bool m_hasSnapshot = false;
     QString m_region;
     QString m_box;
-    long m_area;
-    bool m_retainIndefinitely;
-    float m_ratio;
+    long m_area = 0l;
+    bool m_retainIndefinitely = false;
+    float m_ratio = false;
     QString m_plusId;
     QString m_modelHash;
     QString m_detectorType;
@@ -227,7 +227,7 @@ inline void Event::setSubLabel(const QString &newSubLabel)
     // emit subLabelChanged(m_subLabel);
 }
 
-inline void Event::setcamera(const QString &newCamera)
+inline void Event::setCamera(const QString &newCamera)
 {
     if (m_camera == newCamera)
         return;
@@ -391,7 +391,7 @@ inline void Event::setData(const QString &newData)
 // Q_PROPERTY(std::string id READ id WRITE setId NOTIFY idChanged FINAL)
 // Q_PROPERTY(std::string label READ label WRITE setLabel NOTIFY labelChanged FINAL)
 // Q_PROPERTY(std::string subLabel READ subLabel WRITE setSubLabel NOTIFY subLabelChanged FINAL)
-// Q_PROPERTY(std::string camera READ camera WRITE setcamera NOTIFY cameraChanged FINAL)
+// Q_PROPERTY(std::string camera READ camera WRITE setCamera NOTIFY cameraChanged FINAL)
 // Q_PROPERTY(std::string startTime READ startTime WRITE setStartTime NOTIFY startTimeChanged FINAL)
 // Q_PROPERTY(std::string endTime READ endTime WRITE setEndTime NOTIFY endTimeChanged FINAL)
 // Q_PROPERTY(float topScore READ topScore WRITE setTopScore NOTIFY topScoreChanged FINAL)

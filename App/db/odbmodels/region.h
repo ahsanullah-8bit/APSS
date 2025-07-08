@@ -1,11 +1,5 @@
 #pragma once
 
-// Hide includes from ODB_COMPILER
-#ifndef ODB_COMPILER
-#include <QtCore/QString>
-#include <QtCore/QDateTime>
-#endif
-
 #pragma db object
 class Region
 {

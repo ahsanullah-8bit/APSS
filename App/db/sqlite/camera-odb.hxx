@@ -4,8 +4,8 @@
 // compiler for C++.
 //
 
-#ifndef TIMELINE_ODB_HXX
-#define TIMELINE_ODB_HXX
+#ifndef CAMERA_ODB_HXX
+#define CAMERA_ODB_HXX
 
 // Begin prologue.
 //
@@ -39,7 +39,7 @@
 
 #include <odb/pre.hxx>
 
-#include "timeline.h"
+#include "camera.h"
 
 #include <memory>
 #include <cstddef>
@@ -60,20 +60,20 @@
 
 namespace odb
 {
-  // Timeline
+  // Camera
   //
   template <>
-  struct class_traits< ::Timeline >
+  struct class_traits< ::Camera >
   {
     static const class_kind kind = class_object;
   };
 
   template <>
-  class access::object_traits< ::Timeline >
+  class access::object_traits< ::Camera >
   {
     public:
-    typedef ::Timeline object_type;
-    typedef ::QSharedPointer< ::Timeline > pointer_type;
+    typedef ::Camera object_type;
+    typedef ::QSharedPointer< ::Camera > pointer_type;
     typedef odb::pointer_traits<pointer_type> pointer_traits;
 
     static const bool polymorphic = false;
@@ -113,10 +113,10 @@ namespace odb
 
 namespace odb
 {
-  // Timeline
+  // Camera
   //
   template <typename A>
-  struct query_columns< ::Timeline, id_sqlite, A >
+  struct query_columns< ::Camera, id_sqlite, A >
   {
     // id
     //
@@ -130,19 +130,7 @@ namespace odb
 
     static const id_type_ id;
 
-    // timestamp
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        ::QDateTime,
-        sqlite::id_text >::query_type,
-      sqlite::id_text >
-    timestamp_type_;
-
-    static const timestamp_type_ timestamp;
-
-    // camera
+    // name
     //
     typedef
     sqlite::query_column<
@@ -150,11 +138,11 @@ namespace odb
         ::QString,
         sqlite::id_text >::query_type,
       sqlite::id_text >
-    camera_type_;
+    name_type_;
 
-    static const camera_type_ camera;
+    static const name_type_ name;
 
-    // source
+    // hash
     //
     typedef
     sqlite::query_column<
@@ -162,91 +150,35 @@ namespace odb
         ::QString,
         sqlite::id_text >::query_type,
       sqlite::id_text >
-    source_type_;
+    hash_type_;
 
-    static const source_type_ source;
-
-    // sourceId
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        ::QString,
-        sqlite::id_text >::query_type,
-      sqlite::id_text >
-    sourceId_type_;
-
-    static const sourceId_type_ sourceId;
-
-    // classType
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        ::QString,
-        sqlite::id_text >::query_type,
-      sqlite::id_text >
-    classType_type_;
-
-    static const classType_type_ classType;
-
-    // data
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        ::QString,
-        sqlite::id_text >::query_type,
-      sqlite::id_text >
-    data_type_;
-
-    static const data_type_ data;
+    static const hash_type_ hash;
   };
 
   template <typename A>
-  const typename query_columns< ::Timeline, id_sqlite, A >::id_type_
-  query_columns< ::Timeline, id_sqlite, A >::
+  const typename query_columns< ::Camera, id_sqlite, A >::id_type_
+  query_columns< ::Camera, id_sqlite, A >::
   id (A::table_name, "\"id\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Timeline, id_sqlite, A >::timestamp_type_
-  query_columns< ::Timeline, id_sqlite, A >::
-  timestamp (A::table_name, "\"timestamp\"", 0);
+  const typename query_columns< ::Camera, id_sqlite, A >::name_type_
+  query_columns< ::Camera, id_sqlite, A >::
+  name (A::table_name, "\"name\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Timeline, id_sqlite, A >::camera_type_
-  query_columns< ::Timeline, id_sqlite, A >::
-  camera (A::table_name, "\"camera\"", 0);
+  const typename query_columns< ::Camera, id_sqlite, A >::hash_type_
+  query_columns< ::Camera, id_sqlite, A >::
+  hash (A::table_name, "\"hash\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Timeline, id_sqlite, A >::source_type_
-  query_columns< ::Timeline, id_sqlite, A >::
-  source (A::table_name, "\"source\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Timeline, id_sqlite, A >::sourceId_type_
-  query_columns< ::Timeline, id_sqlite, A >::
-  sourceId (A::table_name, "\"sourceId\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Timeline, id_sqlite, A >::classType_type_
-  query_columns< ::Timeline, id_sqlite, A >::
-  classType (A::table_name, "\"classType\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Timeline, id_sqlite, A >::data_type_
-  query_columns< ::Timeline, id_sqlite, A >::
-  data (A::table_name, "\"data\"", 0);
-
-  template <typename A>
-  struct pointer_query_columns< ::Timeline, id_sqlite, A >:
-    query_columns< ::Timeline, id_sqlite, A >
+  struct pointer_query_columns< ::Camera, id_sqlite, A >:
+    query_columns< ::Camera, id_sqlite, A >
   {
   };
 
   template <>
-  class access::object_traits_impl< ::Timeline, id_sqlite >:
-    public access::object_traits< ::Timeline >
+  class access::object_traits_impl< ::Camera, id_sqlite >:
+    public access::object_traits< ::Camera >
   {
     public:
     struct id_image_type
@@ -264,41 +196,17 @@ namespace odb
       long long m_id_value;
       bool m_id_null;
 
-      // m_timestamp
+      // m_name
       //
-      details::buffer m_timestamp_value;
-      std::size_t m_timestamp_size;
-      bool m_timestamp_null;
+      details::buffer m_name_value;
+      std::size_t m_name_size;
+      bool m_name_null;
 
-      // m_camera
+      // m_hash
       //
-      details::buffer m_camera_value;
-      std::size_t m_camera_size;
-      bool m_camera_null;
-
-      // m_source
-      //
-      details::buffer m_source_value;
-      std::size_t m_source_size;
-      bool m_source_null;
-
-      // m_sourceId
-      //
-      details::buffer m_sourceId_value;
-      std::size_t m_sourceId_size;
-      bool m_sourceId_null;
-
-      // m_classType
-      //
-      details::buffer m_classType_value;
-      std::size_t m_classType_size;
-      bool m_classType_null;
-
-      // m_data
-      //
-      details::buffer m_data_value;
-      std::size_t m_data_size;
-      bool m_data_null;
+      details::buffer m_hash_value;
+      std::size_t m_hash_size;
+      bool m_hash_null;
 
       std::size_t version;
     };
@@ -339,7 +247,7 @@ namespace odb
 
     typedef sqlite::query_base query_base_type;
 
-    static const std::size_t column_count = 7UL;
+    static const std::size_t column_count = 3UL;
     static const std::size_t id_column_count = 1UL;
     static const std::size_t inverse_column_count = 0UL;
     static const std::size_t readonly_column_count = 0UL;
@@ -398,17 +306,17 @@ namespace odb
   };
 
   template <>
-  class access::object_traits_impl< ::Timeline, id_common >:
-    public access::object_traits_impl< ::Timeline, id_sqlite >
+  class access::object_traits_impl< ::Camera, id_common >:
+    public access::object_traits_impl< ::Camera, id_sqlite >
   {
   };
 
-  // Timeline
+  // Camera
   //
 }
 
-#include "timeline-odb.ixx"
+#include "camera-odb.ixx"
 
 #include <odb/post.hxx>
 
-#endif // TIMELINE_ODB_HXX
+#endif // CAMERA_ODB_HXX

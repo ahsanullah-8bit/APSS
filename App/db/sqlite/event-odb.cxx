@@ -975,7 +975,7 @@ namespace odb
         i.m_camera_size,
         i.m_camera_null);
 
-      o.setcamera (v);
+      o.setCamera (v);
     }
 
     // m_startTime

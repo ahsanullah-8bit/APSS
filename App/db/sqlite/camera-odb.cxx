@@ -6,7 +6,7 @@
 
 #include <odb/pre.hxx>
 
-#include "timeline-odb.hxx"
+#include "camera-odb.hxx"
 
 #include <cassert>
 #include <cstring>  // std::memcpy
@@ -26,10 +26,10 @@
 
 namespace odb
 {
-  // Timeline
+  // Camera
   //
 
-  struct access::object_traits_impl< ::Timeline, id_sqlite >::extra_statement_cache_type
+  struct access::object_traits_impl< ::Camera, id_sqlite >::extra_statement_cache_type
   {
     extra_statement_cache_type (
       sqlite::connection&,
@@ -41,8 +41,8 @@ namespace odb
     }
   };
 
-  access::object_traits_impl< ::Timeline, id_sqlite >::id_type
-  access::object_traits_impl< ::Timeline, id_sqlite >::
+  access::object_traits_impl< ::Camera, id_sqlite >::id_type
+  access::object_traits_impl< ::Camera, id_sqlite >::
   id (const image_type& i)
   {
     sqlite::database* db (0);
@@ -61,7 +61,7 @@ namespace odb
     return id;
   }
 
-  bool access::object_traits_impl< ::Timeline, id_sqlite >::
+  bool access::object_traits_impl< ::Camera, id_sqlite >::
   grow (image_type& i,
         bool* t)
   {
@@ -74,58 +74,26 @@ namespace odb
     //
     t[0UL] = false;
 
-    // m_timestamp
+    // m_name
     //
     if (t[1UL])
     {
-      i.m_timestamp_value.capacity (i.m_timestamp_size);
+      i.m_name_value.capacity (i.m_name_size);
       grew = true;
     }
 
-    // m_camera
+    // m_hash
     //
     if (t[2UL])
     {
-      i.m_camera_value.capacity (i.m_camera_size);
-      grew = true;
-    }
-
-    // m_source
-    //
-    if (t[3UL])
-    {
-      i.m_source_value.capacity (i.m_source_size);
-      grew = true;
-    }
-
-    // m_sourceId
-    //
-    if (t[4UL])
-    {
-      i.m_sourceId_value.capacity (i.m_sourceId_size);
-      grew = true;
-    }
-
-    // m_classType
-    //
-    if (t[5UL])
-    {
-      i.m_classType_value.capacity (i.m_classType_size);
-      grew = true;
-    }
-
-    // m_data
-    //
-    if (t[6UL])
-    {
-      i.m_data_value.capacity (i.m_data_size);
+      i.m_hash_value.capacity (i.m_hash_size);
       grew = true;
     }
 
     return grew;
   }
 
-  void access::object_traits_impl< ::Timeline, id_sqlite >::
+  void access::object_traits_impl< ::Camera, id_sqlite >::
   bind (sqlite::bind* b,
         image_type& i,
         sqlite::statement_kind sk)
@@ -146,74 +114,30 @@ namespace odb
       n++;
     }
 
-    // m_timestamp
-    //
-    b[n].type = sqlite::image_traits<
-      ::QDateTime,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_timestamp_value.data ();
-    b[n].size = &i.m_timestamp_size;
-    b[n].capacity = i.m_timestamp_value.capacity ();
-    b[n].is_null = &i.m_timestamp_null;
-    n++;
-
-    // m_camera
+    // m_name
     //
     b[n].type = sqlite::image_traits<
       ::QString,
       sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_camera_value.data ();
-    b[n].size = &i.m_camera_size;
-    b[n].capacity = i.m_camera_value.capacity ();
-    b[n].is_null = &i.m_camera_null;
+    b[n].buffer = i.m_name_value.data ();
+    b[n].size = &i.m_name_size;
+    b[n].capacity = i.m_name_value.capacity ();
+    b[n].is_null = &i.m_name_null;
     n++;
 
-    // m_source
+    // m_hash
     //
     b[n].type = sqlite::image_traits<
       ::QString,
       sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_source_value.data ();
-    b[n].size = &i.m_source_size;
-    b[n].capacity = i.m_source_value.capacity ();
-    b[n].is_null = &i.m_source_null;
-    n++;
-
-    // m_sourceId
-    //
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_sourceId_value.data ();
-    b[n].size = &i.m_sourceId_size;
-    b[n].capacity = i.m_sourceId_value.capacity ();
-    b[n].is_null = &i.m_sourceId_null;
-    n++;
-
-    // m_classType
-    //
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_classType_value.data ();
-    b[n].size = &i.m_classType_size;
-    b[n].capacity = i.m_classType_value.capacity ();
-    b[n].is_null = &i.m_classType_null;
-    n++;
-
-    // m_data
-    //
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_data_value.data ();
-    b[n].size = &i.m_data_size;
-    b[n].capacity = i.m_data_value.capacity ();
-    b[n].is_null = &i.m_data_null;
+    b[n].buffer = i.m_hash_value.data ();
+    b[n].size = &i.m_hash_size;
+    b[n].capacity = i.m_hash_value.capacity ();
+    b[n].is_null = &i.m_hash_null;
     n++;
   }
 
-  void access::object_traits_impl< ::Timeline, id_sqlite >::
+  void access::object_traits_impl< ::Camera, id_sqlite >::
   bind (sqlite::bind* b, id_image_type& i)
   {
     std::size_t n (0);
@@ -222,7 +146,7 @@ namespace odb
     b[n].is_null = &i.id_null;
   }
 
-  bool access::object_traits_impl< ::Timeline, id_sqlite >::
+  bool access::object_traits_impl< ::Camera, id_sqlite >::
   init (image_type& i,
         const object_type& o,
         sqlite::statement_kind sk)
@@ -252,124 +176,48 @@ namespace odb
       i.m_id_null = is_null;
     }
 
-    // m_timestamp
-    //
-    {
-      ::QDateTime const& v =
-        o.timestamp ();
-
-      bool is_null (true);
-      std::size_t cap (i.m_timestamp_value.capacity ());
-      sqlite::value_traits<
-          ::QDateTime,
-          sqlite::id_text >::set_image (
-        i.m_timestamp_value,
-        i.m_timestamp_size,
-        is_null,
-        v);
-      i.m_timestamp_null = is_null;
-      grew = grew || (cap != i.m_timestamp_value.capacity ());
-    }
-
-    // m_camera
+    // m_name
     //
     {
       ::QString const& v =
-        o.camera ();
+        o.name ();
 
       bool is_null (true);
-      std::size_t cap (i.m_camera_value.capacity ());
+      std::size_t cap (i.m_name_value.capacity ());
       sqlite::value_traits<
           ::QString,
           sqlite::id_text >::set_image (
-        i.m_camera_value,
-        i.m_camera_size,
+        i.m_name_value,
+        i.m_name_size,
         is_null,
         v);
-      i.m_camera_null = is_null;
-      grew = grew || (cap != i.m_camera_value.capacity ());
+      i.m_name_null = is_null;
+      grew = grew || (cap != i.m_name_value.capacity ());
     }
 
-    // m_source
+    // m_hash
     //
     {
       ::QString const& v =
-        o.source ();
+        o.hash ();
 
       bool is_null (true);
-      std::size_t cap (i.m_source_value.capacity ());
+      std::size_t cap (i.m_hash_value.capacity ());
       sqlite::value_traits<
           ::QString,
           sqlite::id_text >::set_image (
-        i.m_source_value,
-        i.m_source_size,
+        i.m_hash_value,
+        i.m_hash_size,
         is_null,
         v);
-      i.m_source_null = is_null;
-      grew = grew || (cap != i.m_source_value.capacity ());
-    }
-
-    // m_sourceId
-    //
-    {
-      ::QString const& v =
-        o.sourceId ();
-
-      bool is_null (true);
-      std::size_t cap (i.m_sourceId_value.capacity ());
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_sourceId_value,
-        i.m_sourceId_size,
-        is_null,
-        v);
-      i.m_sourceId_null = is_null;
-      grew = grew || (cap != i.m_sourceId_value.capacity ());
-    }
-
-    // m_classType
-    //
-    {
-      ::QString const& v =
-        o.classType ();
-
-      bool is_null (true);
-      std::size_t cap (i.m_classType_value.capacity ());
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_classType_value,
-        i.m_classType_size,
-        is_null,
-        v);
-      i.m_classType_null = is_null;
-      grew = grew || (cap != i.m_classType_value.capacity ());
-    }
-
-    // m_data
-    //
-    {
-      ::QString const& v =
-        o.data ();
-
-      bool is_null (true);
-      std::size_t cap (i.m_data_value.capacity ());
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_data_value,
-        i.m_data_size,
-        is_null,
-        v);
-      i.m_data_null = is_null;
-      grew = grew || (cap != i.m_data_value.capacity ());
+      i.m_hash_null = is_null;
+      grew = grew || (cap != i.m_hash_value.capacity ());
     }
 
     return grew;
   }
 
-  void access::object_traits_impl< ::Timeline, id_sqlite >::
+  void access::object_traits_impl< ::Camera, id_sqlite >::
   init (object_type& o,
         const image_type& i,
         database* db)
@@ -393,23 +241,7 @@ namespace odb
       o.setId (v);
     }
 
-    // m_timestamp
-    //
-    {
-      ::QDateTime v;
-
-      sqlite::value_traits<
-          ::QDateTime,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_timestamp_value,
-        i.m_timestamp_size,
-        i.m_timestamp_null);
-
-      o.setTimestamp (v);
-    }
-
-    // m_camera
+    // m_name
     //
     {
       ::QString v;
@@ -418,14 +250,14 @@ namespace odb
           ::QString,
           sqlite::id_text >::set_value (
         v,
-        i.m_camera_value,
-        i.m_camera_size,
-        i.m_camera_null);
+        i.m_name_value,
+        i.m_name_size,
+        i.m_name_null);
 
-      o.setCamera (v);
+      o.setName (v);
     }
 
-    // m_source
+    // m_hash
     //
     {
       ::QString v;
@@ -434,63 +266,15 @@ namespace odb
           ::QString,
           sqlite::id_text >::set_value (
         v,
-        i.m_source_value,
-        i.m_source_size,
-        i.m_source_null);
+        i.m_hash_value,
+        i.m_hash_size,
+        i.m_hash_null);
 
-      o.setSource (v);
-    }
-
-    // m_sourceId
-    //
-    {
-      ::QString v;
-
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_sourceId_value,
-        i.m_sourceId_size,
-        i.m_sourceId_null);
-
-      o.setSourceId (v);
-    }
-
-    // m_classType
-    //
-    {
-      ::QString v;
-
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_classType_value,
-        i.m_classType_size,
-        i.m_classType_null);
-
-      o.setClassType (v);
-    }
-
-    // m_data
-    //
-    {
-      ::QString v;
-
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_data_value,
-        i.m_data_size,
-        i.m_data_null);
-
-      o.setData (v);
+      o.setHash (v);
     }
   }
 
-  void access::object_traits_impl< ::Timeline, id_sqlite >::
+  void access::object_traits_impl< ::Camera, id_sqlite >::
   init (id_image_type& i, const id_type& id)
   {
     {
@@ -505,63 +289,47 @@ namespace odb
     }
   }
 
-  const char access::object_traits_impl< ::Timeline, id_sqlite >::persist_statement[] =
-  "INSERT INTO \"Timeline\" "
+  const char access::object_traits_impl< ::Camera, id_sqlite >::persist_statement[] =
+  "INSERT INTO \"Camera\" "
   "(\"id\", "
-  "\"timestamp\", "
-  "\"camera\", "
-  "\"source\", "
-  "\"sourceId\", "
-  "\"classType\", "
-  "\"data\") "
+  "\"name\", "
+  "\"hash\") "
   "VALUES "
-  "(?, ?, ?, ?, ?, ?, ?)";
+  "(?, ?, ?)";
 
-  const char access::object_traits_impl< ::Timeline, id_sqlite >::find_statement[] =
+  const char access::object_traits_impl< ::Camera, id_sqlite >::find_statement[] =
   "SELECT "
-  "\"Timeline\".\"id\", "
-  "\"Timeline\".\"timestamp\", "
-  "\"Timeline\".\"camera\", "
-  "\"Timeline\".\"source\", "
-  "\"Timeline\".\"sourceId\", "
-  "\"Timeline\".\"classType\", "
-  "\"Timeline\".\"data\" "
-  "FROM \"Timeline\" "
-  "WHERE \"Timeline\".\"id\"=?";
+  "\"Camera\".\"id\", "
+  "\"Camera\".\"name\", "
+  "\"Camera\".\"hash\" "
+  "FROM \"Camera\" "
+  "WHERE \"Camera\".\"id\"=?";
 
-  const char access::object_traits_impl< ::Timeline, id_sqlite >::update_statement[] =
-  "UPDATE \"Timeline\" "
+  const char access::object_traits_impl< ::Camera, id_sqlite >::update_statement[] =
+  "UPDATE \"Camera\" "
   "SET "
-  "\"timestamp\"=?, "
-  "\"camera\"=?, "
-  "\"source\"=?, "
-  "\"sourceId\"=?, "
-  "\"classType\"=?, "
-  "\"data\"=? "
+  "\"name\"=?, "
+  "\"hash\"=? "
   "WHERE \"id\"=?";
 
-  const char access::object_traits_impl< ::Timeline, id_sqlite >::erase_statement[] =
-  "DELETE FROM \"Timeline\" "
+  const char access::object_traits_impl< ::Camera, id_sqlite >::erase_statement[] =
+  "DELETE FROM \"Camera\" "
   "WHERE \"id\"=?";
 
-  const char access::object_traits_impl< ::Timeline, id_sqlite >::query_statement[] =
+  const char access::object_traits_impl< ::Camera, id_sqlite >::query_statement[] =
   "SELECT "
-  "\"Timeline\".\"id\", "
-  "\"Timeline\".\"timestamp\", "
-  "\"Timeline\".\"camera\", "
-  "\"Timeline\".\"source\", "
-  "\"Timeline\".\"sourceId\", "
-  "\"Timeline\".\"classType\", "
-  "\"Timeline\".\"data\" "
-  "FROM \"Timeline\"";
+  "\"Camera\".\"id\", "
+  "\"Camera\".\"name\", "
+  "\"Camera\".\"hash\" "
+  "FROM \"Camera\"";
 
-  const char access::object_traits_impl< ::Timeline, id_sqlite >::erase_query_statement[] =
-  "DELETE FROM \"Timeline\"";
+  const char access::object_traits_impl< ::Camera, id_sqlite >::erase_query_statement[] =
+  "DELETE FROM \"Camera\"";
 
-  const char access::object_traits_impl< ::Timeline, id_sqlite >::table_name[] =
-  "\"Timeline\"";
+  const char access::object_traits_impl< ::Camera, id_sqlite >::table_name[] =
+  "\"Camera\"";
 
-  void access::object_traits_impl< ::Timeline, id_sqlite >::
+  void access::object_traits_impl< ::Camera, id_sqlite >::
   persist (database& db, const object_type& obj)
   {
     using namespace sqlite;
@@ -598,7 +366,7 @@ namespace odb
               callback_event::post_persist);
   }
 
-  void access::object_traits_impl< ::Timeline, id_sqlite >::
+  void access::object_traits_impl< ::Camera, id_sqlite >::
   update (database& db, const object_type& obj)
   {
     ODB_POTENTIALLY_UNUSED (db);
@@ -657,7 +425,7 @@ namespace odb
     pointer_cache_traits::update (db, obj);
   }
 
-  void access::object_traits_impl< ::Timeline, id_sqlite >::
+  void access::object_traits_impl< ::Camera, id_sqlite >::
   erase (database& db, const id_type& id)
   {
     using namespace sqlite;
@@ -684,8 +452,8 @@ namespace odb
     pointer_cache_traits::erase (db, id);
   }
 
-  access::object_traits_impl< ::Timeline, id_sqlite >::pointer_type
-  access::object_traits_impl< ::Timeline, id_sqlite >::
+  access::object_traits_impl< ::Camera, id_sqlite >::pointer_type
+  access::object_traits_impl< ::Camera, id_sqlite >::
   find (database& db, const id_type& id)
   {
     using namespace sqlite;
@@ -740,7 +508,7 @@ namespace odb
     return p;
   }
 
-  bool access::object_traits_impl< ::Timeline, id_sqlite >::
+  bool access::object_traits_impl< ::Camera, id_sqlite >::
   find (database& db, const id_type& id, object_type& obj)
   {
     using namespace sqlite;
@@ -774,7 +542,7 @@ namespace odb
     return true;
   }
 
-  bool access::object_traits_impl< ::Timeline, id_sqlite >::
+  bool access::object_traits_impl< ::Camera, id_sqlite >::
   reload (database& db, object_type& obj)
   {
     using namespace sqlite;
@@ -803,7 +571,7 @@ namespace odb
     return true;
   }
 
-  bool access::object_traits_impl< ::Timeline, id_sqlite >::
+  bool access::object_traits_impl< ::Camera, id_sqlite >::
   find_ (statements_type& sts,
          const id_type* id)
   {
@@ -854,8 +622,8 @@ namespace odb
     return r != select_statement::no_data;
   }
 
-  result< access::object_traits_impl< ::Timeline, id_sqlite >::object_type >
-  access::object_traits_impl< ::Timeline, id_sqlite >::
+  result< access::object_traits_impl< ::Camera, id_sqlite >::object_type >
+  access::object_traits_impl< ::Camera, id_sqlite >::
   query (database& db, const query_base_type& q)
   {
     using namespace sqlite;
@@ -905,7 +673,7 @@ namespace odb
     return result<object_type> (r);
   }
 
-  unsigned long long access::object_traits_impl< ::Timeline, id_sqlite >::
+  unsigned long long access::object_traits_impl< ::Camera, id_sqlite >::
   erase_query (database& db, const query_base_type& q)
   {
     using namespace sqlite;
@@ -949,7 +717,7 @@ namespace odb
         }
         case 2:
         {
-          db.execute ("DROP TABLE IF EXISTS \"Timeline\"");
+          db.execute ("DROP TABLE IF EXISTS \"Camera\"");
           return false;
         }
       }
@@ -960,14 +728,10 @@ namespace odb
       {
         case 1:
         {
-          db.execute ("CREATE TABLE \"Timeline\" (\n"
+          db.execute ("CREATE TABLE \"Camera\" (\n"
                       "  \"id\" INTEGER NOT NULL PRIMARY KEY,\n"
-                      "  \"timestamp\" TEXT NULL,\n"
-                      "  \"camera\" TEXT NULL,\n"
-                      "  \"source\" TEXT NULL,\n"
-                      "  \"sourceId\" TEXT NULL,\n"
-                      "  \"classType\" TEXT NULL,\n"
-                      "  \"data\" TEXT NULL)");
+                      "  \"name\" TEXT NULL,\n"
+                      "  \"hash\" TEXT NULL)");
           return false;
         }
       }

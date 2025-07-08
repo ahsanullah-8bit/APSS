@@ -1,11 +1,5 @@
 #pragma once
 
-// Hide includes from ODB_COMPILER
-#ifndef ODB_COMPILER
-#include <QtCore/QString>
-#include <QtCore/QDateTime>
-#endif
-
 #pragma db object
 class Exports   // Named Exports not Export, because it conflicts with Odb's type.
 {

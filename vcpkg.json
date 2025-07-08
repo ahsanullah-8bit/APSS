@@ -1,7 +1,7 @@
 {
     "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
     "name": "ai-powered-surveillance-system",
-    "maintainers": "Ahsan Ullah <CS120212021@kkkuk.edu.pk>",
+    "maintainers": "Ahsan Ullah <CS120212021@kkkuk.edu.pk>, Muhammad Zohaib Shahid <CS120212048@kkkuk.edu.pk>",
     "description": "APSS is an AI Powered (Vehicle) Surveillance System (weird name) for our BS CS FYP",
     "supports": "windows",
     "dependencies": [
