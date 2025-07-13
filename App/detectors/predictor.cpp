@@ -26,14 +26,14 @@ Predictor::Predictor(const PredictorConfig &config)
 
     try {
         Ort::SessionOptions sessionOptions;
-        int intraop_threads = 4; // std::min(6, static_cast<int>(std::thread::hardware_concurrency()));
+        int intraop_threads = std::min(4, static_cast<int>(std::thread::hardware_concurrency()));
         sessionOptions.SetIntraOpNumThreads(intraop_threads);
         sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
 
         std::vector<std::string> exec_providers = Ort::GetAvailableProviders();
         qInfo() << "Available providers:" << exec_providers;
 
-#ifdef APSS_USE_CUDA_EP
+#ifdef APSS_SUPPORT_CUDA_EP
         if (std::find(exec_providers.begin(), exec_providers.end(), "CUDAExecutionProvider")
             != exec_providers.end()) {
             qInfo() << std::format("Inference device {} selected.", "CUDAExecutionProvider");
@@ -45,7 +45,7 @@ Predictor::Predictor(const PredictorConfig &config)
         }
 #endif
 
-#ifdef APSS_USE_OPENVINO_EP
+#ifdef APSS_SUPPORT_OPENVINO_EP
         if (std::find(exec_providers.begin(), exec_providers.end(), "OpenVINOExecutionProvider")
             != exec_providers.end()) {
             qInfo() << std::format("Inference device {} selected.", "OpenVINOExecutionProvider");
@@ -209,7 +209,7 @@ std::vector<PredictionList> Predictor::predict(const MatList &images)
     }
 
     // cv::Size resizedImageShape(static_cast<int>(inputTensorShape[3]), static_cast<int>(inputTensorShape[2]));
-    std::vector<prediction_vec> predictions = postprocess(images, input_image_shape, output_tensors, MODEL_OBJECTS_CONFIDENDCE_THRESHOLD, MODEL_IOU_THRESHOLD);
+    std::vector<PredictionList> predictions = postprocess(images, input_image_shape, output_tensors, MODEL_OBJECTS_CONFIDENDCE_THRESHOLD, MODEL_IOU_THRESHOLD);
 
     return predictions; // Return the vector of detections
 }

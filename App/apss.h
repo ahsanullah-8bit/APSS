@@ -20,6 +20,9 @@ using mat_vec = std::vector<cv::Mat>;
 using PredictionList = std::vector<Prediction>;
 using MatList = std::vector<cv::Mat>;
 
+template <typename T>
+using Vector3d = std::vector<std::vector<std::vector<T>>>;
+
 
 // Detection related
 constexpr float MODEL_OBJECTS_CONFIDENDCE_THRESHOLD = 0.4f;

@@ -193,8 +193,11 @@ function(apss_copy_runtime_files)
 		)
     endif()
 
-    # Copy the .onnx models over from the scripts directory to the <bin_dir>/models.
-	file(GLOB MODEL_FILES LIST_DIRECTORIES FALSE "${CMAKE_SOURCE_DIR}/scripts/*.onnx")
+	# Copy the .onnx models over from the scripts directory to the <bin_dir>/models.
+	set(SCRIPTS_DIR "${CMAKE_SOURCE_DIR}/scripts")
+	file(GLOB MODEL_FILES LIST_DIRECTORIES FALSE "${SCRIPTS_DIR}/*.onnx")
+	file(GLOB MODEL_DIRS RELATIVE ${SCRIPTS_DIR} "${SCRIPTS_DIR}/*_onnx")
+	# message(STATUS "Model dirs: ${MODEL_DIRS}")
 	set(MODELS_BIN_DST "${CMAKE_BINARY_DIR}/models")
 
 	if (MODEL_FILES AND NOT MODEL_FILES STREQUAL "")
@@ -208,6 +211,18 @@ function(apss_copy_runtime_files)
 			VERBATIM
 		)
     endif()
+
+	if (MODEL_DIRS AND NOT MODEL_DIRS STREQUAL "")
+		foreach(dir ${MODEL_DIRS})
+			add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+				COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+				    "${SCRIPTS_DIR}/${dir}"
+					"${MODELS_BIN_DST}/${dir}"
+				DEPENDS "${SCRIPTS_DIR}/${dir}"
+				COMMENT "Copying ${dir} to ${MODELS_BIN_DST}/${dir}"
+			)
+	    endforeach()
+	endif()
 endfunction() # apss_copy_runtime_files
 
 # Scans all the header files of persistent class targets and generates the persistent code

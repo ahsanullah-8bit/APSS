@@ -4,8 +4,8 @@ cmake_policy(SET CMP0135 NEW)
 
 option(LINK_INSIGHT "Link Qt Insight Tracker library" ON)
 option(BUILD_QDS_COMPONENTS "Build design studio components" ON)
-option(APSS_USE_CUDA_EP "Use onnxruntime CUDA for inference" OFF)
-option(APSS_USE_OPENVINO_EP "Use OpenVINO EP for onnxruntime for inference" ON)
+option(APSS_SUPPORT_CUDA_EP "Use CUDA EP for ONNXRuntime inference" OFF)
+option(APSS_SUPPORT_OPENVINO_EP "Use OpenVINO EP for ONNXRuntime inference" ON)
 
 project(APSSApp VERSION 0.1.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
@@ -72,12 +72,9 @@ install(TARGETS ${CMAKE_PROJECT_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-if (APSS_USE_CUDA_EP)
-    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE APSS_USE_CUDA_EP)
-elseif (APSS_USE_OPENVINO_EP)
-    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE APSS_USE_OPENVINO_EP)
-else()
-    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE APSS_USE_CPU_EP)
-endif()
+target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+  $<$<BOOL:${APSS_SUPPORT_CUDA_EP}>:APSS_SUPPORT_CUDA_EP>
+  $<$<BOOL:${APSS_SUPPORT_OPENVINO_EP}>:APSS_SUPPORT_OPENVINO_EP>
+)
 
 add_subdirectory(test)

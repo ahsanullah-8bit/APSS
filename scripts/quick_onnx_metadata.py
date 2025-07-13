@@ -77,5 +77,9 @@ def inspect_onnx(model_path):
 
 # Example usage:
 # inspect_onnx("en_pp-ocrv3_det_infer.onnx")
-inspect_onnx("en_number_mobile_v2.0_rec_slim_infer.onnx")
+# inspect_onnx("en_number_mobile_v2.0_rec_slim_infer.onnx") # version 9223372036854775807
+# inspect_onnx("ch_ppocr_mobile_v2.0_cls_infer.onnx")
+# inspect_onnx("PP-OCRv5_mobile_rec_infer.onnx") # version 9223372036854775807
+inspect_onnx("en_PP-OCRv4_mobile_rec_infer_onnx/inference.onnx") # version 9223372036854775807
+# inspect_onnx("PP-LCNet_x0_25_textline_ori_infer.onnx")
 # inspect_onnx("yolo11n-seg.onnx")
