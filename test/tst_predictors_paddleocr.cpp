@@ -16,7 +16,9 @@
 class TestPaddleOCR : public ::testing::Test {
 protected:
 
-    static void SetUpTestSuite() {}
+    static void SetUpTestSuite() {
+        std::filesystem::create_directories("test/resutls");
+    }
 
     static void TearDownTestSuite() {
         // optional cleanup

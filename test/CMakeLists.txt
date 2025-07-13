@@ -8,6 +8,7 @@ add_executable(${CMAKE_PROJECT_NAME}Test
 	tst_db_recording.cpp
 	tst_db_region.cpp
 	tst_db_timeline.cpp
+	tst_predictors.cpp
 	tst_predictors_paddleocr.cpp
 	# tst_predictors.cpp
 	# tst_timeboundedqueue.cpp

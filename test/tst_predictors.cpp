@@ -1,84 +1,79 @@
 #include <QObject>
 #include <QDebug>
-#include <QTest>
+
+#include <gtest/gtest.h>
 
 #include <opencv2/opencv.hpp>
 
 #include "detectors/objectdetector.h"
 #include "detectors/poseestimator.h"
 #include "detectors/objectdetectorsession.h"
-#include "detectors/yolodetection.h"
-#include "utils/frame.h"
-
 #include "config/modelconfig.h"
 
+class TestPredictors : public ::testing::Test {
+protected:
 
-class TestDetectors : public QObject {
-    Q_OBJECT
-public:
-    TestDetectors() = default;
+    static void SetUpTestSuite() {
+        std::filesystem::create_directories("test/resutls");
+    }
 
-private slots:
-    void objectDetector();
-    void objectDetectorSession();
-    void utils();
-    void poseEstimater();
+    static void TearDownTestSuite() {
+        // optional cleanup
+    }
+
+    void SetUp() override {}
+
+    void TearDown() override {
+        // optional
+    }
 };
 
-void TestDetectors::objectDetector()
-{
-    // Images
-    cv::Mat img1 = cv::imread("test/assets/vehicles2.jpg");
+TEST_F(TestPredictors,  ObjectDetector) {
 
-    // Config
-    PredictorConfig config { "cpu",
-                           ModelConfig {
-                               "models/yolo11n.onnx",
-                               ""
-                           },
-                           "models/yolo11n.onnx" };
+    cv::Mat img1 = cv::imread("test/assets/vehicles.jpg");
+    cv::Mat img2 = cv::imread("test/assets/vehicles2.jpg");
 
-    // Session
+    PredictorConfig config;
+    config.model = ModelConfig();
+    config.model->path = "models/yolo11n.onnx";
+    config.batch_size = 1;
+
+    auto start_time = std::chrono::high_resolution_clock::now();
     ObjectDetector detector(config);
-    // YOLODetection y_detector("models/yolo11n.onnx");
+    auto loading_time = std::chrono::high_resolution_clock::now() - start_time;
+
+    start_time = std::chrono::high_resolution_clock::now();
     std::vector<PredictionList> predictions = detector.predict({ img1 });
-    // std::vector<PredictionList> predictions = y_detector.predict({ img1 });
+    auto inference_time = std::chrono::high_resolution_clock::now() - start_time;
 
-    QVERIFY(!predictions.empty());
-    QVERIFY(!predictions[0].empty());
+    detector.draw(img1, predictions[0], 0.2);
+
+    cv::imwrite("test/resutls/obj_detector_tst.jpg", img1);
+
+    qDebug() << "Object Detector Loading:" << std::chrono::duration<double, std::milli>(loading_time);
+    qDebug() << "Object Detector Inference:" << std::chrono::duration<double, std::milli>(inference_time);
 }
 
-void TestDetectors::objectDetectorSession()
-{
+TEST_F(TestPredictors, PoseEstimator) {
+    cv::Mat img1 = cv::imread("test/assets/vehicles.jpg");
+    cv::Mat img2 = cv::imread("test/assets/vehicles2.jpg");
 
-}
+    PredictorConfig config;
+    config.model = ModelConfig();
+    config.model->path = "models/yolo11n-pose-1700_320.onnx";
 
-void TestDetectors::utils()
-{
-
-}
-
-void TestDetectors::poseEstimater()
-{
-    // Images
-    cv::Mat img1 = cv::imread("test/assets/vehicles2.jpg");
-
-    // Config
-    PredictorConfig config { "cpu",
-                           ModelConfig {
-                               "models/yolo11n-pose-1700_320.onnx",
-                               ""
-                           },
-                           "models/yolo11n-pose-1700_320.onnx" };
-
-    // Session
+    auto start_time = std::chrono::high_resolution_clock::now();
     PoseEstimator estimator(config);
+    auto loading_time = std::chrono::high_resolution_clock::now() - start_time;
+
+    start_time = std::chrono::high_resolution_clock::now();
     std::vector<PredictionList> predictions = estimator.predict({ img1 });
+    auto inference_time = std::chrono::high_resolution_clock::now() - start_time;
 
-    QVERIFY(!predictions.empty());
-    QVERIFY(!predictions[0].empty());
+    estimator.draw(img1, predictions[0], 0.2);
+
+    cv::imwrite("test/resutls/pose_estimator_tst.jpg", img1);
+
+    qDebug() << "Pose Estimator Loading:" << std::chrono::duration<double, std::milli>(loading_time);
+    qDebug() << "Pose Estimator Inference:" << std::chrono::duration<double, std::milli>(inference_time);
 }
-
-
-QTEST_MAIN(TestDetectors)
-#include "tst_predictors.moc"
