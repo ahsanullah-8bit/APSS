@@ -10,12 +10,16 @@ target_sources(${CMAKE_PROJECT_NAME} PUBLIC
 
 
 add_library(APSSPredictors STATIC
+	image.cpp
+	objectdetector.cpp
+	objectdetectorsession.cpp
 	onnxinference.cpp
 	paddlecls.cpp
 	paddledet.cpp
 	paddleocr.cpp
 	paddlerec.cpp
-	image.cpp
+	poseestimator.cpp
+	predictor.cpp
 
 	# Licensed
 	licensed/clipper.cpp
@@ -35,6 +39,7 @@ target_link_libraries(APSSPredictors PRIVATE
 	Qt6::Core
 	onnxruntime::onnxruntime
 	${OpenCV_LIBS}
+	ByteTrackEigen::ByteTrack
 
 	APSS::Config
 )

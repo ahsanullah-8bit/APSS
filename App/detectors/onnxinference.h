@@ -2,9 +2,9 @@
 
 #include <mutex>
 
+#include "wrappers/customallocator.h"
 #include <onnxruntime_cxx_api.h>
 
-#include "apss.h"
 #include "predictorconfig.h"
 
 class ONNXInference
@@ -12,7 +12,7 @@ class ONNXInference
 public:
     explicit ONNXInference(const PredictorConfig &config,
                   const std::shared_ptr<Ort::Env> &env,
-                  const std::shared_ptr<Ort::AllocatorWithDefaultOptions> &allocator,
+                  const std::shared_ptr<CustomAllocator> &allocator,
                   const std::shared_ptr<Ort::MemoryInfo> &memoryInfo);
 
     std::vector<Ort::Value> predictRaw(std::vector<float> data,
@@ -33,7 +33,8 @@ public:
      */
     bool hasDynamicShape() const;
     const Ort::ModelMetadata &modelMetadata() const;
-    std::shared_ptr<Ort::AllocatorWithDefaultOptions> allocator() const;
+    OrtAllocator *allocator() const;
+    std::shared_ptr<CustomAllocator> customAllocator() const;
     std::shared_ptr<Ort::MemoryInfo> memoryInfo() const;
     std::vector<std::vector<int64_t> > inputTensorShapes() const;
     std::vector<std::vector<int64_t> > outputTensorShapes() const;
@@ -53,7 +54,8 @@ private:
     PredictorConfig m_config;
     std::shared_ptr<Ort::Env> m_env;
     Ort::Session m_session { nullptr };
-    std::shared_ptr<Ort::AllocatorWithDefaultOptions> m_allocator;
+    // std::shared_ptr<Ort::AllocatorWithDefaultOptions> m_allocator;
+    std::shared_ptr<CustomAllocator> m_allocator;
     std::shared_ptr<Ort::MemoryInfo> m_memoryInfo;
     std::vector<std::vector<int64_t>> m_inputTensorShapes;
     std::vector<std::vector<int64_t>> m_outputTensorShapes;

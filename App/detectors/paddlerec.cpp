@@ -6,7 +6,7 @@
 
 PaddleRec::PaddleRec(const PredictorConfig &config,
                      const std::shared_ptr<Ort::Env> &env,
-                     const std::shared_ptr<Ort::AllocatorWithDefaultOptions> &allocator,
+                     const std::shared_ptr<CustomAllocator> &allocator,
                      const std::shared_ptr<Ort::MemoryInfo> &memoryInfo)
     : m_inferSession(config, env, allocator, memoryInfo)
 {

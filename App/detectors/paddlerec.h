@@ -15,7 +15,7 @@ class PaddleRec
 public:
     explicit PaddleRec(const PredictorConfig &config,
                        const std::shared_ptr<Ort::Env> &env,
-                       const std::shared_ptr<Ort::AllocatorWithDefaultOptions> &allocator,
+                       const std::shared_ptr<CustomAllocator> &allocator,
                        const std::shared_ptr<Ort::MemoryInfo> &memoryInfo);
     // Returns rec_text, rec_texts_score pairs
     std::vector<std::pair<std::string, float>> predict(const MatList &batch);

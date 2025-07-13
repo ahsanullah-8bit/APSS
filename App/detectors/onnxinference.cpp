@@ -6,7 +6,7 @@
 
 ONNXInference::ONNXInference(const PredictorConfig &config,
                              const std::shared_ptr<Ort::Env> &env,
-                             const std::shared_ptr<Ort::AllocatorWithDefaultOptions> &allocator,
+                             const std::shared_ptr<CustomAllocator> &allocator,
                              const std::shared_ptr<Ort::MemoryInfo> &memoryInfo)
     : m_env(env)
     , m_allocator(allocator)
@@ -15,9 +15,6 @@ ONNXInference::ONNXInference(const PredictorConfig &config,
 {
     if (!m_env)
         m_env = std::make_shared<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "ONNX_Inferece");
-
-    if (!m_allocator)
-        m_allocator = std::make_shared<Ort::AllocatorWithDefaultOptions>();
 
     if (!m_memoryInfo)
         m_memoryInfo = std::make_shared<Ort::MemoryInfo>(Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault));
@@ -75,25 +72,28 @@ ONNXInference::ONNXInference(const PredictorConfig &config,
         m_selectedEPProviders.emplace_back("CPUExecutionProvider");
 
 #ifdef _WIN32
-        std::wstring w_modelPath(model_path.begin(), model_path.end());
-        m_session = Ort::Session(*m_env, w_modelPath.c_str(), sessionOptions);
+        std::wstring modelPath(model_path.begin(), model_path.end());
 #else
-        m_session = Ort::Session(env, modelPath.c_str(), sessionOptions);
+        std::string modelPath(model_path);
 #endif
+        m_session = Ort::Session(*m_env, modelPath.c_str(), sessionOptions);
+
+        if (!m_allocator)
+            m_allocator = std::make_shared<CustomAllocator>(Ort::Allocator(m_session, *m_memoryInfo));
 
         m_numInputNodes = m_session.GetInputCount();
         m_numOutputNodes = m_session.GetOutputCount();
 
         // Input Nodes. Though all of them (YOLOs) have only a one input tensor.
         for (int i = 0; i < m_numInputNodes; ++i) {
-            Ort::AllocatedStringPtr name_ptr = m_session.GetInputNameAllocated(i, *m_allocator);
+            Ort::AllocatedStringPtr name_ptr = m_session.GetInputNameAllocated(i, m_allocator->get());
             m_inputNodeNameAllocatedStrings.emplace_back(std::move(name_ptr));
             m_inputNames.emplace_back(m_inputNodeNameAllocatedStrings.back().get());
         }
 
         // Output Nodes
         for (int i = 0; i < m_numOutputNodes; ++i) {
-            Ort::AllocatedStringPtr name_ptr = m_session.GetOutputNameAllocated(i, *m_allocator);
+            Ort::AllocatedStringPtr name_ptr = m_session.GetOutputNameAllocated(i, m_allocator->get());
             m_outputNodeNameAllocatedStrings.emplace_back(std::move(name_ptr));
             m_outputNames.emplace_back(m_outputNodeNameAllocatedStrings.back().get());
         }
@@ -117,7 +117,7 @@ ONNXInference::ONNXInference(const PredictorConfig &config,
         // METADATA
         // Read the stride
         m_modelMetadata = m_session.GetModelMetadata();
-        Ort::AllocatedStringPtr stride = m_modelMetadata.LookupCustomMetadataMapAllocated("stride", *m_allocator);
+        Ort::AllocatedStringPtr stride = m_modelMetadata.LookupCustomMetadataMapAllocated("stride", m_allocator->get());
         if (stride) {
             std::string model_stride = stride.get();
             m_modelStride = std::stoi(model_stride);
@@ -127,7 +127,7 @@ ONNXInference::ONNXInference(const PredictorConfig &config,
         std::string labels_path = config.model->labelmap_path.value_or("");
 
         std::string model_names;
-        Ort::AllocatedStringPtr names = m_modelMetadata.LookupCustomMetadataMapAllocated("names", *m_allocator);
+        Ort::AllocatedStringPtr names = m_modelMetadata.LookupCustomMetadataMapAllocated("names", m_allocator->get());
         if (names)
             model_names = names.get();
 
@@ -189,12 +189,12 @@ void ONNXInference::printModelMetadata() const
     const Ort::ModelMetadata &model_metadata = modelMetadata();
     qDebug() << "Model metadata:";
     qDebug() << "\tFile:" << m_config.model->path.value_or("").c_str();
-    qDebug() << "\tGraph Name:" << model_metadata.GetGraphNameAllocated(*m_allocator).get();
+    qDebug() << "\tGraph Name:" << model_metadata.GetGraphNameAllocated(m_allocator->get()).get();
 
-    std::vector<Ort::AllocatedStringPtr> keys = model_metadata.GetCustomMetadataMapKeysAllocated(*allocator());
+    std::vector<Ort::AllocatedStringPtr> keys = model_metadata.GetCustomMetadataMapKeysAllocated(m_allocator->get());
     qDebug() << "\tCustom Metadata:";
     for (const auto &key : keys) {
-        qDebug() << "\t " << key.get() << ":" << model_metadata.LookupCustomMetadataMapAllocated(key.get(), *allocator()).get();
+        qDebug() << "\t " << key.get() << ":" << model_metadata.LookupCustomMetadataMapAllocated(key.get(), m_allocator->get()).get();
     }
 
     qDebug() << "\tInputs:";
@@ -252,7 +252,12 @@ const Ort::ModelMetadata &ONNXInference::modelMetadata() const
     return m_modelMetadata;
 }
 
-std::shared_ptr<Ort::AllocatorWithDefaultOptions> ONNXInference::allocator() const
+OrtAllocator* ONNXInference::allocator() const
+{
+    return m_allocator->get();
+}
+
+std::shared_ptr<CustomAllocator> ONNXInference::customAllocator() const
 {
     return m_allocator;
 }

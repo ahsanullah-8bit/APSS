@@ -1,29 +1,34 @@
 #include <opencv2/core.hpp>
 
 #include "paddleocr.h"
+#include "wrappers/customallocator.h"
 #include "paddlecls.h"
 #include "paddledet.h"
 #include "paddlerec.h"
 
-PaddleOCREngine::PaddleOCREngine()
+PaddleOCREngine::PaddleOCREngine(std::shared_ptr<Ort::Env> env,
+                                 std::shared_ptr<CustomAllocator> allocator)
 {
-    std::shared_ptr<Ort::Env> unified_env = std::make_shared<Ort::Env>();
-    std::shared_ptr<Ort::AllocatorWithDefaultOptions> unified_allocator = std::make_shared<Ort::AllocatorWithDefaultOptions>();
+    if (!env)
+        env = std::make_shared<Ort::Env>();
+
+    if (!allocator)
+        allocator = std::make_shared<CustomAllocator>(Ort::AllocatorWithDefaultOptions());
 
     PredictorConfig det_config;
     det_config.model = ModelConfig();
     det_config.model->path = "models/PP-OCRv5_mobile_det_infer_onnx/inference.onnx";
-    m_det = std::make_unique<PaddleDet>(det_config, unified_env, unified_allocator, nullptr);
+    m_det = std::make_unique<PaddleDet>(det_config, env, allocator, nullptr);
 
     PredictorConfig cls_config;
     cls_config.model = ModelConfig();
     cls_config.model->path = "models/PP-LCNet_x1_0_textline_ori_infer_onnx/inference.onnx";
-    m_cls = std::make_unique<PaddleCls>(cls_config, unified_env, unified_allocator, nullptr);
+    m_cls = std::make_unique<PaddleCls>(cls_config, env, allocator, nullptr);
 
     PredictorConfig rec_config;
     rec_config.model = ModelConfig();
     rec_config.model->path = "models/en_PP-OCRv4_mobile_rec_infer_onnx/inference.onnx";
-    m_rec = std::make_unique<PaddleRec>(rec_config, unified_env, unified_allocator, nullptr);
+    m_rec = std::make_unique<PaddleRec>(rec_config, env, allocator, nullptr);
 }
 
 std::vector<PaddleOCR::OCRPredictResultList> PaddleOCREngine::predict(const MatList &batch)

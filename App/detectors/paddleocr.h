@@ -8,11 +8,18 @@
 class PaddleCls;
 class PaddleDet;
 class PaddleRec;
+class CustomAllocator;
+
+namespace Ort{
+class Env;
+class AllocatorWithDefaultOptions;
+}
 
 class PaddleOCREngine
 {
 public:
-    explicit PaddleOCREngine();
+    explicit PaddleOCREngine(std::shared_ptr<Ort::Env> env = {},
+                             std::shared_ptr<CustomAllocator> allocator = {});
     std::vector<PaddleOCR::OCRPredictResultList> predict(const MatList &batch);
 
 private:
