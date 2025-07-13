@@ -9,7 +9,7 @@
 #include <filesystem>
 #include <format>
 
-#include "utils.h"
+#include "image.h"
 
 Predictor::Predictor(const PredictorConfig &config)
     : m_env(ORT_LOGGING_LEVEL_WARNING, "YOLO_ENV")

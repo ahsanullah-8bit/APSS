@@ -2,7 +2,7 @@
 
 #include "onnxinference.h"
 
-#include "utils.h"
+#include "image.h"
 
 ONNXInference::ONNXInference(const PredictorConfig &config,
                              const std::shared_ptr<Ort::Env> &env,
@@ -157,7 +157,7 @@ std::vector<Ort::Value> ONNXInference::predictRaw(std::vector<float> data,
 
     // Check if the data is correctly placed
     if (data.size() != Utils::vectorProduct(customInputTensorShape)) {
-        qFatal() << "Wrong size of pre-processed images provided, Skipping.";
+        qWarning() << "Wrong size of pre-processed images provided, Skipping.";
         return {};
     }
 

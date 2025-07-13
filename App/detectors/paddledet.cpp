@@ -5,7 +5,7 @@
 
 #include "paddledet.h"
 
-#include "utils.h"
+#include "image.h"
 
 PaddleDet::PaddleDet(const PredictorConfig &config,
                      const std::shared_ptr<Ort::Env> &env,
@@ -100,7 +100,7 @@ std::vector<Vector3d<int>> PaddleDet::predict(const MatList &batch)
     if (batch.empty())
         return {};
 
-    auto input_tensor_shapes = m_inferSession.inputTensorShapes();
+    const auto input_tensor_shapes = m_inferSession.inputTensorShapes();
     Q_ASSERT(!input_tensor_shapes.empty());
     std::vector<int64_t> input_tensor_shape(input_tensor_shapes[0]);    // BCHW
 
@@ -138,32 +138,30 @@ std::vector<Vector3d<int>> PaddleDet::predict(const MatList &batch)
 
     // Inference
     std::vector<Ort::Value> output_tensors = m_inferSession.predictRaw(img_data, input_tensor_shape);
+    if (output_tensors.empty())
+        return {};
 
     // Post-Process Results
-    // Strictly assert only single output tensor
-    Q_ASSERT(output_tensors.size() == 1);
-
-    // ['DynamicDimension.3', 1, 'DynamicDimension.4', 'DynamicDimension.5'] (expected) (i.e [1, 1, 32, 32]).
     const Ort::Value &tensor0 = output_tensors[0];
     const std::vector<int64_t> shape0 = tensor0.GetTensorTypeAndShapeInfo().GetShape();
     const float* output0_data = tensor0.GetTensorData<float>(); // Extract raw output data from the first output tensor
 
-    // Strictly expect [N, 1, H, W]
-    Q_ASSERT(shape0.size() == 4);
+    Q_ASSERT(shape0.size() == 4); // expect [N, 1, H, W] ['DynamicDimension.3', 1, 'DynamicDimension.4', 'DynamicDimension.5']
 
-    const size_t batch_size = shape0.at(0);
-    const size_t channels = shape0.at(1); // 1 (expected)
+    const size_t out_batch_size = shape0.at(0);
+    const size_t out_channels = shape0.at(1); // 1 (expected)
     const size_t output_h = shape0.at(2);
     const size_t output_w = shape0.at(3);
 
-    // Strictly expect channels to be 1 and batch_size exactly equal to the batch
-    Q_ASSERT(channels == 1);
-    Q_ASSERT(batch_size == batch.size());
+    Q_ASSERT(out_channels == 1);
+    // out_batch_size can't be trusted, as the session might cache the previous batch
+    // so it shouldn't be used for postprocessing
+    Q_ASSERT(out_batch_size >= batch.size());
 
     std::vector<Vector3d<int>> boxes_results_list;
 
     // Process each output of the batch
-    for (size_t b = 0; b < batch_size; ++b) {
+    for (size_t b = 0; b < batch.size(); ++b) {
         const float *output0_data_offset = output0_data + b * (output_h * output_w);
 
         size_t output_area = output_h * output_w;

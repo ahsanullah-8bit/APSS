@@ -1,6 +1,6 @@
 #include "poseestimator.h"
 
-#include "utils.h"
+#include "image.h"
 
 PoseEstimator::PoseEstimator(const PredictorConfig &config)
     : Predictor(config)

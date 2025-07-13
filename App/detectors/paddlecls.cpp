@@ -101,11 +101,16 @@ PaddleCls::PaddleCls(const PredictorConfig &config,
 
 std::vector<std::pair<int, float>> PaddleCls::predict(const MatList &batch)
 {
+    if (batch.empty())
+        return {};
+
     const int batch_size = batch.size();
     std::vector<std::pair<int, float>> cls_results(batch_size, {});
 
     // (expected) ['DynamicDimension.0', 3, 80, 160] (batch, channels, height, width) as reported by the model itself.
-    std::vector<int64_t> cls_input_shape = m_inferSession.inputTensorShapes()[0];
+    const auto input_tensor_shapes = m_inferSession.inputTensorShapes();
+    Q_ASSERT(!input_tensor_shapes.empty());
+    std::vector<int64_t> cls_input_shape = input_tensor_shapes[0];
     const int64_t in_channels = cls_input_shape[1];
     const int64_t in_height = cls_input_shape[2];
     const int64_t in_width = cls_input_shape[3];
@@ -143,10 +148,10 @@ std::vector<std::pair<int, float>> PaddleCls::predict(const MatList &batch)
 
         // inference on sub-batch
         const std::vector<Ort::Value> output_tensors = m_inferSession.predictRaw(input, cls_input_shape);
+        if (output_tensors.empty())
+            continue;
 
         // postprocess sub-batch results
-        Q_ASSERT(output_tensors.size() == 1);
-
         const Ort::Value &tensor0 = output_tensors[0];
         const std::vector<int64_t> shape0 = tensor0.GetTensorTypeAndShapeInfo().GetShape();
         const float* output0_data = tensor0.GetTensorData<float>(); // Extract raw output data from the first output tensor
@@ -154,12 +159,12 @@ std::vector<std::pair<int, float>> PaddleCls::predict(const MatList &batch)
         Q_ASSERT(shape0.size() == 2); // expect ['Reshape_233_o0__d0', 2]
 
         const size_t out_batch_size = shape0.at(0);
-        const size_t out_num_classes = shape0.at(1); // 2 (expected)
+        // const size_t out_num_classes = shape0.at(1); // 2 (expected)
 
-        Q_ASSERT(out_batch_size == sel_batch.size());
-        Q_ASSERT(out_num_classes == 2); // expect [0, 180]
+        Q_ASSERT(out_batch_size >= sel_batch_size);
+        // Q_ASSERT(out_num_classes == 2); // expect [0, 180]
 
-        for (size_t k = 0; k < out_batch_size; ++k) {
+        for (size_t k = 0; k < sel_batch_size; ++k) {
             const int label = static_cast<int>(PaddleOCR::Utility::argmax(&output0_data[k * shape0[1]],
                                                                           &output0_data[(k + 1) * shape0[1]]));
 

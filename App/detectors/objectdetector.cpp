@@ -1,6 +1,6 @@
 #include "objectdetector.h"
 
-#include "utils.h"
+#include "image.h"
 
 ObjectDetector::ObjectDetector(const PredictorConfig &config)
     : Predictor(config)

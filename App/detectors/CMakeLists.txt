@@ -5,6 +5,7 @@ target_sources(${CMAKE_PROJECT_NAME} PUBLIC
 	objectdetectorsession.cpp
 	poseestimator.cpp
 	predictor.cpp
+	image.cpp
 )
 
 
@@ -14,6 +15,7 @@ add_library(APSSPredictors STATIC
 	paddledet.cpp
 	paddleocr.cpp
 	paddlerec.cpp
+	image.cpp
 
 	# Licensed
 	licensed/clipper.cpp

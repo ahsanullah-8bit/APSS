@@ -5,6 +5,7 @@
 #include "detectors/paddledet.h"
 #include "detectors/paddlecls.h"
 #include "detectors/paddlerec.h"
+#include "detectors/image.h"
 
 class TestPaddleOCR : public ::testing::Test {
 protected:
@@ -63,7 +64,7 @@ TEST_F(TestPaddleOCR, RawInference) {
     std::shared_ptr<Ort::AllocatorWithDefaultOptions> allocator = std::make_shared<Ort::AllocatorWithDefaultOptions>();
     // std::shared_ptr<Ort::MemoryInfo> memory_info = std::make_shared<Ort::MemoryInfo>(Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault));
 
-    cv::Mat img = cv::imread("test/assets/vehicles2.jpg");
+    cv::Mat img = cv::imread("test/assets/plate3_blurred.jpg");
 
     // det
     PredictorConfig det_config;
@@ -129,4 +130,10 @@ TEST_F(TestPaddleOCR, RawInference) {
     }
 
     // Parse ocr_result
+    for (const auto &ocr : ocr_result) {
+        qDebug() << ocr.score << ocr.text;
+    }
+    Utils::drawOCR(img, ocr_result);
+
+    cv::imwrite("ocr.jpg", img);
 }

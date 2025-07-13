@@ -41,12 +41,19 @@ void Normalize::Run(cv::Mat &im, const std::vector<float> &mean,
                     const std::vector<float> &std,
                     const double scale) noexcept {
 
+    if (im.empty() || im.channels() != 3)
+        return;
+
     im.convertTo(im, CV_32FC3, scale);
+
     std::vector<cv::Mat> bgr_channels(3);
     cv::split(im, bgr_channels);
-    for (size_t i = 0; i < bgr_channels.size(); ++i) {
-        bgr_channels[i].convertTo(bgr_channels[i], CV_32FC1, 1.0 * std[i],
-                                  (0.0 - mean[i]) * std[i]);
+
+    for (size_t c = 0; c < bgr_channels.size(); ++c) {
+        bgr_channels[c].convertTo(bgr_channels[c],
+                                  CV_32FC1,
+                                  1.0 / std[c],
+                                  (0.0 - mean[c]) / std[c]);
     }
     cv::merge(bgr_channels, im);
 }

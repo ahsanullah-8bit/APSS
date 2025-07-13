@@ -81,7 +81,11 @@ PaddleRec::PaddleRec(const PredictorConfig &config,
 
 std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &batch)
 {
-    std::vector<std::pair<std::string, float>> rec_texts(batch.size(), {});
+    if (batch.empty())
+        return {};
+
+    const size_t batch_size = batch.size();
+    std::vector<std::pair<std::string, float>> rec_texts(batch_size, {});
 
     // Get the width ratios
     std::vector<float> batch_ratios;
@@ -92,8 +96,9 @@ std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &bat
     const std::vector<size_t> sri = PaddleOCR::Utility::argsort(batch_ratios);
 
     // expected shape ['DynamicDimension.0', 3, 48, 'DynamicDimension.1'] (batch, channels, height, width)
-    std::vector<int64_t> rec_input_shape = m_inferSession.inputTensorShapes()[0];
-    const size_t batch_size = batch.size();
+    const auto input_tensor_shapes = m_inferSession.inputTensorShapes();
+    Q_ASSERT(!input_tensor_shapes.empty());
+    std::vector<int64_t> rec_input_shape = input_tensor_shapes[0];
 
     for (size_t b = 0; b < batch_size; b += m_maxBatchSize) {
         // batch sub-selection
@@ -137,10 +142,10 @@ std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &bat
 
         // Inference.
         std::vector<Ort::Value> output_tensors = m_inferSession.predictRaw(input, rec_input_shape);
+        if (output_tensors.empty())
+            continue;
 
         // postprocess results
-        Q_ASSERT(output_tensors.size() == 1);
-
         const Ort::Value &tensor0 = output_tensors[0];
         const std::vector<int64_t> shape0 = tensor0.GetTensorTypeAndShapeInfo().GetShape();
         const float* output0_data = tensor0.GetTensorData<float>();
@@ -148,15 +153,16 @@ std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &bat
         Q_ASSERT(shape0.size() == 3); // expect ['DynamicDimension.0', 'Reshape_524_o0__d2', 18385] [-1, T, C] (Batch, SequenceLength, NumClasses)
 
         const size_t out_batch_size = shape0.at(0);
-        const size_t out_seq_len = shape0.at(1);     // 25 (expected)
-        const size_t out_num_classes = shape0.at(2); // 64 (expected)
+        const size_t out_seq_len = shape0.at(1);
+        const size_t out_num_classes = shape0.at(2); // (number of characters in the dictionary + 1 for the blank character).
 
-        Q_ASSERT(out_batch_size == sel_batch.size());
-        Q_ASSERT(out_num_classes == 64); // (number of characters in the dictionary + 1 for the blank character).
+        // out_batch_size can't be trusted, as the session might cache the previous batch
+        // so it shouldn't be used for postprocessing
+        Q_ASSERT(out_batch_size >= sel_batch.size());
 
         // ctc decode
         Q_ASSERT(!m_labels.empty());
-        for (size_t r = 0; r < out_batch_size; ++r) {
+        for (size_t r = 0; r < sel_batch.size(); ++r) {
             std::string str_res;
             int argmax_idx;
             int last_index = 0;
@@ -178,7 +184,10 @@ std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &bat
                 if (argmax_idx > 0 && (!(n > 0 && argmax_idx == last_index))) {
                     score += max_value;
                     count += 1;
-                    str_res += m_labels[argmax_idx];
+
+                    // TODO: Do proper research for this one
+                    // Why does the model report 97 classes and we get 95 from the .yml
+                    str_res += m_labels[argmax_idx - 1];
                 }
 
                 last_index = argmax_idx;
