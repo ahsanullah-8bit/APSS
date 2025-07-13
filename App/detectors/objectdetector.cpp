@@ -13,7 +13,7 @@ void ObjectDetector::draw(cv::Mat &image, const PredictionList &predictions, flo
 
 std::vector<PredictionList> ObjectDetector::postprocess(const MatList &originalImages, const cv::Size &resizedImageShape, const std::vector<Ort::Value> &outputTensors, float confThreshold, float iouThreshold)
 {
-    std::vector<prediction_vec> results_list;
+    std::vector<PredictionList> results_list;
 
     if (outputTensors.size() != 1)
         throw std::runtime_error("Insufficient outputs from the model. Expected 1 output.");
@@ -33,7 +33,7 @@ std::vector<PredictionList> ObjectDetector::postprocess(const MatList &originalI
 
     results_list.reserve(batch_size);
     for (size_t b = 0; b < batch_size; ++b) {
-        prediction_vec results;
+        PredictionList results;
 
         std::vector<cv::Rect> boxes;
         std::vector<float> confs;

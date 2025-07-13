@@ -2,24 +2,23 @@
 
 #include <memory>
 
-#include "licensed/utility.h"
+#include <onnxruntime_cxx_api.h>
+
 #include "apss.h"
-
-class PaddleCls;
-class PaddleDet;
-class PaddleRec;
-class CustomAllocator;
-
-namespace Ort{
-class Env;
-class AllocatorWithDefaultOptions;
-}
+#include "licensed/utility.h"
+#include "wrappers/customallocator.h"
+#include "paddlecls.h"
+#include "paddledet.h"
+#include "paddlerec.h"
 
 class PaddleOCREngine
 {
 public:
     explicit PaddleOCREngine(std::shared_ptr<Ort::Env> env = {},
-                             std::shared_ptr<CustomAllocator> allocator = {});
+                             std::shared_ptr<CustomAllocator> allocator = {},
+                             std::unique_ptr<PaddleDet> det = nullptr,
+                             std::unique_ptr<PaddleCls> cls = nullptr,
+                             std::unique_ptr<PaddleRec> rec = nullptr);
     std::vector<PaddleOCR::OCRPredictResultList> predict(const MatList &batch);
 
 private:

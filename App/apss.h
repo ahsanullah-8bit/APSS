@@ -3,7 +3,6 @@
 #include <qdir.h>
 #include <qurl.h>
 #include <vector>
-#include <filesystem>
 #include <opencv2/core/mat.hpp>
 #include <detectors/prediction.h>
 
@@ -15,8 +14,6 @@ namespace fs = std::filesystem;
 // Some common things APSS depends on
 
 // Typedefs
-using prediction_vec = std::vector<Prediction>;
-using mat_vec = std::vector<cv::Mat>;
 using PredictionList = std::vector<Prediction>;
 using MatList = std::vector<cv::Mat>;
 

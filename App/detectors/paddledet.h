@@ -6,11 +6,9 @@
 
 #include "apss.h"
 #include "config/predictorconfig.h"
-#include "config/paddleocrconfig.h"
 #include "onnxinference.h"
 #include "licensed/preprocess_op.h"
 #include "licensed/postprocess_op.h"
-
 
 class PaddleDet {
 public:

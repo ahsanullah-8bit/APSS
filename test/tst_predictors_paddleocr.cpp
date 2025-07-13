@@ -98,7 +98,7 @@ TEST_F(TestPaddleOCR, RawInferenceBenchmark) {
 
     for (size_t i = 0; i < crop_batch.size(); ++i) {
         if (ocr_result[i].cls_label % 2 == 1 &&
-            ocr_result[i].cls_score > cls.clsThreshold()) {
+            ocr_result[i].cls_score > cls.threshold()) {
             cv::rotate(crop_batch[i], crop_batch[i], cv::ROTATE_180);
         }
     }
@@ -123,7 +123,7 @@ TEST_F(TestPaddleOCR, RawInferenceBenchmark) {
     }
     Utils::drawOCR(img, ocr_result);
 
-    cv::imwrite("ocr.jpg", img);
+    cv::imwrite("test/results/ocr_test.jpg", img);
 
     // Print the benchmark result using qDebug
     qDebug() << "Det Loading:" << std::chrono::duration<double, std::milli>(det_loading_time).count();

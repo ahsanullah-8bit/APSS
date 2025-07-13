@@ -177,49 +177,9 @@ std::vector<std::pair<int, float>> PaddleCls::predict(const MatList &batch)
     return cls_results;
 }
 
-bool PaddleCls::readInCharDict(const std::string &filepath) noexcept
+double PaddleCls::threshold() const
 {
-    bool is_yaml = filepath.ends_with(".yml") || filepath.ends_with(".yaml");
-    if (!is_yaml && !filepath.ends_with(".txt"))
-        return false;
-
-    try {
-        if (!is_yaml) {
-            m_labels = PaddleOCR::Utility::ReadDict(filepath);
-        } else {
-            YAML::Node yaml = YAML::LoadFile(filepath);
-
-            // check the model name
-            auto model_name_node = yaml["Global"]["model_name"];
-            if (model_name_node.IsDefined()) {
-                const QString model_name = QString::fromStdString(model_name_node.as<std::string>());
-
-                if (model_name.contains("OCRv5", Qt::CaseInsensitive)
-                    && model_name.contains("OCRv4", Qt::CaseInsensitive)) {
-                    qFatal() << "Unsupported yaml file provided for model" << model_name << ", model name should have either OCRv4 or OCRv5";
-                }
-            }
-
-            // fetch the RecResizeImg
-            auto cls_shape_node = yaml["PreProcess"]["transform_ops"][0]["size"];
-            if (cls_shape_node.IsDefined())
-                m_clsImageShape = cls_shape_node.as<std::vector<int>>();
-
-            // fetch labels_list
-            auto label_list_node = yaml["PostProcess"]["Topk"]["label_list"];
-            if (label_list_node)
-                m_labels = label_list_node.as<std::vector<std::string>>();
-        }
-    } catch(const std::exception &e) {
-        qFatal() << "Failed to load dict text file:" << e.what();
-    }
-
-    return true;
-}
-
-double PaddleCls::clsThreshold() const
-{
-    return m_clsThreshold;
+    return m_threshold;
 }
 
 const ONNXInference &PaddleCls::inferSession() const

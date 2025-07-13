@@ -1,13 +1,15 @@
 #include <opencv2/core.hpp>
 
 #include "paddleocr.h"
-#include "wrappers/customallocator.h"
-#include "paddlecls.h"
-#include "paddledet.h"
-#include "paddlerec.h"
 
 PaddleOCREngine::PaddleOCREngine(std::shared_ptr<Ort::Env> env,
-                                 std::shared_ptr<CustomAllocator> allocator)
+                                 std::shared_ptr<CustomAllocator> allocator,
+                                 std::unique_ptr<PaddleDet> det,
+                                 std::unique_ptr<PaddleCls> cls,
+                                 std::unique_ptr<PaddleRec> rec)
+    : m_det(std::move(det))
+    , m_cls(std::move(cls))
+    , m_rec(std::move(rec))
 {
     if (!env)
         env = std::make_shared<Ort::Env>();
@@ -15,20 +17,26 @@ PaddleOCREngine::PaddleOCREngine(std::shared_ptr<Ort::Env> env,
     if (!allocator)
         allocator = std::make_shared<CustomAllocator>(Ort::AllocatorWithDefaultOptions());
 
-    PredictorConfig det_config;
-    det_config.model = ModelConfig();
-    det_config.model->path = "models/PP-OCRv5_mobile_det_infer_onnx/inference.onnx";
-    m_det = std::make_unique<PaddleDet>(det_config, env, allocator, nullptr);
+    if (!m_det) {
+        PredictorConfig det_config;
+        det_config.model = ModelConfig();
+        det_config.model->path = "models/PP-OCRv5_mobile_det_infer_slim_onnx/inference.onnx";
+        m_det = std::make_unique<PaddleDet>(det_config, env, allocator, nullptr);
+    }
 
-    PredictorConfig cls_config;
-    cls_config.model = ModelConfig();
-    cls_config.model->path = "models/PP-LCNet_x1_0_textline_ori_infer_onnx/inference.onnx";
-    m_cls = std::make_unique<PaddleCls>(cls_config, env, allocator, nullptr);
+    if (!m_cls) {
+        PredictorConfig cls_config;
+        cls_config.model = ModelConfig();
+        cls_config.model->path = "models/PP-LCNet_x1_0_textline_ori_infer_slim_onnx/inference.onnx";
+        m_cls = std::make_unique<PaddleCls>(cls_config, env, allocator, nullptr);
+    }
 
-    PredictorConfig rec_config;
-    rec_config.model = ModelConfig();
-    rec_config.model->path = "models/en_PP-OCRv4_mobile_rec_infer_onnx/inference.onnx";
-    m_rec = std::make_unique<PaddleRec>(rec_config, env, allocator, nullptr);
+    if (!m_rec) {
+        PredictorConfig rec_config;
+        rec_config.model = ModelConfig();
+        rec_config.model->path = "models/en_PP-OCRv4_mobile_rec_infer_slim_onnx/inference.onnx";
+        m_rec = std::make_unique<PaddleRec>(rec_config, env, allocator, nullptr);
+    }
 }
 
 std::vector<PaddleOCR::OCRPredictResultList> PaddleOCREngine::predict(const MatList &batch)
@@ -68,7 +76,7 @@ std::vector<PaddleOCR::OCRPredictResultList> PaddleOCREngine::predict(const MatL
 
         for (size_t i = 0; i < crop_batch.size(); ++i) {
             if (ocr_result[i].cls_label % 2 == 1 &&
-                ocr_result[i].cls_score > m_cls->clsThreshold()) {
+                ocr_result[i].cls_score > m_cls->threshold()) {
                 cv::rotate(crop_batch[i], crop_batch[i], cv::ROTATE_180);
             }
         }
