@@ -63,7 +63,8 @@ def process_data_row(data_row, project_id, ontology_mapping, class_to_index, ima
 
         # Save image
         img_path = os.path.join(images_dir, img_name)
-        download_with_retries(img_url, img_path)
+        if not os.path.exists(img_path):
+            download_with_retries(img_url, img_path)
 
         # Convert Labelbox annotation
         polygon_data = lb_polygon_to_yolo(data_row, project_id, ontology_mapping)
@@ -98,19 +99,23 @@ if __name__ == "__main__":
     ################################################################
     # Initialize Labelbox client
     # NOTE: This call requires Labelbox's API-key as argument or you should set the LABELBOX_API
-    client = lb.Client(api_key='') # My bad, forgot to remove the API Key. It was an expired one.
-    PROJECT_ID = "cm7xlwbmk053507wwcvfz1nuw"
+    client = lb.Client(os.environ['LABELBOX_API']) # My bad, forgot to remove the API Key. It was an expired one.
+    PROJECT_ID = os.environ['LABELBOX_PROJECT_ID']
     project_name = "License_Plates"
     # What the names are in LabelBox VS What you want it to be in data.yaml
     ontology_mapping_polygon = {"license_plate": "license_plate"}
 
     # The rest #####################################################
 
+    print(f"Project ID: {PROJECT_ID}")
     project = client.get_project(PROJECT_ID)
 
     print("🔄 Exporting project annotations...")
+    
+    # @1 comment if you want to use an exported task and uncomment @2
     export_task = project.export()
     export_task.wait_till_done()
+    # @2 comment if you want to export the project and uncomment @1
     # export_task = lb.ExportTask.get_task(client, "")
     export_json = [data_row.json for data_row in export_task.get_buffered_stream()]
 

@@ -12,19 +12,6 @@ from tqdm import tqdm
 import yaml
 import math
 
-# Paths
-dataset_dir = "License_Plates_keypoints"
-images_dir = os.path.join(dataset_dir, "images")
-labels_dir = os.path.join(dataset_dir, "labels")
-output_dir = os.path.join(dataset_dir, "annotated")
-
-os.makedirs(output_dir, exist_ok=True)
-
-# Load class names from data.yaml
-with open(os.path.join(dataset_dir, "data.yaml"), "r") as f:
-    data_yaml = yaml.safe_load(f)
-class_names = data_yaml["names"]
-
 
 def draw_polygons(image_path, label_path):
     with Image.open(image_path) as img:
@@ -46,7 +33,6 @@ def draw_polygons(image_path, label_path):
                 draw.text(polygon[0], class_names[cls_idx], fill="red")
 
         return img
-
 
 def draw_obbs(image_path, label_path, class_names=None, box_color="blue", text_color="blue", box_width=2):
     """
@@ -127,8 +113,7 @@ def draw_obbs(image_path, label_path, class_names=None, box_color="blue", text_c
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
-    
-    
+
 def draw_bounding_boxes(image_path, label_path, class_names=None, box_color="blue", text_color="blue", box_width=4):
     """
     Draws bounding boxes on an image based on labels in a text file.
@@ -297,20 +282,88 @@ def draw_bounding_boxes_and_keypoints(image_path, label_path, class_names=None, 
 ######################################
 
 if __name__ == '__main__':
+    from argparse import ArgumentParser
+    parser = ArgumentParser(prog='APSS Quick-Plot', allow_abbrev=True, description='A Script to plot annotations on images for testing.')
+    
+    parser.add_argument('--dataset', type=str, required=True, help='Provide path to the dataset.')
+    parser.add_argument('--task', type=str, required=True, choices=['detect', 'obb', 'pose', 'segment_wm', 'segment_wp', 'classify'], help='Provide task name. Tasks include Detect, OBB, Pose, Segment With Masks, Segment With Polygons and Classify. See help.')
+    parser.add_argument('--class_names', type=dict[int, str], help='List of class names')
+    parser.add_argument('--yaml_file', type=str, help='Path to the data.yaml file. Necessary if you dont provide class_names')
+    
+    args = parser.parse_args()
+    
+    task_type: str = args.task
+    
+    dataset_dir: str = args.dataset
+    images_dir = os.path.join(dataset_dir, "images")
+    labels_dir = os.path.join(dataset_dir, "labels")
+    output_dir = os.path.join(dataset_dir, "annotated")
+    os.makedirs(output_dir, exist_ok=True)
+
+    if args.class_names:
+        class_names: dict[int, str] = args.class_names
+    else:
+        # Load class names from data.yaml
+        if args.yaml_file:
+            yaml_file: str = args.yaml_file
+        elif os.path.exists(os.path.join(dataset_dir, f"data.yml")):
+            yaml_file = os.path.join(dataset_dir, 'data.yml')
+        elif os.path.exists(os.path.join(dataset_dir, "data.yaml")):
+            yaml_file = os.path.join(dataset_dir, 'data.yaml')
+        else:
+            print('❌ Error: No data.yml was found in the dataset directory. Please provide either class_names or yaml_file!')
+            exit(-1)
+        
+        if not os.path.exists(yaml_file):
+            print(f'❌ Error: {yaml_file} doesn''t exist. Please provide one!')
+            exit(-1)
+            
+        with open(yaml_file, "r") as f:
+            data_yaml = yaml.safe_load(f)
+        class_names: dict[int, str] = data_yaml["names"]
+        
+    if class_names.__len__ == 0:
+        print(f'❌ Invalid list of class_names: {class_names}')
+        exit(-1)
+        
     # Loop through all labels and draw
+    img_exts = ['png', 'jpg', 'jpeg', 'webp']
     for label_file in tqdm(os.listdir(labels_dir), desc="Drawing annotations"):
         if not label_file.endswith(".txt"):
+            print(f'⚠️ Warning: Label file with invalid extension: {label_file}')
             continue
+        
         label_path = os.path.join(labels_dir, label_file)
-        img_name = label_file.replace(".txt", ".jpg")  # or .png depending on your extension
-        img_path = os.path.join(images_dir, img_name)
-
-        if os.path.exists(img_path):
-            img_out_path = os.path.join(output_dir, img_name)
+        
+        img_file = ''
+        for ext in img_exts:
+            img_file = label_file.replace('.txt', f'.{ext}')
+            if os.path.exists(os.path.join(images_dir, img_file)):
+                break
+        
+        img_path = os.path.join(images_dir, img_file)
+        if img_file.__len__() > 0 and os.path.exists(img_path):
+            img_out_path = os.path.join(output_dir, img_file)
             if os.path.exists(img_out_path):
                 continue
             
-            result_img = draw_bounding_boxes_and_keypoints(img_path, label_path) # Call any other function
+            result_img = None
+            if (task_type == 'detect'):
+                result_img = draw_bounding_boxes(img_path, label_path)
+            elif (task_type == 'pose'):
+                result_img = draw_bounding_boxes_and_keypoints(img_path, label_path)
+            elif (task_type == 'obb'):
+                result_img = draw_obbs(img_path, label_path)
+            elif (task_type == 'segment_wp'):
+                result_img = draw_polygons(img_path, label_path)
+            else:
+                print('❌ Error: Task not implemented yet!')
+                exit(-1)
+                
+            if not result_img:
+                print(f'❌ Results is None for {img_path}')
+                continue
+            
             result_img.save(fp=img_out_path)
         else:
             print(f"❌ Image file not found for label: {label_file}")
