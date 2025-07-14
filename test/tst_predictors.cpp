@@ -48,6 +48,9 @@ TEST_F(TestPredictors,  ObjectDetector) {
 
     detector.draw(img1, predictions[0], 0.2);
 
+    ASSERT_TRUE(predictions.size() > 0);
+    ASSERT_TRUE(predictions[0].size() > 0);
+
     cv::imwrite("test/resutls/obj_detector_tst.jpg", img1);
 
     qDebug() << "Object Detector Loading:" << std::chrono::duration<double, std::milli>(loading_time);
@@ -71,6 +74,9 @@ TEST_F(TestPredictors, PoseEstimator) {
     auto inference_time = std::chrono::high_resolution_clock::now() - start_time;
 
     estimator.draw(img1, predictions[0], 0.2);
+
+    ASSERT_TRUE(predictions.size() > 0);
+    ASSERT_TRUE(predictions[0].size() > 0);
 
     cv::imwrite("test/resutls/pose_estimator_tst.jpg", img1);
 

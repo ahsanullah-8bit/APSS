@@ -7,11 +7,8 @@
 
 #include <config/detectorconfig.h>
 #include "config/predictorconfig.h"
-#include <detectors/yolodetection.h>
 #include "detectors/objectdetector.h"
 #include <utils/frame.h>
-
-#include "yolopose.h"
 
 class ObjectDetectorSession : public QThread
 {
@@ -29,7 +26,6 @@ public:
 protected:
     // QThread interface
     void run() override;
-    // void runOld();
 
 private:
     // int m_maxBatchSize = 1;

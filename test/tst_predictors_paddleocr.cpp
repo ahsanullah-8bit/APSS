@@ -38,6 +38,8 @@ TEST_F(TestPaddleOCR, RawInferenceBenchmark) {
 
     cv::Mat img = cv::imread("test/assets/kkkuk.jpg");
 
+    ASSERT_TRUE(!img.empty());
+
     // det
     auto start_time = std::chrono::high_resolution_clock::now();
     PredictorConfig det_config;
@@ -72,6 +74,8 @@ TEST_F(TestPaddleOCR, RawInferenceBenchmark) {
     std::vector<Vector3d<int>> boxes_list = det.predict( { img } );
     auto det_infer_time = std::chrono::high_resolution_clock::now() - start_time;
 
+    ASSERT_TRUE(!boxes_list.empty());
+
     Vector3d<int> boxes = boxes_list.at(0);
     for (size_t i = 0; i < boxes.size(); ++i) {
         PaddleOCR::OCRPredictResult res;
@@ -88,10 +92,15 @@ TEST_F(TestPaddleOCR, RawInferenceBenchmark) {
         crop_batch.emplace_back(std::move(crop_img));
     }
 
+    ASSERT_TRUE(!crop_batch.empty());
+
     // 2. cls
     start_time = std::chrono::high_resolution_clock::now();
     std::vector<std::pair<int, float>> cls_results = cls.predict(crop_batch);
     auto cls_infer_time = std::chrono::high_resolution_clock::now() - start_time;
+
+    ASSERT_TRUE(!cls_results.empty());
+
     // output cls results
     for (size_t i = 0; i < cls_results.size(); ++i) {
         ocr_result[i].cls_label = cls_results[i].first;
@@ -109,6 +118,8 @@ TEST_F(TestPaddleOCR, RawInferenceBenchmark) {
     start_time = std::chrono::high_resolution_clock::now();
     const std::vector<std::pair<std::string, float>> rec_results = rec.predict(crop_batch);
     auto rec_infer_time = std::chrono::high_resolution_clock::now() - start_time;
+
+    ASSERT_TRUE(!rec_results.empty());
 
     // End timing for the inference pipeline
     auto total_infer_time = std::chrono::high_resolution_clock::now() - total_infer_start_time;
