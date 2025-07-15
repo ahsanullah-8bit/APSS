@@ -3,3 +3,4 @@ TabBar 1.0 TabBar.qml
 TabButton 1.0 TabButton.qml
 CameraDialog 1.0 CameraDialog.qml
 LivePlaybackCard 1.0 LivePlaybackCard.qml
+MetricsPane 1.0 MetricsPane.qml

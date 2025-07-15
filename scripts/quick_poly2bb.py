@@ -91,6 +91,6 @@ def batch_convert_labels():
 
 if __name__ == "__main__":
     batch_convert_labels()
-    shutil.rmtree(LABELS_DIR)
+    # shutil.rmtree(LABELS_DIR)
     print(f'Removed the source labels directory {LABELS_DIR}')
     print(f"\n✅ Done. Converted labels saved to: {OUTPUT_LABELS_DIR}")

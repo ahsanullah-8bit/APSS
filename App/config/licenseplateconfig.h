@@ -9,4 +9,6 @@ struct LicensePlateConfig {
     int match_distance = 1;
     std::optional<std::string> format;
     std::optional<std::map<std::string, std::vector<std::string>>> known_plates;
+    // vehicles-of-interest
+    std::optional<std::set<std::string>> voi = std::set<std::string>({ "bicycle", "car", "motorcycle", "bus", "truck" });
 };

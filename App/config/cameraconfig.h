@@ -30,4 +30,7 @@ struct CameraConfig {
     // webui_url
     // zones
     std::optional<bool> enabled_in_config;
+
+    // advanced
+    std::optional<bool> pull_based_order = false;
 };

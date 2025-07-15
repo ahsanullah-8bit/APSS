@@ -10,7 +10,11 @@ class CameraMetricsModel : public QAbstractListModel
 public:
     enum CameraMetricsDataRole {
         Name = Qt::UserRole + 1,
-        VideoSink
+        VideoSink,
+        CameraFPS,
+        DetectionFPS,
+        ProcessFPS,
+        SkippedFPS
     };
 
     explicit CameraMetricsModel(QHash<QString, SharedCameraMetrics> &cameraMetrics,

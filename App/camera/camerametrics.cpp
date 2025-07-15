@@ -1,9 +1,10 @@
 #include "camerametrics.h"
 
-CameraMetrics::CameraMetrics(const QString &name, QObject *parent)
+CameraMetrics::CameraMetrics(const QString &name, bool isPullBased, QObject *parent)
     : QObject(parent)
     , m_frameQueue(new SharedFrameBoundedQueue())
     , m_name(name)
+    , m_isPullBased(isPullBased)
 {
     m_frameQueue->set_capacity(2);
 }
@@ -13,22 +14,22 @@ QString CameraMetrics::name() const
     return m_name;
 }
 
-int CameraMetrics::cameraFPS() const
+double CameraMetrics::cameraFPS() const
 {
     return m_cameraFPS.load(std::memory_order_acquire);
 }
 
-int CameraMetrics::detectionFPS() const
+double CameraMetrics::detectionFPS() const
 {
     return m_detectionFPS.load(std::memory_order_acquire);
 }
 
-int CameraMetrics::processFPS() const
+double CameraMetrics::processFPS() const
 {
     return m_processFPS.load(std::memory_order_acquire);
 }
 
-int CameraMetrics::skippedFPS() const
+double CameraMetrics::skippedFPS() const
 {
     return m_skippedFPS.load(std::memory_order_acquire);
 }
@@ -63,10 +64,10 @@ QSharedPointer<QThread> CameraMetrics::captureThread() const
     return m_captureThread;
 }
 
-void CameraMetrics::setCameraFPS(int newCameraFPS)
+void CameraMetrics::setCameraFPS(double newCameraFPS)
 {
     // Quick check to avoid CAS when unnecessary
-    int current = m_cameraFPS.load(std::memory_order_relaxed);
+    double current = m_cameraFPS.load(std::memory_order_relaxed);
     if (current == newCameraFPS) return;
 
     // CAS loop for atomic update
@@ -82,16 +83,16 @@ void CameraMetrics::setCameraFPS(int newCameraFPS)
     // Only emit if WE changed the value
     Q_EMIT cameraFPSChanged(newCameraFPS);
 
-    // int expected = m_cameraFPS.load(std::memory_order_acquire);
+    // double expected = m_cameraFPS.load(std::memory_order_acquire);
     // if (expected != newCameraFPS) {
     //     m_cameraFPS.compare_exchange_strong(expected, newCameraFPS, std::memory_order_acq_rel);
     //     Q_EMIT cameraFPSChanged(newCameraFPS);
     // }
 }
 
-void CameraMetrics::setDetectionFPS(int newDetectionFPS)
+void CameraMetrics::setDetectionFPS(double newDetectionFPS)
 {
-    int current = m_detectionFPS.load(std::memory_order_relaxed);
+    double current = m_detectionFPS.load(std::memory_order_relaxed);
     if (current == newDetectionFPS)
         return;
 
@@ -108,9 +109,9 @@ void CameraMetrics::setDetectionFPS(int newDetectionFPS)
     Q_EMIT detectionFPSChanged(newDetectionFPS);
 }
 
-void CameraMetrics::setProcessFPS(int newProcessFPS)
+void CameraMetrics::setProcessFPS(double newProcessFPS)
 {
-    int current = m_processFPS.load(std::memory_order_relaxed);
+    double current = m_processFPS.load(std::memory_order_relaxed);
     if (current == newProcessFPS)
         return;
 
@@ -127,9 +128,9 @@ void CameraMetrics::setProcessFPS(int newProcessFPS)
     Q_EMIT processFPSChanged(newProcessFPS);
 }
 
-void CameraMetrics::setSkippedFPS(int newSkippedFPS)
+void CameraMetrics::setSkippedFPS(double newSkippedFPS)
 {
-    int current = m_skippedFPS.load(std::memory_order_relaxed);
+    double current = m_skippedFPS.load(std::memory_order_relaxed);
     if (current == newSkippedFPS)
         return;
 
@@ -229,5 +230,9 @@ void CameraMetrics::setCaptureThread(QSharedPointer<QThread> newCaptureThread)
     Q_EMIT captureThreadChanged(m_captureThread);
 }
 
+bool CameraMetrics::isPullBased() const
+{
+    return m_isPullBased;
+}
 
 #include "moc_camerametrics.cpp"

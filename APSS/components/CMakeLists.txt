@@ -13,6 +13,7 @@ qt6_add_qml_module(APSS_Components
         "CameraDialog.qml"
         "TabButton.qml"
         "LivePlaybackCard.qml"
+        MetricsPane.qml
 )
 
 

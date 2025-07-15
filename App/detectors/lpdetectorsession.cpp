@@ -2,38 +2,46 @@
 
 #include <QDebug>
 
-#include "utils.h"
+#include "detectors/image.h"
 
-LPDetectorSession::LPDetectorSession(SharedFrameBoundedQueue &objDetectedFrameQueue,
-                       SharedFrameBoundedQueue &lpDetectedFrameQueueOut,
-                       const std::set<std::string> &filterClasses,
-                       const std::string &modelPath,
-                       int maxBatchSize,
-                       float confThreshold,
-                       float iouThreshold,
-                       bool drawPredictions,
-                       const std::string &labelsPath,
-                       QObject *parent)
+LPDetectorSession::LPDetectorSession(SharedFrameBoundedQueue &inFrameQueue,
+                                     QHash<QString, QSharedPointer<QWaitCondition>> &cameraWaitConditions,
+                                     const PredictorConfig &config,
+                                     const LicensePlateConfig &lpConfig,
+                                     QObject *parent)
     : QThread(parent)
-    , m_objDetectedFrameQueue(objDetectedFrameQueue)
-    , m_lpDetectedFrameQueue(lpDetectedFrameQueueOut)
-    , m_keyPointDetector(modelPath, labelsPath)
-    , m_filterClasses(std::move(filterClasses))
-    , m_maxBatchSize(maxBatchSize)
-    , m_confThreshold(confThreshold)
-    , m_iouThreshold(iouThreshold)
-    , m_drawPredictions(drawPredictions)
-{}
+    , m_inFrameQueue(inFrameQueue)
+    , m_cameraWaitConditions(cameraWaitConditions)
+    , m_keyPointDetector(config)
+    , m_config(config)
+    , m_lpConfig(lpConfig)
+{
+    setObjectName("lp_detector");
+}
 
-YOLOPose& LPDetectorSession::detector() {
+PoseEstimator& LPDetectorSession::detector() {
     return m_keyPointDetector;
 }
 
 void LPDetectorSession::run() {
     try {
+        // vehicles-of-interest
+        std::set<std::string> voi = { "car", "motorcycle",
+                                      "bus", "truck" };
+        if (m_lpConfig.voi)
+            voi = m_lpConfig.voi.value_or(std::set<std::string>());
+
+        int max_batch_size = 1;
+        if (m_config.batch_size)
+            max_batch_size = m_config.batch_size.value_or(1);
+
+        m_eps.start();
+
         while (!QThread::currentThread()->isInterruptionRequested()) {
             SharedFrame frame;
-            m_objDetectedFrameQueue.pop(frame);
+            m_inFrameQueue.pop(frame);
+            if (!frame || frame->hasExpired())
+                continue;
 
             // Detect LPs for a single frame.
             // We only need no-copy Mats from each frame that that are one of the filtered classes
@@ -41,7 +49,7 @@ void LPDetectorSession::run() {
             PredictionList filtered_vehicle_predictions;
 
             for (const auto& prediction : object_predictions) {
-                if (m_filterClasses.contains(prediction.className) && prediction.hasDeltas)
+                if (voi.contains(prediction.className) /*&& prediction.hasDeltas*/)
                     filtered_vehicle_predictions.emplace_back(prediction);
             }
 
@@ -55,9 +63,9 @@ void LPDetectorSession::run() {
                 batch.emplace_back(vehicle);
 
                 // Model doesn't support dynamic batch || Max batch size reached || No more predictions to complete the batch.
-                if (!m_keyPointDetector.hasDynamicBatch() || batch.size() >= m_maxBatchSize || p + 1 >= filtered_vehicle_predictions.size()) {
+                if (!m_keyPointDetector.hasDynamicBatch() || batch.size() >= max_batch_size || p + 1 >= filtered_vehicle_predictions.size()) {
                     // Detect LP
-                    std::vector<PredictionList> results_list = m_keyPointDetector.predict(batch, true, MODEL_LP_CONFIDENDCE_THRESHOLD);
+                    std::vector<PredictionList> results_list = m_keyPointDetector.predict(batch);
 
                     int vehicle_x = vehicle_prediction.box.x;
                     int vehicle_y = vehicle_prediction.box.y;
@@ -76,7 +84,7 @@ void LPDetectorSession::run() {
                             }
                         }
 
-                        // Save some License Plates
+                        // Debugging, Save some License Plates
                         // for (size_t m = 0; m < results.size(); ++m) {
                         //     cv::Mat lp_mat;
                         //     Utils::perspectiveCrop(vehicle, lp_mat, results[m].points);
@@ -107,11 +115,15 @@ void LPDetectorSession::run() {
                 }
             }
 
+            if (!frame || frame->hasExpired())
+                continue;
 
             frame->setPredictions(Prediction::Type::LicensePlates, std::move(lp_predictions));
-            m_lpDetectedFrameQueue.emplace(frame);
+            QString camera_id = frame->cameraId();
+            Q_ASSERT(m_cameraWaitConditions.contains(camera_id));
+            m_cameraWaitConditions.value(camera_id)->notify_all();    // Notify waiting camera processors.
 
-            // Recognize an LP
+            m_eps.update();
         }
     }
     catch(const tbb::user_abort &) {}
@@ -125,12 +137,7 @@ void LPDetectorSession::run() {
     qInfo() << "Aborting on thread" << QThread::currentThread()->objectName();
 }
 
-bool LPDetectorSession::emitProcessedFrames() const
+const EventsPerSecond &LPDetectorSession::eps() const
 {
-    return m_emitProcessedFrames.load();
-}
-
-void LPDetectorSession::setEmitProcessedFrames(bool yes)
-{
-    m_emitProcessedFrames.store(yes);
+    return m_eps;
 }

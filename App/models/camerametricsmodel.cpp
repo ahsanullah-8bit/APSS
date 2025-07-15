@@ -24,9 +24,16 @@ QVariant CameraMetricsModel::data(const QModelIndex &index, int role) const
     switch (role) {
     case Name:
         return key;
-        break;
     case VideoSink:
         return QVariant::fromValue<QVideoSink*>(m_cameraMetrics[key]->videoSink());
+    case CameraFPS:
+        return static_cast<int>(m_cameraMetrics[key]->cameraFPS());
+    case DetectionFPS:
+        return static_cast<int>(m_cameraMetrics[key]->detectionFPS());
+    case ProcessFPS:
+        return static_cast<int>(m_cameraMetrics[key]->processFPS());
+    case SkippedFPS:
+        return static_cast<int>(m_cameraMetrics[key]->skippedFPS());
     default:
         break;
     }
@@ -58,7 +65,15 @@ bool CameraMetricsModel::setData(const QModelIndex &index, const QVariant &value
 
 QHash<int, QByteArray> CameraMetricsModel::roleNames() const
 {
-    static QHash<int, QByteArray> roles = { { Name, "name" }, { VideoSink, "videosink" } };
+    static QHash<int, QByteArray> roles = {
+        { Name, "name" },
+        { VideoSink, "videosink" },
+        { CameraFPS, "camerafps" },
+        { DetectionFPS, "detectionfps" },
+        { ProcessFPS, "processfps" },
+        { SkippedFPS, "skippedfps" }
+    };
+
     return roles;
 }
 

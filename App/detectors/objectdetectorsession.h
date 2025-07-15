@@ -8,6 +8,7 @@
 #include <config/detectorconfig.h>
 #include "config/predictorconfig.h"
 #include "detectors/objectdetector.h"
+#include "utils/eventspersecond.h"
 #include <utils/frame.h>
 
 class ObjectDetectorSession : public QThread
@@ -20,6 +21,7 @@ public:
                                    const PredictorConfig &config,
                                    QObject *parent = nullptr);
     QSharedPointer<ObjectDetector> detector();
+    const EventsPerSecond &eps() const;
     // This method will run in the thread it is called from.
     void stop();
 
@@ -41,6 +43,7 @@ private:
     // SharedFrameBoundedQueue &m_outFrameQueue;
     std::atomic_int m_avgInferenceSpeed;
     PredictorConfig m_config;
+    EventsPerSecond m_eps;
 };
 
 using SharedObjectDetectorSession = QSharedPointer<ObjectDetectorSession>;

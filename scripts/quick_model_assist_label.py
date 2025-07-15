@@ -110,7 +110,7 @@ def process_images_with_model(
 
 
 if __name__ == "__main__":
-    YOLO_MODEL_PATH = 'yolo11m_int8_openvino_model'
+    YOLO_MODEL_PATH = 'yolo11m_openvino_model'
 
     DATASET_ROOT = 'License_Plates_bb'
 
@@ -118,9 +118,9 @@ if __name__ == "__main__":
 
     OUTPUT_ANNOTATED_DIR = os.path.join(DATASET_ROOT, 'annotated_images_for_review')
 
-    OUTPUT_LABELS_DIR = os.path.join(DATASET_ROOT, 'labels')
+    OUTPUT_LABELS_DIR = os.path.join(DATASET_ROOT, 'labels_')
 
-    DETECTION_CONF_THRESHOLD = 0.5
+    DETECTION_CONF_THRESHOLD = 0.6
 
     process_images_with_model(
         model_path=YOLO_MODEL_PATH,

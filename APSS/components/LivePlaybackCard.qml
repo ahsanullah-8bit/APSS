@@ -15,6 +15,7 @@ Pane {
     property string name: "uknown"
     property int cameraState: LivePlaybackCard.Disabled
     property alias videoOutput: videoOutput
+    property alias metricsList: metricsPane.metrics
 
     width: 400
     height: 300
@@ -26,27 +27,37 @@ Pane {
         radius: 10 // Rounded corners for the video area
         clip: true // Ensure content inside doesn't overflow rounded corners
 
-        RowLayout {
+        ColumnLayout {
             anchors {
                 left: parent.left
                 top: parent.top
                 margins: 15
             }
-            spacing: 10
 
-            Text {
-                text: cameraCard.name
-                color: "white"
-                opacity: 0.7
+            // little info about the camera
+            RowLayout {
+                spacing: 10
+
+                Text {
+                    text: cameraCard.name
+                    color: "white"
+                    opacity: 0.7
+                }
+
+                Rectangle {
+                    width: 10
+                    height: 10
+                    radius: 5
+                    color: cameraCard.cameraState === LivePlaybackCard.Active ? "lightgreen" : (cameraCard.cameraState === LivePlaybackCard.Disabled ? "gray" : "red")
+                    border.width: 1
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                }
             }
 
-            Rectangle {
-                width: 10
-                height: 10
-                radius: 5
-                color: cameraCard.cameraState === LivePlaybackCard.Active ? "lightgreen" : (cameraCard.cameraState === LivePlaybackCard.Disabled ? "gray" : "red")
-                border.width: 1
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            MetricsPane {
+                id: metricsPane
+
+                // Layout.fillHeight: true
             }
         }
 

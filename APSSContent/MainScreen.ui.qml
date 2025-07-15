@@ -77,39 +77,49 @@ Rectangle {
                 model: Constants.isPreviewMode ? 1 : apssEngine.cameraMetricsModel
 
                 delegate: LivePlaybackCard {
+                    id: liveplaycard
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
+                    metricsList: Constants.isPreviewMode ? [] : [["Process FPS", model.processfps], ["Detection FPS", model.detectionfps]]
                     name: Constants.isPreviewMode ? "uknown" : model.name
                     visible: true
 
                     Component.onCompleted: {
                         // VideoSink must be set, so the engine can forward frames
-                        model.videosink = videoOutput.videoSink
+                        if (!Constants.isPreviewMode) {
+                            model.videosink = videoOutput.videoSink
+                        }
+                    }
+
+                    Connections {
+                        target: fpsTimer
+
+                        onTriggered: function () {
+                            var metrics = liveplaycard.metricsList
+
+                            if (!Constants.isPreviewMode) {
+                                // metrics[0][1] = model.camerafps
+                                metrics[0][1] = model.processfps
+                                metrics[1][1] = model.detectionfps
+                            }
+
+                            liveplaycard.metricsList = metrics
+                        }
                     }
                 }
             }
+        }
+    }
 
-            // LivePlaybackCard {
-            //     Layout.fillWidth: true
-            //     Layout.fillHeight: true
+    Timer {
+        id: fpsTimer
 
-            //     visible: true
-            // }
+        interval: 1000 // 1sec
+        repeat: true
 
-            // LivePlaybackCard {
-            //     Layout.fillWidth: true
-            //     Layout.fillHeight: true
-
-            //     visible: true
-            // }
-
-            // LivePlaybackCard {
-            //     Layout.fillWidth: true
-            //     Layout.fillHeight: true
-
-            //     visible: true
-            // }
+        Component.onCompleted: function () {
+            fpsTimer.start()
         }
     }
 }

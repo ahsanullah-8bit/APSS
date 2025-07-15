@@ -65,6 +65,7 @@ private:
     // SharedFrameBoundedQueue m_objDetectedFrameQueue;
     // SharedFrameBoundedQueue m_lpDetectedFrameQueue;
     SharedFrameBoundedQueue m_inUnifiedObjDetectorQ;
+    SharedFrameBoundedQueue m_inUnifiedLPDetectorQ;
     // SharedFrameBoundedQueue m_outUnifiedObjDetectorQ;
     QHash<QString, QSharedPointer<QWaitCondition>> m_cameraWaitConditions;
 
@@ -74,6 +75,7 @@ private:
     std::atomic_bool m_stopEvent;
     SharedFrameBoundedQueue m_detectionQueue;
     QHash<QString, QSharedPointer<QThread>> m_detectors;
+    QSharedPointer<QThread> m_lpdetector;
     QHash<QString, SharedCameraMetrics> m_cameraMetrics;
     SharedCameraMetricsModel m_cameraMetricsModel;
 };

@@ -1,16 +1,17 @@
 # Configuration specific to detectors/predictors
 
-target_sources(${CMAKE_PROJECT_NAME} PUBLIC
-	objectdetector.cpp
-	objectdetectorsession.cpp
-	poseestimator.cpp
-	predictor.cpp
-	image.cpp
-)
+# target_sources(${CMAKE_PROJECT_NAME} PUBLIC
+# 	objectdetector.cpp
+# 	objectdetectorsession.cpp
+# 	poseestimator.cpp
+# 	predictor.cpp
+# 	image.cpp
+# )
 
 
 add_library(APSSPredictors STATIC
 	image.cpp
+	lpdetectorsession.cpp
 	objectdetector.cpp
 	objectdetectorsession.cpp
 	onnxinference.cpp
@@ -32,7 +33,8 @@ add_library(APSS::Predictors ALIAS APSSPredictors)
 target_include_directories(APSSPredictors PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/..			# Not a good choice, but anyway...
-
+)
+target_include_directories(APSSPredictors PUBLIC
 	${OpenCV_INCLUDE_DIRS}
 )
 target_link_libraries(APSSPredictors PRIVATE

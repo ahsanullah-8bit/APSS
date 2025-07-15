@@ -12,11 +12,11 @@ class CameraMetrics : QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString name READ name FINAL)
-    Q_PROPERTY(int cameraFPS READ cameraFPS WRITE setCameraFPS NOTIFY cameraFPSChanged FINAL)
-    Q_PROPERTY(int detectionFPS READ detectionFPS WRITE setDetectionFPS NOTIFY detectionFPSChanged FINAL)
+    Q_PROPERTY(double cameraFPS READ cameraFPS WRITE setCameraFPS NOTIFY cameraFPSChanged FINAL)
+    Q_PROPERTY(double detectionFPS READ detectionFPS WRITE setDetectionFPS NOTIFY detectionFPSChanged FINAL)
     Q_PROPERTY(int detectionFrame READ detectionFrame WRITE setDetectionFrame NOTIFY detectionFrameChanged FINAL)
-    Q_PROPERTY(int processFPS READ processFPS WRITE setProcessFPS NOTIFY processFPSChanged FINAL)
-    Q_PROPERTY(int skippedFPS READ skippedFPS WRITE setSkippedFPS NOTIFY skippedFPSChanged FINAL)
+    Q_PROPERTY(double processFPS READ processFPS WRITE setProcessFPS NOTIFY processFPSChanged FINAL)
+    Q_PROPERTY(double skippedFPS READ skippedFPS WRITE setSkippedFPS NOTIFY skippedFPSChanged FINAL)
     Q_PROPERTY(int readStart READ readStart WRITE setReadStart NOTIFY readStartChanged FINAL)
     // Q_PROPERTY(std::atomic_int audioRMS READ audioRMS WRITE setAudioRMS NOTIFY audioRMSChanged FINAL)
     // Q_PROPERTY(std::atomic_int audiodBFS READ audiodBFS WRITE setAudiodBFS NOTIFY audiodBFSChanged FINAL)
@@ -27,25 +27,26 @@ class CameraMetrics : QObject
     Q_PROPERTY(QSharedPointer<QThread> captureThread READ captureThread WRITE setCaptureThread NOTIFY captureThreadChanged FINAL)
 
 public:
-    CameraMetrics(const QString &name, QObject *parent = nullptr);
+    CameraMetrics(const QString &name, bool isPullBased = false, QObject *parent = nullptr);
 
     QString name() const;
-    int cameraFPS() const;
-    int detectionFPS() const;
-    int processFPS() const;
-    int skippedFPS() const;
+    double cameraFPS() const;
+    double detectionFPS() const;
+    double processFPS() const;
+    double skippedFPS() const;
     int detectionFrame() const;
     int readStart() const;
     QVideoSink *videoSink() const;
     QSharedPointer<SharedFrameBoundedQueue> frameQueue() const;
     QSharedPointer<QThread> thread() const;
     QSharedPointer<QThread> captureThread() const;
+    bool isPullBased() const;
 
 public slots:
-    void setCameraFPS(int newCameraFPS);
-    void setDetectionFPS(int newDetectionFPS);
-    void setProcessFPS(int newProcessFPS);
-    void setSkippedFPS(int newSkippedFPS);
+    void setCameraFPS(double newCameraFPS);
+    void setDetectionFPS(double newDetectionFPS);
+    void setProcessFPS(double newProcessFPS);
+    void setSkippedFPS(double newSkippedFPS);
     void setDetectionFrame(int newDetectionFrame);
     void setReadStart(int newReadStart);
     void setVideoSink(QVideoSink *newVideoSink);
@@ -54,10 +55,10 @@ public slots:
     void setCaptureThread(QSharedPointer<QThread> newCaptureThread);
 
 signals:
-    void cameraFPSChanged(int);
-    void detectionFPSChanged(int);
-    void processFPSChanged(int);
-    void skippedFPSChanged(int);
+    void cameraFPSChanged(double);
+    void detectionFPSChanged(double);
+    void processFPSChanged(double);
+    void skippedFPSChanged(double);
     void detectionFrameChanged(int detectionFrame);
     void readStartChanged(int readStart);
     void videoSinkChanged(QVideoSink *videoSink);
@@ -67,16 +68,18 @@ signals:
 
 private:
     QString m_name;
-    std::atomic_int m_cameraFPS;
-    std::atomic_int m_detectionFPS;
-    std::atomic_int m_processFPS;
-    std::atomic_int m_skippedFPS;
+    std::atomic<double> m_cameraFPS;
+    std::atomic<double> m_detectionFPS;
+    std::atomic<double> m_processFPS;
+    std::atomic<double> m_skippedFPS;
     std::atomic_int m_detectionFrame;
     std::atomic_int m_readStart;
     std::atomic<QVideoSink *> m_videoSink = nullptr;
     QSharedPointer<SharedFrameBoundedQueue> m_frameQueue;
     QSharedPointer<QThread> m_thread;
     QSharedPointer<QThread> m_captureThread;
+
+    bool m_isPullBased = false;
 };
 
 using SharedCameraMetrics = QSharedPointer<CameraMetrics>;

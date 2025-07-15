@@ -8,6 +8,7 @@
 #include "camera/cameraprocessor.h"
 #include "camera/cameracapture.h"
 #include "detectors/objectdetectorsession.h"
+#include "detectors/lpdetectorsession.h"
 
 APSSEngine::APSSEngine(APSSConfig *config, QObject *parent)
     : QObject{parent}
@@ -111,6 +112,15 @@ void APSSEngine::stop()
             }
         }
 
+        // lp
+        m_lpdetector->requestInterruption();
+        m_inUnifiedLPDetectorQ.abort();
+        if (m_lpdetector->wait(50)) {
+            qWarning() << "Gracefull termination timed-out for detector thread" << m_lpdetector->objectName() << ", forcing termination";
+            m_lpdetector->terminate();
+            m_lpdetector->wait();
+        }
+
         // We can force each thread to a wait for tbb::user_abort,
         // by requesting interruption in the stage ahead
         // m_ffmpegFileStream.requestInterruption();
@@ -140,7 +150,7 @@ void APSSEngine::stop()
 void APSSEngine::onFrameChanged(SharedFrame frame)
 {
     if (!m_cameraMetrics.contains(frame->cameraId())) {
-        qWarning() << QString("No such camera as %1, skipping frame &2.").arg(frame->cameraId(), frame->frameId());
+        qWarning() << QString("No such camera as %1, skipping frame %2.").arg(frame->cameraId(), frame->frameId());
         return;
     }
 
@@ -183,9 +193,9 @@ void APSSEngine::ensureDirs()
 
 void APSSEngine::initCameraMetrics()
 {
-    for (const auto &[camera_name, _] : m_config->cameras) {
+    for (const auto &[camera_name, config] : m_config->cameras) {
         QString name = QString::fromStdString(camera_name);
-        m_cameraMetrics[name] = SharedCameraMetrics(new CameraMetrics(name));
+        m_cameraMetrics[name] = SharedCameraMetrics(new CameraMetrics(name, config.pull_based_order.value_or(false)));
     }
 }
 
@@ -193,6 +203,7 @@ void APSSEngine::initQueues()
 {
     // TODO: Change this to 2 * number_of_cameras enabled
     m_inUnifiedObjDetectorQ.set_capacity(4);
+    m_inUnifiedLPDetectorQ.set_capacity(10);
     /*m_unProcessedFrameQueue.set_capacity(2);
     m_objDetectedFrameQueue.set_capacity(4);
     m_lpDetectedFrameQueue.set_capacity(6);*/
@@ -223,6 +234,18 @@ void APSSEngine::startDetectors()
         m_detectors[_name]->start();
         qInfo() << "Detector" << name << "has started:" << m_detectors[_name]->isRunning();
     }
+
+    // lp detector
+    PredictorConfig lpdetconfig;
+    lpdetconfig.model = ModelConfig();
+    lpdetconfig.model->path = "models/yolo11n-pose-1700_320.onnx";
+    lpdetconfig.batch_size = 1;
+
+    m_lpdetector = QSharedPointer<QThread>(new LPDetectorSession(m_inUnifiedLPDetectorQ,
+                                                                 m_cameraWaitConditions,
+                                                                 lpdetconfig,
+                                                                 m_config->lpr.has_value() ? m_config->lpr.value() : LicensePlateConfig()));
+    m_lpdetector->start();
 }
 
 void APSSEngine::initEmbeddingsManager()
@@ -258,13 +281,14 @@ void APSSEngine::startCameraProcessors()
 
         QString cam_name = QString::fromStdString(name);
         QSharedPointer<CameraProcessor> camera_thread(new CameraProcessor(cam_name,
-                                                                  config,
-                                                                  m_config->model,
-                                                                  m_config->model->labelmap,
-                                                                  m_inUnifiedObjDetectorQ,
-                                                                  m_cameraWaitConditions[cam_name],
-                                                                  m_cameraMetrics[cam_name]
-                                                                  ));
+                                                                          config,
+                                                                          m_config->model,
+                                                                          m_config->model->labelmap,
+                                                                          m_inUnifiedObjDetectorQ,
+                                                                          m_inUnifiedLPDetectorQ,
+                                                                          m_cameraWaitConditions[cam_name],
+                                                                          m_cameraMetrics[cam_name]
+                                                                          ));
 
         connect(camera_thread.get(), &CameraProcessor::frameChanged, this, &APSSEngine::onFrameChanged);
         m_cameraMetrics[cam_name]->setThread(camera_thread);
@@ -311,5 +335,5 @@ void APSSEngine::startAPSSWatchdog()
 }
 
 
-
 #include "moc_apssengine.cpp"
+

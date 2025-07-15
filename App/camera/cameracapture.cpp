@@ -203,7 +203,9 @@ void CameraCapture::run()
 
                 // Non-blocking queue insertion with abort detection
                 try {
-                    if (!frame_queue->try_emplace(final_frame)) {
+                    if (!m_metrics->isPullBased()) {
+                        frame_queue->emplace(final_frame);
+                    } else if (!frame_queue->try_emplace(final_frame)) {
                         // Queue full but not aborted - wait with timeout
                         if (QThread::currentThread()->isInterruptionRequested())
                             break;

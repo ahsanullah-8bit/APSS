@@ -26,6 +26,11 @@ ObjectDetectorSession::ObjectDetectorSession(const QString &name,
     return m_detector;
 }
 
+const EventsPerSecond &ObjectDetectorSession::eps() const
+{
+    return m_eps;
+}
+
 void ObjectDetectorSession::stop()
 {
     try {
@@ -48,10 +53,12 @@ void ObjectDetectorSession::stop()
 }
 
 void ObjectDetectorSession::run() {
+    qInfo() << "Starting" << objectName() << "thread";
 
     m_detector = QSharedPointer<ObjectDetector>(new ObjectDetector(m_config));
 
-    qInfo() << "Starting" << objectName() << "thread";
+    m_eps.start();
+
     try {
         while (!isInterruptionRequested()) {
             MatList batch;
@@ -84,6 +91,8 @@ void ObjectDetectorSession::run() {
                 Q_ASSERT(m_cameraWaitConditions.contains(camera_id));
                 m_cameraWaitConditions.value(camera_id)->notify_all();    // Notify waiting camera processors.
             }
+
+            m_eps.update();
         }
     }
     catch(const tbb::user_abort &) {}

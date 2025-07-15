@@ -33,6 +33,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
 
     APSS::Config
     APSS::Database
+    APSS::Predictors
 
     TBB::tbb
     Eigen3::Eigen

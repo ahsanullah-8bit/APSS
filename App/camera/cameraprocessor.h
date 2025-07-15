@@ -17,6 +17,7 @@ public:
                              const std::optional<ModelConfig> &modelConfig,
                              const std::optional<std::map<int, std::string>> &labelmap,
                              SharedFrameBoundedQueue &inDetectorFrameQueue,
+                             SharedFrameBoundedQueue &inLPDetectorFrameQueue,
                              QSharedPointer<QWaitCondition> waitCondition,
                              SharedCameraMetrics cameraMetrics,
                              QObject *parent = nullptr);
@@ -27,23 +28,74 @@ signals:
     // QThread interface
 protected:
     void run() override;
-
-private:
-    void trackCamera();
-    void processFrames();
+    bool predict(SharedFrame frame,
+                 SharedFrameBoundedQueue &queue,
+                 const int frameTimeOut);
 
 private:
     QString m_cameraName;
     CameraConfig m_config;
     std::optional<ModelConfig> m_modelConfig;
     std::optional<std::map<int, std::string>> m_labelmap;
-    // SharedFrameBoundedQueue &m_inFrameQueue;
     SharedFrameBoundedQueue &m_inDetectorFrameQueue;
+    SharedFrameBoundedQueue &m_inLPDetectorFrameQueue;
     QSharedPointer<QWaitCondition> m_waitCondition;
     QMutex m_mtx;
-    // SharedFrameBoundedQueue &m_outFrameQueue;
     SharedCameraMetrics m_cameraMetrics;
 };
 
-// CameraCapture -> CameraProcessor -> Detectors
-// Metrics.framequeue -> detectorInputQueue
+/*
+
+        if (!m_cameraMetrics->isPullBased()) {
+            // push or wait if the queue is full
+            m_inDetectorFrameQueue.push(frame);
+        } else {
+            // put the frame in the detect, using try_push, wait for 5 ms, if the push was successful
+            bool frame_pushed = m_inDetectorFrameQueue.try_push(frame);
+            if (!frame_pushed)
+                continue;
+        }
+
+        static const int time_out = m_config.image_detect_timeout
+                                        ? m_config.image_detect_timeout.value()
+                                        : 20;
+
+        m_mtx.lock();
+        if (!m_cameraMetrics->isPullBased()) {
+            // wait forever
+            m_waitCondition->wait(&m_mtx);
+        } else if (!m_waitCondition->wait(&m_mtx, time_out)) {
+            // waited for (config timeout or) 20ms and failed, expire the frame.
+            frame->setHasExpired(true);
+            qWarning() << std::format("Frame {} expired after {}ms. System seems to be overloaded.", frame->id().toStdString(), time_out);
+            m_mtx.unlock();
+            continue;
+        }
+        m_mtx.unlock();
+
+        // LP detection
+        if (!m_cameraMetrics->isPullBased()) {
+            m_inLPDetectorFrameQueue.push(frame);
+        } else {
+            bool frame_pushed = m_inLPDetectorFrameQueue.try_push(frame);
+            if (!frame_pushed)
+                continue;
+        }
+
+        m_mtx.lock();
+        if (!m_cameraMetrics->isPullBased()) {
+            m_waitCondition->wait(&m_mtx);
+        } else if (!m_waitCondition->wait(&m_mtx, time_out)) {
+            frame->setHasExpired(true);
+            qWarning() << std::format("Frame {} expired after {}ms. System seems to be overloaded.", frame->id().toStdString(), time_out);
+            m_mtx.unlock();
+            continue;
+        }
+        m_mtx.unlock();
+
+        if (!frame->hasExpired())
+            detectors_eps.update();
+            m_cameraMetrics->setDetectionFPS(detectors_eps.eps());
+
+
+*/

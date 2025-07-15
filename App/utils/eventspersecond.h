@@ -3,6 +3,8 @@
 #include <algorithm> // Required for std::min
 #include <QDateTime>
 #include <QList>
+#include <qmutex.h>
+#include <shared_mutex>
 
 class EventsPerSecond {
 public:
@@ -13,10 +15,12 @@ public:
     }
 
     void start() {
+        std::unique_lock<std::shared_mutex> lock(m_mtx);
         m_start = QDateTime::currentDateTime().toSecsSinceEpoch();
     }
 
     void update() {
+        std::unique_lock<std::shared_mutex> lock(m_mtx);
         qreal now = QDateTime::currentDateTime().toSecsSinceEpoch();
         if (m_start == 0.0) { // Check if m_start is uninitialized
             m_start = now;
@@ -33,6 +37,7 @@ public:
     }
 
     qreal eps() {
+        std::shared_lock<std::shared_mutex> lock(m_mtx);
         qreal now = QDateTime::currentDateTime().toSecsSinceEpoch();
         if (m_start == 0.0) { // Check if m_start is uninitialized
             m_start = now;
@@ -62,4 +67,5 @@ private:
     int m_maxEvents;
     int m_lastNSeconds;
     QList<qreal> m_timestamps;
+    std::shared_mutex m_mtx;
 };
