@@ -56,35 +56,13 @@ struct Candidate {
     double score;
 };
 
-struct ResultA {
-    PlateInfo plate;
-    VehicleInfo vehicle;
-    std::optional<int> direction;
-    double direction_score;
-};
-
 struct Region {
     std::string code;
     double score;
 };
 
-struct ResultB {
-    std::string plate;
-    VehicleInfo vehicle;
-    std::optional<int> direction;
-    double direction_score;
-    Box box;
-    Region region;
-    double score;
-    std::vector<Candidate> candidates;
-    double dscore;
-    std::vector<MakeModel> model_make;
-    std::vector<VehicleProp> color;
-    std::vector<VehicleProp> orientation;
-};
-
 // combined
-struct Result {
+struct ANPRResult {
     std::variant<std::string, PlateInfo> plate;
     VehicleInfo vehicle;
     std::optional<int> direction;
@@ -100,31 +78,13 @@ struct Result {
     std::optional<std::vector<VehicleProp>> orientation;
 };
 
-struct SnapshotA {
-    std::string filename;
-    std::string timestamp;
-    std::string camera_id;
-    double processing_time;
-    std::vector<ResultA> results;
-};
-
-struct SnapshotB {
-    std::string filename;
-    std::string timestamp;
-    double processing_time;
-    std::vector<ResultB> results;
-    int version;
-    std::optional<std::string> camera_id;
-};
-
 // combined
-struct Snapshot {
+struct ANPRSnapshot {
     std::string filename;
     std::string timestamp;
     std::optional<std::string> camera_id;
-    std::vector<Result> results;
+    std::vector<ANPRResult> results;
 
     std::optional<double> processing_time;
-
     std::optional<int> version;
 };

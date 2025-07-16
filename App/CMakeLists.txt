@@ -4,6 +4,7 @@ add_subdirectory(camera)
 add_subdirectory(config)
 add_subdirectory(db)
 add_subdirectory(detectors)
+add_subdirectory(utils)
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34,6 +35,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     APSS::Config
     APSS::Database
     APSS::Predictors
+    APSS::Utils
 
     TBB::tbb
     Eigen3::Eigen

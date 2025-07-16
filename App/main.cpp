@@ -27,7 +27,8 @@ int main(int argc, char *argv[])
     // cam_config.pull_based_order = true;
 
     PredictorConfig pred_config;
-    pred_config.model_path = "models/yolo11n.onxx";
+    pred_config.model = ModelConfig();
+    pred_config.model->path = "models/yolo11n.onnx";
 
     APSSConfig config;
     config.version = "0.1";

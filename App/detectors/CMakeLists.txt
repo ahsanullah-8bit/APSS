@@ -44,11 +44,10 @@ target_link_libraries(APSSPredictors PRIVATE
 	ByteTrackEigen::ByteTrack
 
 	APSS::Config
+	APSS::Utils
 )
 
 target_compile_definitions(APSSPredictors PRIVATE
   $<$<BOOL:${APSS_SUPPORT_CUDA_EP}>:APSS_SUPPORT_CUDA_EP>
   $<$<BOOL:${APSS_SUPPORT_OPENVINO_EP}>:APSS_SUPPORT_OPENVINO_EP>
 )
-
-message(STATUS "${OpenCV_LIBS}")
