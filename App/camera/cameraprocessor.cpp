@@ -3,6 +3,7 @@
 #include "config/objectconfig.h"
 #include "detectors/image.h"
 #include "utils/eventspersecond.h"
+#include "track/tracker.h"
 
 CameraProcessor::CameraProcessor(const QString &cameraName,
                                  const CameraConfig &config,
@@ -29,9 +30,10 @@ CameraProcessor::CameraProcessor(const QString &cameraName,
 void CameraProcessor::run()
 {
     QSharedPointer<SharedFrameBoundedQueue> frame_queue = m_cameraMetrics->frameQueue();
-    auto objects_to_track = m_config.objects->track;
-    auto object_filters = m_config.objects->filters;;
 
+    const ObjectConfig &objects_config = m_config.objects ? m_config.objects.value() : ObjectConfig();
+
+    Tracker tracker(objects_config.track);
 
     // COCO class names
     const std::vector<std::string> class_names = {
@@ -75,23 +77,23 @@ void CameraProcessor::run()
     EventsPerSecond detectors_eps;
     detectors_eps.start();
 
-    const int frame_time_out = m_config.image_detect_timeout
-                                   ? m_config.image_detect_timeout.value()
-                                   : 20;
-
     while(!isInterruptionRequested()) {
         SharedFrame frame;
         frame_queue->pop(frame);
         if(!frame)
             continue;
 
-        if (predict(frame, m_inDetectorFrameQueue, frame_time_out)
-            && predict(frame, m_inLPDetectorFrameQueue, frame_time_out)) {
-            detectors_eps.update();
-            m_cameraMetrics->setDetectionFPS(detectors_eps.eps());
-        } else {
+        if (!predict(frame, m_inDetectorFrameQueue))
             continue;
-        }
+
+        // Track and Filter predictions
+        trackAndEstimateDeltas(frame, tracker, Prediction::Objects);
+
+        if (!predict(frame, m_inLPDetectorFrameQueue))
+            continue;
+
+        detectors_eps.update();
+        m_cameraMetrics->setDetectionFPS(detectors_eps.eps());
 
         // draw results
         Frame::TypePredictionsHash predictions_list = frame->predictions();
@@ -117,32 +119,83 @@ void CameraProcessor::run()
 }
 
 bool CameraProcessor::predict(SharedFrame frame,
-                              SharedFrameBoundedQueue &queue,
-                              const int frameTimeOut)
+                              SharedFrameBoundedQueue &queue)
 {
     static const bool is_pull_based = m_cameraMetrics->isPullBased();
+    static QMutex mtx;
 
     if (is_pull_based) {
+        static const int frame_timeout = m_config.pull_based_timeout
+                                             ? m_config.pull_based_timeout.value()
+                                             : 20;
+
         if (!queue.try_emplace(frame))
             return false;
 
-        m_mtx.lock();
-        if (!m_waitCondition->wait(&m_mtx, frameTimeOut)) {
-            frame->setHasExpired(true);
-            qWarning() << std::format("Frame {} expired after {}ms. System seems to be overloaded.", frame->id().toStdString(), frameTimeOut);
-            m_mtx.unlock();
-            return false;
+        if (!frame->hasBeenProcessed()) {
+            QMutexLocker<QMutex> lock(&mtx);
+            if (!m_waitCondition->wait(&mtx, frame_timeout)) {
+                frame->setHasExpired(true);
+                qWarning() << std::format("Frame {} expired after {}ms. System seems to be overloaded.", frame->id().toStdString(), frame_timeout);
+                return false;
+            }
         }
-        m_mtx.unlock();
     } else {
+        static const int frame_timeout = m_config.push_based_timeout
+                                             ? m_config.push_based_timeout.value()
+                                             : 100;
+
         queue.emplace(frame);
 
-        m_mtx.lock();
-        m_waitCondition->wait(&m_mtx);
-        m_mtx.unlock();
+        if (!frame->hasBeenProcessed()) {
+            QMutexLocker<QMutex> lock(&mtx);
+            if (!m_waitCondition->wait(&mtx, frame_timeout)) {
+                qCritical() << std::format("Frame {} expired after {}ms, in push based mode!!!", frame->id().toStdString(), frame_timeout);
+            }
+        }
     }
 
     return true;
+}
+
+bool CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker, Prediction::Type predictionType)
+{
+    // TODO: Find a proper way to hold seen ids.
+    // Don't mistaken this for the tracker remembering objects. This one is for us to avoid going to another
+    // stage for the same object in multiple frames. It focuses on whether it's a new
+    // object or an old with increased quality/size/area. This usually helps in cases
+    // of camera being mounted on the ground.
+    static QList<std::pair<size_t, int>> delta_objects(tracker.trackBuffer(), {}); // <id, area>
+    bool has_deltas = false;
+
+    // Filter predictions
+    PredictionList &obj_predictions = frame->predictionsByRef(predictionType);
+    std::vector<int> track_ids = tracker.track(obj_predictions);
+
+    for (int i = 0; i < track_ids.size(); ++i) {
+        int id = track_ids.at(i);
+        if (id == -1)
+            continue;
+
+        obj_predictions[i].trackerId = id;
+
+        int delta_indx = id % (delta_objects.size());  // Resets when limit is reached
+        int box_area = obj_predictions.at(i).box.area();
+
+        // We proceed if the id is not seen before or old area is less than the current (box is much bigger). Then
+        // we reconsider the other stages to re-process these predictions if they want to. i.e. LP was not visible, now is.
+        int area_increase = (delta_objects.at(delta_indx).second * DET_RECONSIDER_AREA_INCREASE);
+        if (delta_objects.at(delta_indx).first != id
+            || delta_objects.at(delta_indx).second + area_increase < box_area) {
+
+            delta_objects[delta_indx] = std::pair(id, box_area);
+            obj_predictions[i].hasDeltas = true;
+            has_deltas = true;
+        }
+    }
+
+    // To avoid running lp detector
+    return has_deltas;
 }
 
 #include "moc_cameraprocessor.cpp"

@@ -4,7 +4,7 @@
 #include <qurl.h>
 #include <vector>
 #include <opencv2/core/mat.hpp>
-#include <detectors/prediction.h>
+#include <utils/prediction.h>
 
 #include <QString>
 #include <QStandardPaths>

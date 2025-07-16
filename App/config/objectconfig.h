@@ -1,6 +1,6 @@
 #pragma once
 
-inline const std::vector<std::string> DEFAULT_TRACKED_OBJECTS = {"person"};
+inline const std::set<std::string> DEFAULT_TRACKED_OBJECTS = {"person", "car", "truck", "motorcycle", "bicycle"};
 
 struct FilterConfig {
     std::optional<std::variant<int, float>> min_area = 0;
@@ -14,7 +14,7 @@ struct FilterConfig {
 };
 
 struct ObjectConfig {
-    std::optional<std::vector<std::string>> track = DEFAULT_TRACKED_OBJECTS;
+    std::optional<std::set<std::string>> track = DEFAULT_TRACKED_OBJECTS;
     std::optional<std::map<std::string, FilterConfig>> filters = {};
     std::optional<std::variant<std::string, std::vector<std::string>>> mask = "";
 };

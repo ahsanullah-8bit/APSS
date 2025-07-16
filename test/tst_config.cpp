@@ -252,7 +252,7 @@ TEST_F(TestConfig, objectConfig)
 
     // Create test ObjectConfig
     ObjectConfig object_config;
-    object_config.track = std::vector<std::string>{"person", "car", "bike"};
+    object_config.track = std::set<std::string>{"person", "car", "bike"};
     object_config.mask = std::vector<std::string>{"masked_region_1", "masked_region_2"};
 
     FilterConfig person_filter {

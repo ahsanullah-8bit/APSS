@@ -49,7 +49,7 @@ void LPDetectorSession::run() {
             PredictionList filtered_vehicle_predictions;
 
             for (const auto& prediction : object_predictions) {
-                if (voi.contains(prediction.className) /*&& prediction.hasDeltas*/)
+                if (voi.contains(prediction.className) && prediction.hasDeltas)
                     filtered_vehicle_predictions.emplace_back(prediction);
             }
 
@@ -84,30 +84,6 @@ void LPDetectorSession::run() {
                             }
                         }
 
-                        // Debugging, Save some License Plates
-                        // for (size_t m = 0; m < results.size(); ++m) {
-                        //     cv::Mat lp_mat;
-                        //     Utils::perspectiveCrop(vehicle, lp_mat, results[m].points);
-
-                        //     // SCRIPTS_DIR/lps/<frame_id> - <prediction_indx>
-                        //     const std::string img_dir = std::format("{}/{}", std::string(SCRIPTS_DIR), ".lps");
-                        //     if (!std::filesystem::exists(img_dir))
-                        //         std::filesystem::create_directories(img_dir);
-
-                        //     std::string img_path = std::format("{}/{} - {}.jpg", img_dir,
-                        //                                        std::string(frame->frameIdString().toStdString() + " - " + std::to_string(m + p)),
-                        //                                        results[m].conf);
-                        //     // cv::Mat frame_clone = frame.data().clone();
-                        //     // m_keyPointDetector.drawPredictionsMask(frame_clone, results); // License Plate predictions aren't coming very good, see why is that happening.
-                        //     // std::string vehicle_path = std::format("{}/{} - v.jpg", img_dir,
-                        //     //                                        std::string(frame.frameId().toStdString() + " - " + std::to_string(m + p)));
-                        //     cv::imwrite(img_path, lp_mat);
-                        //     // cv::imwrite(vehicle_path, frame_clone);
-
-                        //     frame->lp_paths.insert(0, QString::fromStdString(img_path));
-                        // }
-
-
                         lp_predictions.insert(lp_predictions.end(), results.begin(), results.end());
                     }
 
@@ -119,6 +95,7 @@ void LPDetectorSession::run() {
                 continue;
 
             frame->setPredictions(Prediction::Type::LicensePlates, std::move(lp_predictions));
+            frame->setHasBeenProcessed(true);   // NOTE: This is very necessary to prevent CameraProcessor's prediction blocking, if finished very early.
             QString camera_id = frame->cameraId();
             Q_ASSERT(m_cameraWaitConditions.contains(camera_id));
             m_cameraWaitConditions.value(camera_id)->notify_all();    // Notify waiting camera processors.
@@ -141,3 +118,27 @@ const EventsPerSecond &LPDetectorSession::eps() const
 {
     return m_eps;
 }
+
+
+// Debugging, Save some License Plates
+// for (size_t m = 0; m < results.size(); ++m) {
+//     cv::Mat lp_mat;
+//     Utils::perspectiveCrop(vehicle, lp_mat, results[m].points);
+
+//     // SCRIPTS_DIR/lps/<frame_id> - <prediction_indx>
+//     const std::string img_dir = std::format("{}/{}", std::string(SCRIPTS_DIR), ".lps");
+//     if (!std::filesystem::exists(img_dir))
+//         std::filesystem::create_directories(img_dir);
+
+//     std::string img_path = std::format("{}/{} - {}.jpg", img_dir,
+//                                        std::string(frame->frameIdString().toStdString() + " - " + std::to_string(m + p)),
+//                                        results[m].conf);
+//     // cv::Mat frame_clone = frame.data().clone();
+//     // m_keyPointDetector.drawPredictionsMask(frame_clone, results); // License Plate predictions aren't coming very good, see why is that happening.
+//     // std::string vehicle_path = std::format("{}/{} - v.jpg", img_dir,
+//     //                                        std::string(frame.frameId().toStdString() + " - " + std::to_string(m + p)));
+//     cv::imwrite(img_path, lp_mat);
+//     // cv::imwrite(vehicle_path, frame_clone);
+
+//     frame->lp_paths.insert(0, QString::fromStdString(img_path));
+// }

@@ -54,10 +54,13 @@ public:
     TimePoint timestamp() const;
     const QHash<Prediction::Type, PredictionList> &predictions() const;
     PredictionList predictions(const Prediction::Type target) const;
+    QHash<Prediction::Type, PredictionList> &predictionsByRef();
+    PredictionList &predictionsByRef(const Prediction::Type target);
     std::optional<cv::Rect> roi() const;
     bool hasExpired() const;
     QList<PaddleOCR::OCRPredictResult> ocrResults() const;
     std::optional<ANPRSnapshot> anprSnapshot() const;
+    bool hasBeenProcessed() const;
 
     void setCameraId(const QString &newCameraId);
     void setFrameId(const QString &newFrameId);
@@ -71,9 +74,11 @@ public:
     void setHasExpired(bool newHasExpired);
     void setOcrResults(const QList<PaddleOCR::OCRPredictResult> &newOcrResults);
     void setAnprSnapshot(std::optional<ANPRSnapshot> newAnprSnapshot);
+    void setHasBeenProcessed(bool newHasBeenProcessed);
 
 private:
     std::atomic_bool m_hasExpired = false;
+    std::atomic_bool m_hasBeenProcessed = false;
     QString m_cameraId;
     QString m_frameId;
     cv::Mat m_data;

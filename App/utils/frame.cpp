@@ -67,7 +67,7 @@ Frame Frame::clone() const {
 
 QString Frame::id()
 {
-    return QString("%1_%2").arg(m_cameraId).arg(m_frameId);
+    return QString("%1_%2").arg(m_cameraId, m_frameId);
 }
 
 QString Frame::cameraId() const
@@ -96,6 +96,16 @@ PredictionList Frame::predictions(const Prediction::Type target) const {
     return m_predictions[target];
 }
 
+QHash<Prediction::Type, PredictionList> &Frame::predictionsByRef()
+{
+    return m_predictions;
+}
+
+PredictionList &Frame::predictionsByRef(const Prediction::Type target)
+{
+    return m_predictions[target];
+}
+
 std::optional<cv::Rect> Frame::roi() const {
     return m_roi;
 }
@@ -113,6 +123,11 @@ QList<PaddleOCR::OCRPredictResult> Frame::ocrResults() const
 std::optional<ANPRSnapshot> Frame::anprSnapshot() const
 {
     return m_anprSnapshot;
+}
+
+bool Frame::hasBeenProcessed() const
+{
+    return m_hasBeenProcessed.load(std::memory_order_acquire);
 }
 
 void Frame::setCameraId(const QString &newCameraId)
@@ -154,7 +169,19 @@ void Frame::setRoi(std::optional<cv::Rect> newRoi) {
 
 void Frame::setHasExpired(bool newHasExpired)
 {
-    m_hasExpired.store(newHasExpired, std::memory_order_release);
+    bool current = m_hasExpired.load(std::memory_order_relaxed);
+    if (current == newHasExpired)
+        return;
+
+    while (!m_hasExpired.compare_exchange_weak(
+        current, newHasExpired,
+        std::memory_order_release,
+        std::memory_order_relaxed
+        )) {
+
+        if (current == newHasExpired)
+            return;
+    }
 }
 
 void Frame::setOcrResults(const QList<PaddleOCR::OCRPredictResult> &newOcrResults)
@@ -165,4 +192,21 @@ void Frame::setOcrResults(const QList<PaddleOCR::OCRPredictResult> &newOcrResult
 void Frame::setAnprSnapshot(std::optional<ANPRSnapshot> newAnprSnapshot)
 {
     m_anprSnapshot = newAnprSnapshot;
+}
+
+void Frame::setHasBeenProcessed(bool newHasBeenProcessed)
+{
+    bool current = m_hasBeenProcessed.load(std::memory_order_relaxed);
+    if (current == newHasBeenProcessed)
+        return;
+
+    while (!m_hasBeenProcessed.compare_exchange_weak(
+        current, newHasBeenProcessed,
+        std::memory_order_release,
+        std::memory_order_relaxed
+        )) {
+
+        if (current == newHasBeenProcessed)
+            return;
+    }
 }

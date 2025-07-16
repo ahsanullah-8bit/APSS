@@ -22,7 +22,8 @@ struct CameraConfig {
     // timestamp_style
 
     std::optional<int> best_image_timeout = 60;
-    std::optional<int> image_detect_timeout = 50;
+    std::optional<int> push_based_timeout = 50;
+    std::optional<int> pull_based_timeout = 100;
     // mqtt
     // noticiations
     // onvif

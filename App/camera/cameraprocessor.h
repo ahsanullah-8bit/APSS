@@ -3,9 +3,10 @@
 #include <QThread>
 
 #include "cameraconfig.h"
-#include "camerametrics.h"
-#include "utils/frame.h"
 #include "config/modelconfig.h"
+#include "camerametrics.h"
+#include "track/tracker.h"
+#include "utils/frame.h"
 
 // The one responsible for all the processing, in Frigate.
 class CameraProcessor : public QThread
@@ -29,8 +30,9 @@ signals:
 protected:
     void run() override;
     bool predict(SharedFrame frame,
-                 SharedFrameBoundedQueue &queue,
-                 const int frameTimeOut);
+                 SharedFrameBoundedQueue &queue);
+    // returns true, if there were any deltas
+    bool trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker, Prediction::Type predictionType);
 
 private:
     QString m_cameraName;
@@ -40,7 +42,6 @@ private:
     SharedFrameBoundedQueue &m_inDetectorFrameQueue;
     SharedFrameBoundedQueue &m_inLPDetectorFrameQueue;
     QSharedPointer<QWaitCondition> m_waitCondition;
-    QMutex m_mtx;
     SharedCameraMetrics m_cameraMetrics;
 };
 

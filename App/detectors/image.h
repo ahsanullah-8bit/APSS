@@ -15,7 +15,7 @@
 #include <QDebug>
 
 #include "apss.h"
-#include "prediction.h"
+#include "utils/prediction.h"
 #include "licensed/utility.h"
 
 class Utils {
