@@ -58,6 +58,8 @@ PaddleRec::PaddleRec(const PredictorConfig &config,
                 // read from the .txt file, if empty
                 if (!m_labels.empty())
                     read_labels = false;
+
+                m_labels.emplace_back("");
             }
 
         } else {
@@ -73,6 +75,7 @@ PaddleRec::PaddleRec(const PredictorConfig &config,
 
         try {
             m_labels = PaddleOCR::Utility::ReadDict(model_txt.absolutePath().toStdString());
+            m_labels.emplace_back("");
         } catch(const std::exception &e) {
             qFatal() << "Failed to load dict text file:" << e.what();
         }
@@ -99,6 +102,9 @@ std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &bat
     const auto input_tensor_shapes = m_inferSession.inputTensorShapes();
     Q_ASSERT(!input_tensor_shapes.empty());
     std::vector<int64_t> rec_input_shape = input_tensor_shapes[0];
+    // set fixed width, because onnx/onnxruntime/openvino doesn't like to re-use buffers bigger than before/after
+    rec_input_shape[2] = m_imgShape[1];
+    rec_input_shape[3] = m_imgShape[2];
 
     for (size_t b = 0; b < batch_size; b += m_maxBatchSize) {
         // batch sub-selection
@@ -110,25 +116,23 @@ std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &bat
         // batch and add padding to the rest.
 
         // find the max ratio of the whole batch and the max width
-        float max_ratio = 0.0f;
-        int max_w = 0;
-        for (size_t j = b; j < sel_batch_end; ++j) {
-            const float ratio = batch[sri[j]].cols * 1.0 / batch[sri[j]].rows;
-            max_ratio = std::max(max_ratio, ratio);
-            max_w = std::max(max_w, batch[sri[j]].cols);
-        }
+        // int max_w = 0;
+        // for (size_t j = b; j < sel_batch_end; ++j) {
+        //     const float ratio = batch[sri[j]].cols * 1.0 / batch[sri[j]].rows;
+        //     max_w = std::max(max_w, batch[sri[j]].cols);
+        // }
 
         // set the max batch size and max width for each img in the batch
         rec_input_shape[0] = sel_batch_size;
-        rec_input_shape[3] = max_w;
-        const int max_h = rec_input_shape[2];
+        // rec_input_shape[3] = max_w;
+        // const int max_h = rec_input_shape[2];
 
         // int batch_width = img_w;
         std::vector<cv::Mat> sel_batch;
         for (size_t j = b; j < sel_batch_end; ++j) {
             cv::Mat resized_img;
 
-            m_resizeOp.Run(batch[sri[j]], resized_img, cv::Size(max_w, max_h));
+            m_resizeOp.Run(batch[sri[j]], resized_img, cv::Size(rec_input_shape[3], rec_input_shape[2])); // w, h
             m_normalizeOp.Run(resized_img, m_mean, m_std, m_scale);
 
             // batch_width = std::max(resized_img.cols, batch_width);
@@ -136,7 +140,7 @@ std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &bat
         }
 
         // std::vector<int64_t> custom_shape = { static_cast<int64_t>(sel_batch_size), 3, imgH, batch_width };
-        std::vector<float> input(sel_batch_size * 3 * max_h * max_w, 0.0f);
+        std::vector<float> input(sel_batch_size * 3 * rec_input_shape[2] * rec_input_shape[3], 0.0f);
 
         m_permuteOp.Run(sel_batch, input.data());
 
@@ -187,7 +191,11 @@ std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &bat
 
                     // TODO: Do proper research for this one
                     // Why does the model report 97 classes and we get 95 from the .yml
-                    str_res += m_labels[argmax_idx - 1];
+
+                    if (argmax_idx - 1 > m_labels.size())
+                        qFatal() << "Invalid index accessed" << argmax_idx - 1;
+                    else
+                        str_res += m_labels[argmax_idx - 1];
                 }
 
                 last_index = argmax_idx;

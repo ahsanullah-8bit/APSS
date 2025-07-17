@@ -50,6 +50,8 @@ std::vector<PaddleOCR::OCRPredictResultList> PaddleOCREngine::predict(const MatL
         // 1. det
         std::vector<Vector3d<int>> boxes_list = m_det->predict( { img } );
         Vector3d<int> boxes = boxes_list.at(0);
+        if (boxes.empty())
+            continue;
 
         for (size_t i = 0; i < boxes.size(); ++i) {
             PaddleOCR::OCRPredictResult res;

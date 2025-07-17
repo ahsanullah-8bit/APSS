@@ -36,7 +36,7 @@ TEST_F(TestPaddleOCR, RawInferenceBenchmark) {
     std::shared_ptr<CustomAllocator> allocator = std::make_shared<CustomAllocator>();
 
 
-    cv::Mat img = cv::imread("test/assets/kkkuk.jpg");
+    cv::Mat img = cv::imread("test/assets/plate4.jpg");
 
     ASSERT_TRUE(!img.empty());
 

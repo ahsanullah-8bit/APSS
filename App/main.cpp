@@ -24,6 +24,8 @@ int main(int argc, char *argv[])
     CameraConfig cam_config;
     cam_config.enabled = true;
     cam_config.ffmpeg.inputs.emplace_back(CameraInput( "C:/Users/MadGuy/Videos/ny_street2.mp4", {CameraRoleEnum::Detect}));
+    cam_config.objects = ObjectConfig();
+    cam_config.objects->track = DEFAULT_TRACKED_OBJECTS;
     // cam_config.pull_based_order = true;
 
     PredictorConfig pred_config;

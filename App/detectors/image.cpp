@@ -918,6 +918,9 @@ void Utils::drawPoseEstimation(cv::Mat &image, const std::vector<Prediction> &pr
 }
 
 void Utils::crop(const cv::Mat &img, cv::Mat &res, const cv::Rect &box) {
+    if (img.empty())
+        return;
+
     int x1 = box.x;
     int y1 = box.y;
     int x2 = box.x + box.width;
@@ -926,6 +929,9 @@ void Utils::crop(const cv::Mat &img, cv::Mat &res, const cv::Rect &box) {
 }
 
 void Utils::perspectiveCrop(const cv::Mat &img, cv::Mat &res, const std::vector<cv::Point2f> &srcPoints, const std::vector<cv::Point2f> &dstPoints) {
+    if (img.empty() || srcPoints.empty() || dstPoints.empty())
+        return;
+
     int h = dstPoints.at(3).y - dstPoints.at(0).y;
     int w = dstPoints.at(1).x - dstPoints.at(0).x;
 
@@ -934,6 +940,8 @@ void Utils::perspectiveCrop(const cv::Mat &img, cv::Mat &res, const std::vector<
 }
 
 void Utils::perspectiveCrop(const cv::Mat &img, cv::Mat &res, const std::vector<cv::Point2f> &srcPoints, float sizeGain) {
+    if (img.empty() || srcPoints.empty())
+        return;
 
     // Find heights/widths on each side
     float h_left  = cv::norm(srcPoints[3] - srcPoints[0]);

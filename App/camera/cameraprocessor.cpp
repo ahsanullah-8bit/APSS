@@ -95,6 +95,8 @@ void CameraProcessor::run()
         detectors_eps.update();
         m_cameraMetrics->setDetectionFPS(detectors_eps.eps());
 
+        recognizeLicensePlates(frame);
+
         // draw results
         Frame::TypePredictionsHash predictions_list = frame->predictions();
         cv::Mat frame_mat = frame->data();
@@ -140,6 +142,9 @@ bool CameraProcessor::predict(SharedFrame frame,
                 return false;
             }
         }
+
+        // set it back to false or other stages will skip
+        frame->setHasBeenProcessed(false);
     } else {
         static const int frame_timeout = m_config.push_based_timeout
                                              ? m_config.push_based_timeout.value()
@@ -151,8 +156,12 @@ bool CameraProcessor::predict(SharedFrame frame,
             QMutexLocker<QMutex> lock(&mtx);
             if (!m_waitCondition->wait(&mtx, frame_timeout)) {
                 qCritical() << std::format("Frame {} expired after {}ms, in push based mode!!!", frame->id().toStdString(), frame_timeout);
+                // return false;
             }
         }
+
+        // set it back to false or other stages will skip
+        frame->setHasBeenProcessed(false);
     }
 
     return true;
@@ -190,12 +199,77 @@ bool CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker
 
             delta_objects[delta_indx] = std::pair(id, box_area);
             obj_predictions[i].hasDeltas = true;
-            has_deltas = true;
         }
     }
 
     // To avoid running lp detector
     return has_deltas;
+}
+
+PredictionList CameraProcessor::filterResults(const PredictionList &results, const std::map<std::string, FilterConfig> &objectsToFilter)
+{
+    PredictionList filtered_results;
+    for (const auto &prediction : results) {
+        if (objectsToFilter.contains(prediction.className)) {
+            const FilterConfig &config = objectsToFilter.at(prediction.className);
+
+            const int box_area = prediction.box.area();
+            if (box_area < config.min_area.value_or(0) || box_area > config.max_area.value_or(24000000))
+                continue;
+
+            // ratio
+
+            if (prediction.conf < config.threshold.value_or(0.7))
+                continue;
+
+            // min_score
+            // raw_mask
+
+            filtered_results.emplace_back(prediction);
+        }
+    }
+
+    return filtered_results;
+}
+
+void CameraProcessor::recognizeLicensePlates(SharedFrame frame)
+{
+    // crop images
+    PredictionList predictions = frame->predictions(Prediction::LicensePlates);
+    if (predictions.empty())
+        return;
+
+    MatList crop_batch;
+    for (const auto &prediction : predictions) {
+        cv::Mat crop;
+        Utils::perspectiveCrop(frame->data(), crop, prediction.points);
+        crop_batch.emplace_back(crop);
+
+        // const std::string img_dir = std::format("{}/{}", "test/results", ".lps");
+        // if (!std::filesystem::exists(img_dir))
+        //     std::filesystem::create_directories(img_dir);
+
+        // std::string img_path = std::format("{}/{}.jpg", img_dir, std::string(frame->id().toStdString() + " - " + std::to_string(prediction.conf)));
+        // cv::imwrite(img_path, crop);
+    }
+
+    std::vector<PaddleOCR::OCRPredictResultList> results_list = m_ocrEngine.predict(crop_batch);
+    // std::string results_str;
+    // for (const auto &reslist : results_list) {
+    //     if (reslist.empty())
+    //         continue;
+
+    //     results_str.append("[");
+    //     for (const auto &ocr : reslist) {
+    //         results_str.append(ocr.text + " : " + std::to_string(ocr.score) + ", ");
+    //     }
+    //     results_str.append("], ");
+    // }
+
+    // if (!results_str.empty())
+    //     qDebug() << results_str;
+
+    frame->setOcrResults(std::move(results_list));
 }
 
 #include "moc_cameraprocessor.cpp"

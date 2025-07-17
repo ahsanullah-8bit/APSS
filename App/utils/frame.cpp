@@ -115,7 +115,7 @@ bool Frame::hasExpired() const
     return m_hasExpired.load(std::memory_order_acquire);
 }
 
-QList<PaddleOCR::OCRPredictResult> Frame::ocrResults() const
+std::vector<PaddleOCR::OCRPredictResultList> Frame::ocrResults() const
 {
     return m_ocrResults;
 }
@@ -151,17 +151,17 @@ void Frame::setPredictions(const QHash<Prediction::Type, PredictionList> &newPre
     m_predictions = newPredictions;
 }
 
-void Frame::setPredictions(QHash<Prediction::Type, PredictionList> &&newPredictions) {
-    m_predictions = std::move(newPredictions);
-}
+// void Frame::setPredictions(QHash<Prediction::Type, PredictionList> &&newPredictions) {
+//     m_predictions = std::move(newPredictions);
+// }
 
 void Frame::setPredictions(const Prediction::Type target, const PredictionList &newPredictions) {
     m_predictions[target] = newPredictions;
 }
 
-void Frame::setPredictions(const Prediction::Type target, PredictionList &&newPredictions) {
-    m_predictions[target] = std::move(newPredictions);
-}
+// void Frame::setPredictions(const Prediction::Type target, PredictionList &&newPredictions) {
+//     m_predictions[target] = std::move(newPredictions);
+// }
 
 void Frame::setRoi(std::optional<cv::Rect> newRoi) {
     m_roi = newRoi;
@@ -184,7 +184,12 @@ void Frame::setHasExpired(bool newHasExpired)
     }
 }
 
-void Frame::setOcrResults(const QList<PaddleOCR::OCRPredictResult> &newOcrResults)
+// void Frame::setOcrResults(std::vector<PaddleOCR::OCRPredictResultList> &&newOcrResults)
+// {
+//     m_ocrResults = std::move(newOcrResults);
+// }
+
+void Frame::setOcrResults(const std::vector<PaddleOCR::OCRPredictResultList> &newOcrResults)
 {
     m_ocrResults = newOcrResults;
 }

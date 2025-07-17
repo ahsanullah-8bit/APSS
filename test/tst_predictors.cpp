@@ -51,7 +51,9 @@ TEST_F(TestPredictors,  ObjectDetector) {
     ASSERT_TRUE(predictions.size() > 0);
     ASSERT_TRUE(predictions[0].size() > 0);
 
-    cv::imwrite("test/resutls/obj_detector_tst.jpg", img1);
+    std::string output_path = "test/resutls/obj_detector_tst.jpg";
+    cv::imwrite(output_path, img1);
+    qDebug() << "Results written to" << output_path;
 
     qDebug() << "Object Detector Loading:" << std::chrono::duration<double, std::milli>(loading_time);
     qDebug() << "Object Detector Inference:" << std::chrono::duration<double, std::milli>(inference_time);
@@ -78,7 +80,9 @@ TEST_F(TestPredictors, PoseEstimator) {
     ASSERT_TRUE(predictions.size() > 0);
     ASSERT_TRUE(predictions[0].size() > 0);
 
-    cv::imwrite("test/resutls/pose_estimator_tst.jpg", img1);
+    std::string output_path = "test/resutls/pose_estimator_tst.jpg";
+    cv::imwrite(output_path, img1);
+    qDebug() << "Results written to" << output_path;
 
     qDebug() << "Pose Estimator Loading:" << std::chrono::duration<double, std::milli>(loading_time);
     qDebug() << "Pose Estimator Inference:" << std::chrono::duration<double, std::milli>(inference_time);

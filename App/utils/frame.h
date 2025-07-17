@@ -58,7 +58,7 @@ public:
     PredictionList &predictionsByRef(const Prediction::Type target);
     std::optional<cv::Rect> roi() const;
     bool hasExpired() const;
-    QList<PaddleOCR::OCRPredictResult> ocrResults() const;
+    std::vector<PaddleOCR::OCRPredictResultList> ocrResults() const;
     std::optional<ANPRSnapshot> anprSnapshot() const;
     bool hasBeenProcessed() const;
 
@@ -67,12 +67,13 @@ public:
     void setData(cv::Mat newData);
     void setTimestamp(const TimePoint &newTimestamp);
     void setPredictions(const QHash<Prediction::Type, PredictionList> &newPredictions);
-    void setPredictions(QHash<Prediction::Type, PredictionList> &&newPredictions);
+    // void setPredictions(QHash<Prediction::Type, PredictionList> &&newPredictions);
     void setPredictions(const Prediction::Type target, const PredictionList &newPredictions);
-    void setPredictions(const Prediction::Type target, PredictionList &&newPredictions);
+    // void setPredictions(const Prediction::Type target, PredictionList &&newPredictions);
     void setRoi(std::optional<cv::Rect> newRoi);
     void setHasExpired(bool newHasExpired);
-    void setOcrResults(const QList<PaddleOCR::OCRPredictResult> &newOcrResults);
+    // void setOcrResults(std::vector<PaddleOCR::OCRPredictResultList> &&newOcrResults);
+    void setOcrResults(const std::vector<PaddleOCR::OCRPredictResultList> &newOcrResults);
     void setAnprSnapshot(std::optional<ANPRSnapshot> newAnprSnapshot);
     void setHasBeenProcessed(bool newHasBeenProcessed);
 
@@ -85,7 +86,7 @@ private:
     TimePoint m_timestamp;
     std::optional<cv::Rect> m_roi;
     QHash<Prediction::Type, PredictionList> m_predictions;
-    QList<PaddleOCR::OCRPredictResult> m_ocrResults;
+    std::vector<PaddleOCR::OCRPredictResultList> m_ocrResults;
     std::optional<ANPRSnapshot> m_anprSnapshot; // Comprehensive ANPR data
 };
 

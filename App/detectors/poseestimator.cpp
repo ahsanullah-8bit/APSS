@@ -98,12 +98,6 @@ std::vector<PredictionList> PoseEstimator::postprocess(const MatList &originalIm
                                                      cv::Rect(cx - w / 2.0f, cy - h / 2.0f, w, h),
                                                      cv::Size(orig_w, orig_h));
 
-            // // Round coordinates for integer pixel positions
-            // scaled_box.x = std::round(scaled_box.x);
-            // scaled_box.y = std::round(scaled_box.y);
-            // scaled_box.width = std::round(scaled_box.width);
-            // scaled_box.height = std::round(scaled_box.height);
-
             // Adjust NMS box coordinates to prevent overlap between classes
             cv::Rect nms_box = scaled_box;
             // Arbitrary offset to differentiate classes

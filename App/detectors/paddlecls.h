@@ -41,6 +41,6 @@ private:
     // post-process
     PaddleOCR::DBPostProcessor m_postProcessor;
 
-    double m_threshold = 0.9;
+    double m_threshold = 0.4;
     std::vector<std::string> m_labels;
 };

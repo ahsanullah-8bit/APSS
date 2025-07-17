@@ -7,8 +7,9 @@ old_class_id = 0
 new_class_id = 80
 # -----------------------------------------------------------------
 
-label_files = glob.glob(os.path.join(labels_dir, '*.txt'))
+label_files = glob.glob(os.path.join(labels_dir, '**', '*.txt'), recursive=True)
 
+print(f'Files selected {label_files.__len__()}')
 for file_path in label_files:
     modified_lines = []
     with open(file_path, 'r') as f:

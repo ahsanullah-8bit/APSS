@@ -44,4 +44,5 @@ private:
     std::string m_limitType = "max";
     std::string m_detDbScoreMode = "slow";
     bool m_useDilation = false;
+    cv::Size m_tempTargetImgSize;
 };

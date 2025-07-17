@@ -37,8 +37,8 @@ protected:
     Ort::AllocatorWithDefaultOptions& allocator() const;
 
 private:
-    PredictorConfig m_config;
     Ort::Env m_env;
+    PredictorConfig m_config;
     Ort::Session m_session{nullptr};
     mutable Ort::AllocatorWithDefaultOptions m_allocator;
     mutable Ort::MemoryInfo m_memoryInfo;

@@ -24,6 +24,8 @@ PoseEstimator& LPDetectorSession::detector() {
 }
 
 void LPDetectorSession::run() {
+    qInfo() << "Starting" << objectName() << "thread";
+
     try {
         // vehicles-of-interest
         std::set<std::string> voi = { "car", "motorcycle",
@@ -111,12 +113,33 @@ void LPDetectorSession::run() {
         qCritical() << "Uknown/Uncaught exception occurred.";
     }
 
-    qInfo() << "Aborting on thread" << QThread::currentThread()->objectName();
+    qInfo() << "Stopping" << objectName() << "thread";
 }
 
 const EventsPerSecond &LPDetectorSession::eps() const
 {
     return m_eps;
+}
+
+void LPDetectorSession::stop()
+{
+    try {
+        if (isRunning()) {
+            requestInterruption();
+
+            qDebug() << "Waiting for" << objectName() << "to exit gracefully...";
+            if (!wait(3000)) {
+                qDebug() << objectName() << "didn't exit. Applying force killing...";
+                terminate();
+                wait();
+            }
+            qDebug() << objectName() << "thread has exited...";
+        }
+    } catch (const std::exception &e) {
+        qDebug() << e.what();
+    } catch (...) {
+        qCritical() << "Uknown/Uncaught exception occurred!";
+    }
 }
 
 

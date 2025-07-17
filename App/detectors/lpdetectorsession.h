@@ -4,11 +4,11 @@
 
 #include <tbb_patched.h>
 
-#include "utils/eventspersecond.h"
-#include "utils/frame.h"
 #include "config/predictorconfig.h"
 #include "config/licenseplateconfig.h"
-#include "detectors/poseestimator.h"
+#include "utils/eventspersecond.h"
+#include "utils/frame.h"
+#include "poseestimator.h"
 
 class LPDetectorSession : public QThread
 {
@@ -21,6 +21,7 @@ public:
                         QObject *parent = nullptr);
     PoseEstimator& detector();
     const EventsPerSecond &eps() const;
+    void stop();
 
 protected:
     // QThread interface

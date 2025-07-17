@@ -30,10 +30,6 @@ protected:
     void run() override;
 
 private:
-    // int m_maxBatchSize = 1;
-    // float m_confThreshold = 0.4f;
-    // float m_iouThreshold = 0.45f;
-    // bool m_drawPredictions = true;
 
     // New interface
     QString m_name;
