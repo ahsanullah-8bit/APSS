@@ -18,6 +18,7 @@ public:
                        const std::shared_ptr<Ort::MemoryInfo> &memoryInfo);
     std::vector<Vector3d<int>> predict(const MatList &batch);
     const ONNXInference &inferSession() const;
+    bool hasDynamicBatch();
 
 private:
     ONNXInference m_inferSession;

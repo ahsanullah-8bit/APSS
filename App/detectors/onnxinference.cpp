@@ -36,10 +36,6 @@ ONNXInference::ONNXInference(const PredictorConfig &config,
 
         m_availableEPProviders = Ort::GetAvailableProviders();
 
-        // if (config.ep.has_value() && std::find(exec_providers.begin(), exec_providers.end(), config.ep.value()) == exec_providers.end()) {
-        //     throw std::runtime_error(std::format("Wrong EP provided in the config: {}", config.ep.value_or("")));
-        // }
-
 #ifdef APSS_SUPPORT_CUDA_EP
         if (std::find(m_availableEPProviders.begin(), m_availableEPProviders.end(), "CUDAExecutionProvider")
             != m_availableEPProviders.end()) {
@@ -285,25 +281,6 @@ size_t ONNXInference::numInputNodes() const
 size_t ONNXInference::numOutputNodes() const
 {
     return m_numOutputNodes;
-}
-
-bool ONNXInference::hasDynamicBatch() const
-{
-    return !m_inputTensorShapes.empty()
-           && !m_inputTensorShapes[0].empty()
-           && m_inputTensorShapes[0].at(0) == -1;
-}
-
-bool ONNXInference::hasDynamicShape() const
-{
-    if (m_inputTensorShapes.empty()
-        || m_inputTensorShapes[0].empty()
-        || m_inputTensorShapes[0].size() != 4) {
-        return false;
-    }
-
-    return m_inputTensorShapes[0].at(2) == -1
-           || m_inputTensorShapes[0].at(3) == -1;
 }
 
 int ONNXInference::modelStride() const

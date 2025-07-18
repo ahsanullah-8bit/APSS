@@ -1,145 +1,32 @@
 #include "predictor.h"
 
-#include <algorithm>
-#include <string>
 #include <vector>
 #include <memory>
 #include <mutex>
 #include <assert.h>
-#include <filesystem>
-#include <format>
 
 #include "image.h"
 
-Predictor::Predictor(const PredictorConfig &config)
-    : m_env(ORT_LOGGING_LEVEL_WARNING, "YOLO_ENV")
-    , m_memoryInfo(Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault))
-    , m_modelMetadata(nullptr)
-    , m_config(config)
-{
-    std::string model_path;
-    if (m_config.model.has_value())
-        model_path = m_config.model->path.value_or("");
-
-    if (!std::filesystem::exists(model_path))
-        throw std::runtime_error("Model is not available in the specified directory. Please download a model first and try again!");
-
-    try {
-        Ort::SessionOptions sessionOptions;
-        int intraop_threads = std::min(4, static_cast<int>(std::thread::hardware_concurrency()));
-        sessionOptions.SetIntraOpNumThreads(intraop_threads);
-        sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
-
-        std::vector<std::string> exec_providers = Ort::GetAvailableProviders();
-        qInfo() << "Available providers:" << exec_providers;
-
-#ifdef APSS_SUPPORT_CUDA_EP
-        if (std::find(exec_providers.begin(), exec_providers.end(), "CUDAExecutionProvider")
-            != exec_providers.end()) {
-            qInfo() << std::format("Inference device {} selected.", "CUDAExecutionProvider");
-
-            OrtCUDAProviderOptions cudaOption;
-            sessionOptions.AppendExecutionProvider_CUDA(cudaOption);
-        } else {
-            qWarning() << std::format("Inference device {} not available, using fall back {}", "CUDAExecutionProvider", "CPUExecutionProvider");
-        }
-#endif
-
-#ifdef APSS_SUPPORT_OPENVINO_EP
-        if (std::find(exec_providers.begin(), exec_providers.end(), "OpenVINOExecutionProvider")
-            != exec_providers.end()) {
-            qInfo() << std::format("Inference device {} selected.", "OpenVINOExecutionProvider");
-
-            std::unordered_map<std::string, std::string> options;
-            options["device_type"] = "AUTO:GPU,CPU";
-            options["precision"] = "ACCURACY";
-            options["num_of_threads"] = "4";
-            sessionOptions.AppendExecutionProvider_OpenVINO_V2(options);
-        }
-        else {
-            qWarning() << std::format("Inference device {} not available, using fall back {}", "OpenVINOExecutionProvider", "CPUExecutionProvider");
-        }
-#endif
-
-#ifdef APP_USE_CPU_EP
-        qInfo() << std::format("Inference device {} selected.", "CPUExecutionProvider");
-#endif
-
-#ifdef _WIN32
-        std::wstring w_modelPath(model_path.begin(), model_path.end());
-        m_session = Ort::Session(m_env, w_modelPath.c_str(), sessionOptions);
-#else
-        m_session = Ort::Session(env, modelPath.c_str(), sessionOptions);
-#endif
-
-        m_numInputNodes = m_session.GetInputCount();
-        m_numOutputNodes = m_session.GetOutputCount();
-
-        // Input Nodes. Though all of them (YOLOs) have only a one input tensor.
-        for (int i = 0; i < m_numInputNodes; ++i) {
-            Ort::AllocatedStringPtr name_ptr = m_session.GetInputNameAllocated(i, m_allocator);
-            m_inputNodeNameAllocatedStrings.emplace_back(std::move(name_ptr));
-            m_inputNames.emplace_back(m_inputNodeNameAllocatedStrings.back().get());
-        }
-
-        // Output Nodes
-        for (int i = 0; i < m_numOutputNodes; ++i) {
-            Ort::AllocatedStringPtr name_ptr = m_session.GetOutputNameAllocated(i, m_allocator);
-            m_outputNodeNameAllocatedStrings.emplace_back(std::move(name_ptr));
-            m_outputNames.emplace_back(m_outputNodeNameAllocatedStrings.back().get());
-        }
-
-        // AFAIK, all the YOLO models have a single input tensor shape. So, we hardcoding.
-        Ort::TypeInfo input_type_info = m_session.GetInputTypeInfo(0);
-        m_inputTensorShape = input_type_info.GetTensorTypeAndShapeInfo().GetShape();
-
-        if (m_inputTensorShape.size() != 4)
-            throw std::runtime_error("Model input is not 4D! Expected [N, C, H, W].");
-
-
-        // METADATA
-        // Read the stride
-        m_modelMetadata = m_session.GetModelMetadata();
-        std::string model_stride = m_modelMetadata.LookupCustomMetadataMapAllocated("stride", m_allocator).get();
-        m_modelStride = std::stoi(model_stride);
-
-        // Names
-        std::string labels_path;
-        if (m_config.model.has_value())
-            labels_path = m_config.model->labelmap_path.value_or("");
-
-        std::string model_names = m_modelMetadata.LookupCustomMetadataMapAllocated("names", m_allocator).get();
-        // Load class names and generate corresponding colors
-        if (!model_names.empty()){
-            m_classNames = Utils::jsonToVecClassNames(model_names);
-            m_classColors = Utils::generateColors(m_classNames);
-            qInfo() << "Classes found on the model's metadata, skip reading from file.";
-        } else if (!labels_path.empty()) {
-            m_classNames = Utils::readClassNames(labels_path);
-            m_classColors = Utils::generateColors(m_classNames);
-        } else {
-            throw std::runtime_error("Class names weren't found, please provide a model with enough metadata or path to a file containing class names");
-        }
-    } catch (const Ort::Exception& e) {
-        throw std::runtime_error(std::format("ONNX Runtime error {}: {}", static_cast<int>(e.GetOrtErrorCode()), e.what()));
-    } catch (const std::exception& e) {
-        throw std::runtime_error(std::format("Standard exception caught: {}", e.what()));
-    }
-}
+Predictor::Predictor(const PredictorConfig &config,
+                     const std::shared_ptr<Ort::Env> &env,
+                     const std::shared_ptr<CustomAllocator> &allocator,
+                     const std::shared_ptr<Ort::MemoryInfo> &memoryInfo)
+    : m_inferSession(config, env, allocator, memoryInfo)
+{}
 
 Predictor::~Predictor()
 {}
 
 std::vector<PredictionList> Predictor::predict(const MatList &images)
 {
-    bool followBigDimensions = true;
-
     if (images.empty())
         return {};
 
     std::lock_guard<std::mutex> lock_guard(m_mtx);
 
-    std::vector<int64_t> input_tensor_shape(m_inputTensorShape);    // BCHW
+    const auto &input_tensor_shapes = m_inferSession.inputTensorShapes();
+    Q_ASSERT(!input_tensor_shapes.empty());
+    std::vector<int64_t> input_tensor_shape(input_tensor_shapes[0]);    // BCHW
 
     // Model doesn't have dynamic shape. Ignore user images sizes
     // Model have dynamic shape. Prefer user image sizes
@@ -152,7 +39,7 @@ std::vector<PredictionList> Predictor::predict(const MatList &images)
     if (hasDynamicShape()) {
         // Use dimensions of the biggest image for resize.
         int64_t img_h = images.at(0).rows, img_w = images.at(0).cols;
-        for (size_t i = 1; followBigDimensions && i < images.size(); ++i) {
+        for (size_t i = 1; i < images.size(); ++i) {
             if (img_h < images[i].rows)
                 img_h = images[i].rows;
 
@@ -161,10 +48,11 @@ std::vector<PredictionList> Predictor::predict(const MatList &images)
         }
 
         // Ensuring the stride
-        if (img_h % m_modelStride != 0)
-            img_h = ((img_h / m_modelStride) + 1) * m_modelStride;
-        if (img_w % m_modelStride != 0)
-            img_w = ((img_w / m_modelStride) + 1) * m_modelStride;
+        int model_stride = m_inferSession.modelStride();
+        if (img_h % model_stride != 0)
+            img_h = ((img_h / model_stride) + 1) * model_stride;
+        if (img_w % model_stride != 0)
+            img_w = ((img_w / model_stride) + 1) * model_stride;
 
         input_tensor_shape[2] = img_h;
         input_tensor_shape[3] = img_w;
@@ -182,33 +70,7 @@ std::vector<PredictionList> Predictor::predict(const MatList &images)
         preprocessed_images.emplace_back(preprocessed_image);
     }
 
-    // Check if the data is correctly placed
-    if (img_data.size() != Utils::vectorProduct(input_tensor_shape)) {
-        qFatal() << "Wrong size of pre-processed images provided, Skipping.";
-        return {};
-    }
-
-    Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
-        m_memoryInfo,
-        img_data.data(),
-        img_data.size(),
-        input_tensor_shape.data(),
-        input_tensor_shape.size()
-        );
-
-    std::vector<Ort::Value> output_tensors; // Should be
-    {
-        output_tensors = m_session.Run(
-            Ort::RunOptions{nullptr},
-            m_inputNames.data(),
-            &input_tensor,
-            m_numInputNodes,
-            m_outputNames.data(),
-            m_numOutputNodes
-            );
-    }
-
-    // cv::Size resizedImageShape(static_cast<int>(inputTensorShape[3]), static_cast<int>(inputTensorShape[2]));
+    std::vector<Ort::Value> output_tensors = m_inferSession.predictRaw(img_data, input_tensor_shape);
     std::vector<PredictionList> predictions = postprocess(images, input_image_shape, output_tensors, MODEL_OBJECTS_CONFIDENDCE_THRESHOLD, MODEL_IOU_THRESHOLD);
 
     return predictions; // Return the vector of detections
@@ -223,67 +85,26 @@ void Predictor::draw(MatList &images, const std::vector<PredictionList> &predict
     }
 }
 
-void Predictor::printModelMetadata() const
-{
-    const Ort::ModelMetadata &model_metadata = modelMetadata();
-    qDebug() << "\n\nModel metadata";
-    std::vector<Ort::AllocatedStringPtr> keys = model_metadata.GetCustomMetadataMapKeysAllocated(allocator());
-    for (const auto &key : keys) {
-        qDebug() << std::format("{} : {}", key.get(), model_metadata.LookupCustomMetadataMapAllocated(key.get(), allocator()).get());
-    }
-    qDebug() << "\n\n";
-}
-
-const PredictorConfig &Predictor::config() const
-{
-    return m_config;
-}
-
-std::vector<int64_t> Predictor::inputTensorShape() const
-{
-    return m_inputTensorShape;
-}
-
-const Ort::Session &Predictor::session() const
-{
-    return m_session;
-}
-
-size_t Predictor::numInputNodes() const
-{
-    return m_numInputNodes;
-}
-
-size_t Predictor::numOutputNodes() const
-{
-    return m_numOutputNodes;
-}
-
-const std::vector<std::string> &Predictor::classNames() const
-{
-    return m_classNames;
-}
-
-const std::vector<cv::Scalar> &Predictor::classColors() const
-{
-    return m_classColors;
-}
-
-const Ort::ModelMetadata &Predictor::modelMetadata() const
-{
-    return m_modelMetadata;
-}
-
 bool Predictor::hasDynamicBatch() const
 {
-    return !m_inputTensorShape.empty() && m_inputTensorShape.at(0) == -1;
+    const auto &input_tshapes = m_inferSession.inputTensorShapes();
+    return !input_tshapes.empty()
+           && !input_tshapes.at(0).empty()
+           &&  input_tshapes.at(0).at(0) == -1;
 }
 
 bool Predictor::hasDynamicShape() const
 {
-    return !m_inputTensorShape.empty()
-    && (m_inputTensorShape.at(2) == -1
-       || m_inputTensorShape.at(3) == -1);
+    const auto &input_tshapes = m_inferSession.inputTensorShapes();
+    return !input_tshapes.empty()
+           && !input_tshapes.at(0).empty()
+           && (input_tshapes.at(0).at(2) == -1 ||
+               input_tshapes.at(0).at(3) == -1);
+}
+
+const ONNXInference &Predictor::inferSession() const
+{
+    return m_inferSession;
 }
 
 cv::Mat Predictor::preprocess(const cv::Mat &image, float *&imgData, cv::Size inputImageShape)
@@ -303,14 +124,4 @@ cv::Mat Predictor::preprocess(const cv::Mat &image, float *&imgData, cv::Size in
     cv::split(resizedImage, chw); // Split channels into the blob
 
     return resizedImage;
-}
-
-Ort::MemoryInfo &Predictor::memoryInfo() const
-{
-    return m_memoryInfo;
-}
-
-Ort::AllocatorWithDefaultOptions &Predictor::allocator() const
-{
-    return m_allocator;
 }

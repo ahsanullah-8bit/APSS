@@ -1,16 +1,40 @@
+#include <yaml-cpp/yaml.h>
+
 #include "poseestimator.h"
 
 #include "image.h"
 
-PoseEstimator::PoseEstimator(const PredictorConfig &config)
-    : Predictor(config)
-{}
+PoseEstimator::PoseEstimator(const PredictorConfig &config,
+                             const std::shared_ptr<Ort::Env> &env,
+                             const std::shared_ptr<CustomAllocator> &allocator,
+                             const std::shared_ptr<Ort::MemoryInfo> &memoryInfo)
+    : Predictor(config, env, allocator, memoryInfo)
+{
+    const auto &infer_session = inferSession();
+    const auto &model_metadata = infer_session.modelMetadata();
+    Ort::AllocatedStringPtr kpt_shape = model_metadata.LookupCustomMetadataMapAllocated("kpt_shape", infer_session.allocator());
+    if (kpt_shape) {
+        YAML::Node kpt_yaml = YAML::Load(kpt_shape.get());
+        if (kpt_yaml)
+            m_kptShape = kpt_yaml.as<std::vector<int>>();
+    }
+
+    m_classColors = Utils::generateColors(inferSession().classNames());
+}
 
 void PoseEstimator::draw(cv::Mat &image, const PredictionList &predictions, float maskAlpha) const
 {
-    // Skeleton: top-left -> top-right -> bottom-right -> bottom-left -> top-left
-    static const std::vector<std::pair<int, int>> skeleton = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
-    Utils::drawPoseEstimation(image, predictions, classNames(), classColors(), skeleton);
+    if (m_skeleton.empty()) {
+        qWarning() << "No skeleton is set. Please set a pose skeleton before drawing!";
+        return;
+    }
+
+    Utils::drawPoseEstimation(image, predictions, inferSession().classNames(), m_classColors, m_skeleton);
+}
+
+void PoseEstimator::setPoseSkeleton(const std::vector<std::pair<int, int>> &poseSkeleton)
+{
+    m_skeleton = poseSkeleton;
 }
 
 std::vector<PredictionList> PoseEstimator::postprocess(const MatList &originalImages, const cv::Size &resizedImageShape, const std::vector<Ort::Value> &outputTensors, float confThreshold, float iouThreshold)
@@ -20,6 +44,7 @@ std::vector<PredictionList> PoseEstimator::postprocess(const MatList &originalIm
     if (outputTensors.size() != 1)
         throw std::runtime_error("Insufficient outputs from the model. Expected 1 output.");
 
+    static const std::vector<std::string> class_names = inferSession().classNames();
     const Ort::Value &tensor0 = outputTensors[0];
     // [N, 4 + num_classes + kpts * 3, num_preds]
     const std::vector<int64_t> shape0 = tensor0.GetTensorTypeAndShapeInfo().GetShape();
@@ -32,8 +57,8 @@ std::vector<PredictionList> PoseEstimator::postprocess(const MatList &originalIm
     const size_t batch_size = shape0.at(0);
     const size_t num_features = shape0.at(1);
     const size_t num_predictions = shape0.at(2);
-    const int num_classes = static_cast<int>(classNames().size());
-    const int features_per_keypoint = 3;    // This may vary
+    const int num_classes = static_cast<int>(class_names.size());
+    const int features_per_keypoint = 3;
     const int num_keypoints = static_cast<int>(num_features - num_classes - 4) / features_per_keypoint;
 
     results_list.reserve(batch_size);
@@ -137,7 +162,7 @@ std::vector<PredictionList> PoseEstimator::postprocess(const MatList &originalIm
             prediction.box = boxes[idx];
             prediction.conf = confs[idx];
             prediction.classId = class_ids[idx];
-            prediction.className = classNames()[prediction.classId];
+            prediction.className = class_names[prediction.classId];
             prediction.points = keypoints_list[idx];
 
             results.emplace_back(prediction);

@@ -104,7 +104,7 @@ std::vector<Vector3d<int>> PaddleDet::predict(const MatList &batch)
     Q_ASSERT(!input_tensor_shapes.empty());
     std::vector<int64_t> input_tensor_shape(input_tensor_shapes[0]);    // BCHW
 
-    if (m_inferSession.hasDynamicBatch())
+    if (hasDynamicBatch())
         input_tensor_shape[0] = batch.size();
     else if (static_cast<int64_t>(batch.size()) != input_tensor_shape[0]) {
         qWarning() << "Batch mismatch for input tensor, ignoring the rest!";
@@ -207,4 +207,12 @@ std::vector<Vector3d<int>> PaddleDet::predict(const MatList &batch)
 const ONNXInference &PaddleDet::inferSession() const
 {
     return m_inferSession;
+}
+
+bool PaddleDet::hasDynamicBatch()
+{
+    const auto &input_tshapes = m_inferSession.inputTensorShapes();
+    return !input_tshapes.empty()
+           && !input_tshapes.at(0).empty()
+           &&  input_tshapes.at(0).at(0) == -1;
 }

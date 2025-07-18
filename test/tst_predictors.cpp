@@ -63,12 +63,16 @@ TEST_F(TestPredictors, PoseEstimator) {
     cv::Mat img1 = cv::imread("test/assets/vehicles.jpg");
     cv::Mat img2 = cv::imread("test/assets/vehicles2.jpg");
 
+
     PredictorConfig config;
     config.model = ModelConfig();
     config.model->path = "models/yolo11n-pose-1700_320.onnx";
 
     auto start_time = std::chrono::high_resolution_clock::now();
+    // Skeleton: top-left -> top-right -> bottom-right -> bottom-left -> top-left
+    const std::vector<std::pair<int, int>> skeleton = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
     PoseEstimator estimator(config);
+    estimator.setPoseSkeleton(skeleton);
     auto loading_time = std::chrono::high_resolution_clock::now() - start_time;
 
     start_time = std::chrono::high_resolution_clock::now();

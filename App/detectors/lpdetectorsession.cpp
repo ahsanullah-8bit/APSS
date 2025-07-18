@@ -24,6 +24,10 @@ PoseEstimator& LPDetectorSession::detector() {
 }
 
 void LPDetectorSession::run() {
+    // Skeleton: top-left -> top-right -> bottom-right -> bottom-left -> top-left
+    static const std::vector<std::pair<int, int>> skeleton = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
+    m_keyPointDetector.setPoseSkeleton(skeleton);
+
     qInfo() << "Starting" << objectName() << "thread";
 
     try {

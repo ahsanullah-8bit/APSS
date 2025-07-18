@@ -2,13 +2,18 @@
 
 #include "image.h"
 
-ObjectDetector::ObjectDetector(const PredictorConfig &config)
-    : Predictor(config)
-{}
+ObjectDetector::ObjectDetector(const PredictorConfig &config,
+                               const std::shared_ptr<Ort::Env> &env,
+                               const std::shared_ptr<CustomAllocator> &allocator,
+                               const std::shared_ptr<Ort::MemoryInfo> &memoryInfo)
+    : Predictor(config, env, allocator, memoryInfo)
+{
+    m_classColors = Utils::generateColors(inferSession().classNames());
+}
 
 void ObjectDetector::draw(cv::Mat &image, const PredictionList &predictions, float maskAlpha) const
 {
-    Utils::drawDetections(image, predictions, classNames(), classColors());
+    Utils::drawDetections(image, predictions, inferSession().classNames(), m_classColors);
 }
 
 std::vector<PredictionList> ObjectDetector::postprocess(const MatList &originalImages, const cv::Size &resizedImageShape, const std::vector<Ort::Value> &outputTensors, float confThreshold, float iouThreshold)
@@ -18,12 +23,13 @@ std::vector<PredictionList> ObjectDetector::postprocess(const MatList &originalI
     if (outputTensors.size() != 1)
         throw std::runtime_error("Insufficient outputs from the model. Expected 1 output.");
 
-    // [N, 4 + num_classes, num_preds] (expected).
+    static const std::vector<std::string> class_names = inferSession().classNames();
+
     const Ort::Value &tensor0 = outputTensors[0];
     const std::vector<int64_t> shape0 = tensor0.GetTensorTypeAndShapeInfo().GetShape();
     const float* output0_data = tensor0.GetTensorData<float>(); // Extract raw output data from the first output tensor
 
-    if (shape0.size() != 3)
+    if (shape0.size() != 3) // [N, 4 + num_classes, num_preds] (expected).
         throw std::runtime_error("Unexpected output tensor shape. Expected [N, 84, num_detections].");
 
     const size_t batch_size = shape0.at(0);
@@ -121,7 +127,7 @@ std::vector<PredictionList> ObjectDetector::postprocess(const MatList &originalI
             prediction.box = boxes[idx];
             prediction.conf = confs[idx];
             prediction.classId = class_ids[idx];
-            prediction.className = classNames()[prediction.classId];
+            prediction.className = class_names[prediction.classId];
 
             results.emplace_back(prediction);
         }

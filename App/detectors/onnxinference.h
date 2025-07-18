@@ -19,19 +19,6 @@ public:
                                        std::vector<int64_t> customInputTensorShape = {});
     void printModelMetadata() const;
     void printSessionMetadata() const;
-
-    /**
-     * @brief Check if the model has a dynamic batch support.
-     * @return true if input tensor shape at 0 has -1 set at index 0. false if no or empty input tensor shape.
-     * It does not consider inputs > 1.
-     */
-    bool hasDynamicBatch() const;
-    /**
-     * @brief Check if the model has a dynamic shape support.
-     * @return true if input tensor shape at 0 has -1 set at index 2 and 3. false if no, empty or size != 4 input tensors shape.
-     * It does not consider outputs > 1.
-     */
-    bool hasDynamicShape() const;
     const Ort::ModelMetadata &modelMetadata() const;
     OrtAllocator *allocator() const;
     std::shared_ptr<CustomAllocator> customAllocator() const;
@@ -54,7 +41,6 @@ private:
     PredictorConfig m_config;
     std::shared_ptr<Ort::Env> m_env;
     Ort::Session m_session { nullptr };
-    // std::shared_ptr<Ort::AllocatorWithDefaultOptions> m_allocator;
     std::shared_ptr<CustomAllocator> m_allocator;
     std::shared_ptr<Ort::MemoryInfo> m_memoryInfo;
     std::vector<std::vector<int64_t>> m_inputTensorShapes;
