@@ -1,5 +1,10 @@
+> [!IMPORTANT]
+> This project was heavily inspired by [Frigate NVR](https://github.com/blakeblackshear/frigate.git) and how it works, as I Ahsan U. have had no experience regarding such systems and how their architecture works on deep technical level.
+> In simple words, we only had 4-5 months to make a light-weight surveillance system. No one can acheive something like that in 4 months. So, I really didn't had the time to make mistakes and find out. I learned and implemented.
+> I'm gonna add references later...
+
 > [!NOTE]
-> Works only on Windows.
+> Tested only on Windows.
 > We're in a bit of hurry at the moment. So, this might turnout more spaghetti than I thought.
 
 
@@ -36,6 +41,7 @@ Prebuilt binaries are hosted in my [0.1 release](https://github.com/ahsanullah-8
 * [oneTBB 2022.0.0](https://github.com/uxlfoundation/oneTBB.git)
 * [FFMpeg 7.1.1](https://github.com/FFmpeg/FFmpeg.git) (avcodec, avformat, avdevice, avfilter, swscale, swresample, openssl, zlib, x264, x265, freetype, drawtext)
 * [Eigen 3.4.0](https://github.com/PX4/eigen.git) (needed by ByteTrackEigen)
+* [yaml-cpp 0.8.0](https://github.com/jbeder/yaml-cpp.git)
 * [reflect-cpp 0.17.0](https://github.com/getml/reflect-cpp.git) (yaml)
 * [GTest 1.16.0](https://github.com/google/googletest.git) (needed for tests)
 
@@ -70,8 +76,3 @@ git clone --recursive https://github.com/ahsanullah-8bit/APSS.git
 
 > [!NOTE]
 > Copying of dlls to the binary directory is automated for non-vcpkg packages, as vcpkg does copy dlls automatically.
-
-> [!IMPORTANT]
-> This project was heavily inspired by [Frigate NVR](https://github.com/blakeblackshear/frigate.git) and how it works, as I Ahsan U. have had no experience regarding such systems and how their architecture works on deep technical level.
-> In simple words, we only had 4-5 months to make a light-weight surveillance system. No one can acheive something like that in 4 months. So, I really didn't had the time to make mistakes and find out. I learned and implemented.
-> I'm gonna add references later...
