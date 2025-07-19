@@ -138,7 +138,8 @@ cv::Mat
 Utility::GetRotateCropImage(const cv::Mat &srcimage,
                             const std::vector<std::vector<int>> &box) noexcept {
     cv::Mat image;
-    srcimage.copyTo(image);
+    srcimage.copyTo(image); // TODO: This copy looks unnecessary.
+
     std::vector<std::vector<int>> points = box;
 
     int x_collect[4] = {box[0][0], box[1][0], box[2][0], box[3][0]};

@@ -16,18 +16,10 @@ public:
                        const std::shared_ptr<Ort::MemoryInfo> &memoryInfo);
     virtual ~Predictor();
     virtual std::vector<PredictionList> predict(const MatList &images);
-    virtual void draw(MatList &images, const std::vector<PredictionList> &predictionsList, float maskAlpha = MODEL_MASK_ALPHA) const;
-    virtual void draw(cv::Mat &image, const PredictionList &predictions, float maskAlpha = MODEL_MASK_ALPHA) const = 0;
-    // void printModelMetadata() const;
-
-    // const PredictorConfig& config() const;
-    // std::vector<int64_t> inputTensorShape() const;
-    // const Ort::Session& session() const;
-    // size_t numInputNodes() const;
-    // size_t numOutputNodes() const;
-    // const std::vector<std::string>& classNames() const;
-    // const std::vector<cv::Scalar>& classColors() const;
-    // const Ort::ModelMetadata &modelMetadata() const;
+    virtual void draw(MatList &images, const std::vector<PredictionList> &predictionsList, float maskAlpha = 0.3f) const;
+    virtual void draw(cv::Mat &image, const PredictionList &predictions, float maskAlpha = 0.3f) const = 0;
+    int width() const;
+    int height() const;
     bool hasDynamicBatch() const;
     bool hasDynamicShape() const;
     const ONNXInference &inferSession() const;
@@ -37,34 +29,12 @@ protected:
     virtual std::vector<PredictionList> postprocess(const MatList &originalImages,
                                                     const cv::Size &resizedImageShape,
                                                     const std::vector<Ort::Value> &outputTensors,
-                                                    float confThreshold, float iouThreshold) = 0;
-
-    // Ort::MemoryInfo& memoryInfo() const;
-    // Ort::AllocatorWithDefaultOptions& allocator() const;
+                                                    float confThreshold = 0.4f, float iouThreshold = 0.4f) = 0;
 
 private:
     ONNXInference m_inferSession;
-
-    // Ort::Env m_env;
-    // PredictorConfig m_config;
-    // Ort::Session m_session{nullptr};
-    // mutable Ort::AllocatorWithDefaultOptions m_allocator;
-    // mutable Ort::MemoryInfo m_memoryInfo;
-    // std::vector<int64_t> m_inputTensorShape;
-    // size_t m_numInputNodes = 1, m_numOutputNodes = 1;
-    // bool m_hasDynamicBatch = false;
-    // bool m_hasDynamicShape = false;
-    // int m_modelStride = 32;
-    // Ort::ModelMetadata m_modelMetadata;
-
-    // Vectors to hold allocated input and output node names
-    // std::vector<Ort::AllocatedStringPtr> m_inputNodeNameAllocatedStrings;
-    // std::vector<Ort::AllocatedStringPtr> m_outputNodeNameAllocatedStrings;
-    // std::vector<const char *> m_inputNames;
-    // std::vector<const char *> m_outputNames;
-
-    // std::vector<std::string> m_classNames;            // Vector of class names loaded from file
-    // std::vector<cv::Scalar> m_classColors;            // Vector of colors for each class
+    int m_width = 640;
+    int m_height = 640;
 
     mutable std::mutex m_mtx;
 };

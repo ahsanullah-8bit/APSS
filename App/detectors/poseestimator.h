@@ -17,10 +17,14 @@ public:
     void setPoseSkeleton(const std::vector<std::pair<int, int>> &poseSkeleton);
 
 protected:
-    std::vector<PredictionList> postprocess(const MatList &originalImages, const cv::Size &resizedImageShape, const std::vector<Ort::Value> &outputTensors, float confThreshold, float iouThreshold) override;
+    std::vector<PredictionList> postprocess(const MatList &originalImages,
+                                            const cv::Size &resizedImageShape,
+                                            const std::vector<Ort::Value> &outputTensors,
+                                            float confThreshold = POSE_MIN_CONF,
+                                            float iouThreshold = POSE_MIN_IOU_THRESH) override;
 
 private:
     std::vector<std::pair<int, int>> m_skeleton;
     std::vector<cv::Scalar> m_classColors;
-    std::vector<int> m_kptShape;
+    std::vector<int> m_kptShape = {17, 3}; // keypoints, dims
 };

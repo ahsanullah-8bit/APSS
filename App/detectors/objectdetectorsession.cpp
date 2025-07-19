@@ -20,6 +20,9 @@ ObjectDetectorSession::ObjectDetectorSession(const QString &name,
     , m_detector{nullptr}
 {
     setObjectName(name);
+
+    if (m_config.batch_size)
+        m_maxBatchSize = m_config.batch_size.value();
 }
 
  QSharedPointer<ObjectDetector> ObjectDetectorSession::detector() {
@@ -71,7 +74,7 @@ void ObjectDetectorSession::run() {
 
                 frames.emplace_back(frame);
                 batch.emplace_back(frames.back()->data());
-            } while (batch.size() < DET_BATCH_SIZE_MAX && !m_inFrameQueue.empty());
+            } while (batch.size() < m_maxBatchSize && !m_inFrameQueue.empty());
 
             if (batch.empty())
                 continue;

@@ -36,7 +36,8 @@ protected:
     bool trackAndEstimateDeltas(SharedFrame frame,
                                 Tracker &tracker,
                                 Prediction::Type predictionType);
-    PredictionList filterResults(const PredictionList &results, const std::map<std::string, FilterConfig> &objectsToFilter);
+    PredictionList filterObjectPredictions(const PredictionList &results,
+                                           const std::map<std::string, FilterConfig> &objectsToFilter);
     void recognizeLicensePlates(SharedFrame frame);
 
 private:

@@ -192,10 +192,7 @@ std::vector<Vector3d<int>> PaddleDet::predict(const MatList &batch)
             prob_map, bit_map, m_boxThresh, m_unclipRatio,
             m_detDbScoreMode));
 
-        // TODO: Look into this extra allocation, if it is really necessary or not
-        cv::Mat src_img;
-        batch[b].copyTo(src_img);
-        m_postProcessor.FilterTagDetRes(boxes, ratio_h, ratio_w, src_img);
+        m_postProcessor.FilterTagDetRes(boxes, ratio_h, ratio_w, batch[b]);
         // end NOTICE
 
         boxes_results_list.emplace_back(std::move(boxes));

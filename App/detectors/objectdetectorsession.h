@@ -36,10 +36,10 @@ private:
     QSharedPointer<ObjectDetector> m_detector;
     QHash<QString, QSharedPointer<QWaitCondition>> &m_cameraWaitConditions;
     SharedFrameBoundedQueue &m_inFrameQueue;
-    // SharedFrameBoundedQueue &m_outFrameQueue;
     std::atomic_int m_avgInferenceSpeed;
     PredictorConfig m_config;
     EventsPerSecond m_eps;
+    int m_maxBatchSize = 1;
 };
 
 using SharedObjectDetectorSession = QSharedPointer<ObjectDetectorSession>;

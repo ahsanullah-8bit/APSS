@@ -206,7 +206,7 @@ bool CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker
     return has_deltas;
 }
 
-PredictionList CameraProcessor::filterResults(const PredictionList &results, const std::map<std::string, FilterConfig> &objectsToFilter)
+PredictionList CameraProcessor::filterObjectPredictions(const PredictionList &results, const std::map<std::string, FilterConfig> &objectsToFilter)
 {
     PredictionList filtered_results;
     for (const auto &prediction : results) {

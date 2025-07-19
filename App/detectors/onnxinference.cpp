@@ -130,13 +130,9 @@ ONNXInference::ONNXInference(const PredictorConfig &config,
         // Load class names and generate corresponding colors
         if (!model_names.empty()){
             m_classNames = Utils::jsonToVecClassNames(model_names);
-            // m_classColors = Utils::generateColors(m_classNames);
             qInfo() << "Classes found on the model's metadata, skip reading from file.";
         } else if (!labels_path.empty()) {
             m_classNames = Utils::readClassNames(labels_path);
-            // m_classColors = Utils::generateColors(m_classNames);
-        } else {
-            // throw std::runtime_error("Class names weren't found, please provide a model with enough metadata or path to a file containing class names");
         }
     }  catch (const Ort::Exception& e) {
         throw std::runtime_error(std::format("ONNXRuntime error {}: {}", static_cast<int>(e.GetOrtErrorCode()), e.what()));

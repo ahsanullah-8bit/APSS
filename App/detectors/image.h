@@ -169,7 +169,7 @@ public:
     static void drawBoundingBoxMask(cv::Mat &image, const std::vector<Prediction> &predictions,
                                     const std::vector<std::string> &classNames,
                                     const std::vector<cv::Scalar> &classColors,
-                                    float maskAlpha = MODEL_MASK_ALPHA);
+                                    float maskAlpha = 0.3f);
 
     /**
      * @brief Draws bounding boxes, masks, and labels on the image based on detections
@@ -202,12 +202,12 @@ public:
     static void drawSegmentationsAndBoxes(cv::Mat &image, const std::vector<Prediction> &predictions,
                                           const std::vector<std::string> &classNames,
                                           const std::vector<cv::Scalar> &classColors,
-                                          float maskAlpha = MODEL_MASK_ALPHA);
+                                          float maskAlpha = 0.3f);
 
     static void drawSegmentations(cv::Mat &image, const std::vector<Prediction> &predictions,
                                   const std::vector<std::string> &classNames,
                                   const std::vector<cv::Scalar> &classColors,
-                                  float maskAlpha = MODEL_MASK_ALPHA);
+                                  float maskAlpha = 0.3f);
 
     /**
      * @brief Draws segmentation masks, bounding boxes, and labels on the image
@@ -332,7 +332,7 @@ public:
      */
     static void perspectiveCrop(const cv::Mat &img, cv::Mat &res,
                                 const std::vector<cv::Point2f> &srcPoints,
-                                float sizeGain = MODEL_CROP_GAIN);
+                                float sizeGain = 0.4f);
 
     /**
      * @brief Crops a warped image from the source points to the destination points.

@@ -1,10 +1,11 @@
-#include "predictor.h"
-
 #include <vector>
 #include <memory>
 #include <mutex>
 #include <assert.h>
 
+#include <yaml-cpp/yaml.h>
+
+#include "predictor.h"
 #include "image.h"
 
 Predictor::Predictor(const PredictorConfig &config,
@@ -12,7 +13,31 @@ Predictor::Predictor(const PredictorConfig &config,
                      const std::shared_ptr<CustomAllocator> &allocator,
                      const std::shared_ptr<Ort::MemoryInfo> &memoryInfo)
     : m_inferSession(config, env, allocator, memoryInfo)
-{}
+{
+    const auto &model_metadata = m_inferSession.modelMetadata();
+    Ort::AllocatedStringPtr imgsz = model_metadata.LookupCustomMetadataMapAllocated("imgsz", m_inferSession.allocator());
+    bool is_valid_imgsz = false;
+    if (imgsz) {
+        YAML::Node imgsz_yaml = YAML::Load(imgsz.get());
+        if (imgsz_yaml) {
+            std::vector<int> wh = imgsz_yaml.as<std::vector<int>>();
+            if (!wh.empty()) {
+                m_width = wh[0];
+                m_height = wh[1];
+                is_valid_imgsz = true;
+            }
+        }
+    }
+
+    if (!is_valid_imgsz) {
+        if (config.model) {
+            m_width = config.model->width.value_or(320);
+            m_height = config.model->height.value_or(320);
+        } else {
+            qWarning() << "No imgsz found for model" << config.model->path << "assuming" << m_width << m_height << "instead.";
+        }
+    }
+}
 
 Predictor::~Predictor()
 {}
@@ -33,29 +58,29 @@ std::vector<PredictionList> Predictor::predict(const MatList &images)
     if (hasDynamicBatch())
         input_tensor_shape[0] = images.size();
     else if (static_cast<int64_t>(images.size()) != input_tensor_shape[0]) {
-        qWarning() << "Batch mismatch for input tensor, ignoring the rest!";
+        qWarning() << "Batch mismatch for input tensor, ignoring the rest!" << input_tensor_shape[0] << " != " << images.size();
     }
 
     if (hasDynamicShape()) {
-        // Use dimensions of the biggest image for resize.
-        int64_t img_h = images.at(0).rows, img_w = images.at(0).cols;
-        for (size_t i = 1; i < images.size(); ++i) {
-            if (img_h < images[i].rows)
-                img_h = images[i].rows;
+        // // Use dimensions of the biggest image for resize.
+        // int64_t img_h = images.at(0).rows, img_w = images.at(0).cols;
+        // for (size_t i = 1; i < images.size(); ++i) {
+        //     if (img_h < images[i].rows)
+        //         img_h = images[i].rows;
 
-            if (img_w < images[i].cols)
-                img_w = images[i].cols;
-        }
+        //     if (img_w < images[i].cols)
+        //         img_w = images[i].cols;
+        // }
 
         // Ensuring the stride
         int model_stride = m_inferSession.modelStride();
-        if (img_h % model_stride != 0)
-            img_h = ((img_h / model_stride) + 1) * model_stride;
-        if (img_w % model_stride != 0)
-            img_w = ((img_w / model_stride) + 1) * model_stride;
+        if (m_height % model_stride != 0)
+            m_height = ((m_height / model_stride) + 1) * model_stride;
+        if (m_width % model_stride != 0)
+            m_width = ((m_width / model_stride) + 1) * model_stride;
 
-        input_tensor_shape[2] = img_h;
-        input_tensor_shape[3] = img_w;
+        input_tensor_shape[2] = m_height;
+        input_tensor_shape[3] = m_width;
     }
     cv::Size input_image_shape(input_tensor_shape[3], input_tensor_shape[2]);
 
@@ -71,7 +96,7 @@ std::vector<PredictionList> Predictor::predict(const MatList &images)
     }
 
     std::vector<Ort::Value> output_tensors = m_inferSession.predictRaw(img_data, input_tensor_shape);
-    std::vector<PredictionList> predictions = postprocess(images, input_image_shape, output_tensors, MODEL_OBJECTS_CONFIDENDCE_THRESHOLD, MODEL_IOU_THRESHOLD);
+    std::vector<PredictionList> predictions = postprocess(images, input_image_shape, output_tensors);
 
     return predictions; // Return the vector of detections
 }
@@ -124,4 +149,14 @@ cv::Mat Predictor::preprocess(const cv::Mat &image, float *&imgData, cv::Size in
     cv::split(resizedImage, chw); // Split channels into the blob
 
     return resizedImage;
+}
+
+int Predictor::height() const
+{
+    return m_height;
+}
+
+int Predictor::width() const
+{
+    return m_width;
 }

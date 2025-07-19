@@ -26,6 +26,7 @@ public:
 protected:
     // QThread interface
     void run() override;
+    PredictionList filterLicensePlates(const PredictionList &predictions);
 
 private:
     PredictorConfig m_config;

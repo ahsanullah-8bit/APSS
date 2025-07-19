@@ -6,6 +6,7 @@ import numpy as np
 import onnx
 from pprint import pprint
 import os
+from argparse import ArgumentParser
 
 def inspect_onnx(model_path):
     if not os.path.exists(model_path):
@@ -75,11 +76,12 @@ def inspect_onnx(model_path):
     except Exception as e:
         print("  ⚠️ Dummy run failed:", str(e))
 
-# Example usage:
-# inspect_onnx("en_pp-ocrv3_det_infer.onnx")
-# inspect_onnx("en_number_mobile_v2.0_rec_slim_infer.onnx") # version 9223372036854775807
-# inspect_onnx("ch_ppocr_mobile_v2.0_cls_infer.onnx")
-# inspect_onnx("PP-OCRv5_mobile_rec_infer.onnx") # version 9223372036854775807
-inspect_onnx("en_PP-OCRv4_mobile_rec_infer_onnx/inference.onnx") # version 9223372036854775807
-# inspect_onnx("PP-LCNet_x0_25_textline_ori_infer.onnx")
-# inspect_onnx("yolo11n-seg.onnx")
+
+if __name__ == "__main__":
+    parser = ArgumentParser(prog='APSS Quick ONNX Metadata', description='Prints metadata of an onnx model')
+    parser.add_argument('--model', required=True, help='Path to the .onnx model file')
+    
+    args = parser.parse_args()
+    
+    if args.model:
+        inspect_onnx(args.model)

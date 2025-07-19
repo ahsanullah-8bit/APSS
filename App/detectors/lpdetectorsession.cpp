@@ -90,6 +90,8 @@ void LPDetectorSession::run() {
                             }
                         }
 
+                        results = filterLicensePlates(results);
+
                         lp_predictions.insert(lp_predictions.end(), results.begin(), results.end());
                     }
 
@@ -118,6 +120,19 @@ void LPDetectorSession::run() {
     }
 
     qInfo() << "Stopping" << objectName() << "thread";
+}
+
+PredictionList LPDetectorSession::filterLicensePlates(const PredictionList &predictions)
+{
+    PredictionList results;
+    for (const auto &prediction : predictions) {
+        if (prediction.conf < m_lpConfig.detection_threshold)
+            continue;
+
+        results.emplace_back(std::move(prediction));
+    }
+
+    return results;
 }
 
 const EventsPerSecond &LPDetectorSession::eps() const

@@ -17,6 +17,10 @@ PoseEstimator::PoseEstimator(const PredictorConfig &config,
         YAML::Node kpt_yaml = YAML::Load(kpt_shape.get());
         if (kpt_yaml)
             m_kptShape = kpt_yaml.as<std::vector<int>>();
+    } else if (config.kpt_shape) {
+        m_kptShape = config.kpt_shape.value();
+    } else {
+        qWarning() << "kpt_shape not found for model" << config.model->path << "assuming" << m_kptShape << "instead.";
     }
 
     m_classColors = Utils::generateColors(inferSession().classNames());
@@ -58,7 +62,7 @@ std::vector<PredictionList> PoseEstimator::postprocess(const MatList &originalIm
     const size_t num_features = shape0.at(1);
     const size_t num_predictions = shape0.at(2);
     const int num_classes = static_cast<int>(class_names.size());
-    const int features_per_keypoint = 3;
+    static const int features_per_keypoint = m_kptShape.empty() ? 3 : m_kptShape[1];
     const int num_keypoints = static_cast<int>(num_features - num_classes - 4) / features_per_keypoint;
 
     results_list.reserve(batch_size);
