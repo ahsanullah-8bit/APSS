@@ -70,3 +70,8 @@ git clone --recursive https://github.com/ahsanullah-8bit/APSS.git
 
 > [!NOTE]
 > Copying of dlls to the binary directory is automated for non-vcpkg packages, as vcpkg does copy dlls automatically.
+
+> [!IMPORTANT]
+> This project was heavily inspired by [Frigate NVR](https://github.com/blakeblackshear/frigate.git) and how it works, as I Ahsan U. have had no experience regarding such systems and how their architecture works on deep technical level.
+> In simple words, we only had 4-5 months to make a light-weight surveillance system. No one can acheive something like that in 4 months. So, I really didn't had the time to make mistakes and find out. I learned and implemented.
+> I'm gonna add references later...
