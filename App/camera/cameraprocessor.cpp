@@ -167,7 +167,7 @@ bool CameraProcessor::predict(SharedFrame frame,
     return true;
 }
 
-bool CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker, Prediction::Type predictionType)
+void CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker, Prediction::Type predictionType)
 {
     // TODO: Find a proper way to hold seen ids.
     // Don't mistaken this for the tracker remembering objects. This one is for us to avoid going to another
@@ -178,7 +178,7 @@ bool CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker
     bool has_deltas = false;
 
     // Filter predictions
-    PredictionList &obj_predictions = frame->predictionsByRef(predictionType);
+    PredictionList obj_predictions = frame->predictions(predictionType);
     std::vector<int> track_ids = tracker.track(obj_predictions);
 
     for (int i = 0; i < track_ids.size(); ++i) {
@@ -202,8 +202,7 @@ bool CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker
         }
     }
 
-    // To avoid running lp detector
-    return has_deltas;
+    frame->setPredictions(predictionType, std::move(obj_predictions));
 }
 
 PredictionList CameraProcessor::filterObjectPredictions(const PredictionList &results, const std::map<std::string, FilterConfig> &objectsToFilter)

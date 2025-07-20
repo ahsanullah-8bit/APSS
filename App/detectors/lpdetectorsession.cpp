@@ -51,7 +51,8 @@ void LPDetectorSession::run() {
 
             // Detect LPs for a single frame.
             // We only need no-copy Mats from each frame that that are one of the filtered classes
-            const PredictionList &object_predictions = frame->predictions()[Prediction::Type::Objects];
+            const auto predictions = frame->predictions();
+            const PredictionList &object_predictions = predictions[Prediction::Type::Objects];
             PredictionList filtered_vehicle_predictions;
 
             for (const auto& prediction : object_predictions) {

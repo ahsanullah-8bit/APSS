@@ -10,7 +10,6 @@ add_executable(${CMAKE_PROJECT_NAME}Test
 	tst_db_timeline.cpp
 	tst_predictors.cpp
 	tst_predictors_paddleocr.cpp
-	# tst_predictors.cpp
 	# tst_timeboundedqueue.cpp
 )
 
@@ -30,6 +29,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}Test PRIVATE
 
 	APSS::Config
 	APSS::Database
+	APSS::Events
 	APSS::Predictors
 )
 

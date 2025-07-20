@@ -1,16 +1,13 @@
 #include "gtest/gtest.h"
 
-// ODB headers for database interaction
 #include <odb/core.hxx>
 #include <odb/database.hxx>
 #include <odb/transaction.hxx>
 #include <odb/session.hxx>
-#include <odb/schema-catalog.hxx> // For create_schema
+#include <odb/schema-catalog.hxx>
 
-// SQLite backend for ODB
 #include <odb/sqlite/database.hxx>
 
-// Qt headers
 #include <QtCore/QString>
 #include <QtCore/QDateTime>
 #include <QtCore/QDebug>
@@ -18,7 +15,6 @@
 #include "db/db.h"
 #include <db/recording>
 
-// Define a test fixture for ODB operations
 class RecordingOdbTest : public ::testing::Test
 {
 protected:
@@ -39,11 +35,8 @@ protected:
     }
 
     void TearDown() override
-    {
-        // Database destroyed on db unique_ptr scope exit
-    }
+    {}
 
-    // Helper function to create a sample Recording object
     Recording createSampleRecording(const QString& idSuffix = "")
     {
         Recording rec;
@@ -61,7 +54,6 @@ protected:
         return rec;
     }
 
-    // Helper function to compare two Recording objects for equality
     void expectRecordingsEqual(const Recording& expected, const Recording& actual)
     {
         EXPECT_EQ(actual.id(), expected.id());
@@ -78,7 +70,6 @@ protected:
     }
 };
 
-// Test Case 1: Persistence and Loading
 TEST_F(RecordingOdbTest, PersistAndLoadRecording)
 {
     Recording original_recording = createSampleRecording("001");
@@ -99,7 +90,6 @@ TEST_F(RecordingOdbTest, PersistAndLoadRecording)
     }
 }
 
-// Test Case 2: Updating a Recording object
 TEST_F(RecordingOdbTest, UpdateRecording)
 {
     Recording recording_to_update = createSampleRecording("002");
@@ -131,7 +121,6 @@ TEST_F(RecordingOdbTest, UpdateRecording)
     }
 }
 
-// Test Case 3: Deleting a Recording object
 TEST_F(RecordingOdbTest, DeleteRecording)
 {
     Recording recording_to_delete = createSampleRecording("003");
@@ -161,7 +150,6 @@ TEST_F(RecordingOdbTest, DeleteRecording)
     }
 }
 
-// Test Case 4: Querying Recording objects
 TEST_F(RecordingOdbTest, QueryRecordings)
 {
     Recording rec1 = createSampleRecording("A");
@@ -187,7 +175,6 @@ TEST_F(RecordingOdbTest, QueryRecordings)
         t.commit();
     }
 
-    // Query by camera
     {
         odb::transaction t(db->begin());
         typedef odb::result<Recording> result_type;
@@ -209,7 +196,6 @@ TEST_F(RecordingOdbTest, QueryRecordings)
         EXPECT_TRUE(found3);
     }
 
-    // Query by motion threshold
     {
         odb::transaction t(db->begin());
         typedef odb::result<Recording> result_type;

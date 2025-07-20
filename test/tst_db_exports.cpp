@@ -1,23 +1,19 @@
 #include "gtest/gtest.h"
 
-// ODB headers for database interaction
 #include <odb/core.hxx>
 #include <odb/database.hxx>
 #include <odb/transaction.hxx>
 #include <odb/session.hxx>
-#include <odb/schema-catalog.hxx> // For create_schema
+#include <odb/schema-catalog.hxx>
 
-// SQLite backend for ODB
 #include <odb/sqlite/database.hxx>
 
-// Qt headers
 #include <QtCore/QString>
 #include <QtCore/QDateTime>
 #include <QtCore/QDebug>
 
 #include <db/exports>
 
-// Define a test fixture for ODB operations
 class ExportsOdbTest : public ::testing::Test
 {
 protected:
@@ -25,7 +21,6 @@ protected:
 
     void SetUp() override
     {
-        // Let's using :memory: this time.
         db = std::make_unique<odb::sqlite::database>(":memory:", SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
         odb::transaction t(db->begin());
         try {
@@ -39,11 +34,8 @@ protected:
     }
 
     void TearDown() override
-    {
-        // Database destroyed on db unique_ptr scope exit
-    }
+    {}
 
-    // Helper function to create a sample Exports object
     Exports createSampleExport(const QString& idSuffix = "")
     {
         Exports exp;
@@ -57,7 +49,6 @@ protected:
         return exp;
     }
 
-    // Helper function to compare two Exports objects for equality
     void expectExportsEqual(const Exports& expected, const Exports& actual)
     {
         EXPECT_EQ(actual.id(), expected.id());
@@ -70,7 +61,6 @@ protected:
     }
 };
 
-// Test Case 1: Persistence and Loading
 TEST_F(ExportsOdbTest, PersistAndLoadExport)
 {
     Exports original_export = createSampleExport("001");
@@ -91,7 +81,6 @@ TEST_F(ExportsOdbTest, PersistAndLoadExport)
     }
 }
 
-// Test Case 2: Updating an Exports object
 TEST_F(ExportsOdbTest, UpdateExport)
 {
     Exports export_to_update = createSampleExport("002");
@@ -122,7 +111,6 @@ TEST_F(ExportsOdbTest, UpdateExport)
     }
 }
 
-// Test Case 3: Deleting an Exports object
 TEST_F(ExportsOdbTest, DeleteExport)
 {
     Exports export_to_delete = createSampleExport("003");
@@ -152,7 +140,6 @@ TEST_F(ExportsOdbTest, DeleteExport)
     }
 }
 
-// Test Case 4: Querying Exports objects
 TEST_F(ExportsOdbTest, QueryExports)
 {
     Exports exp1 = createSampleExport("A");
@@ -175,7 +162,6 @@ TEST_F(ExportsOdbTest, QueryExports)
         t.commit();
     }
 
-    // Query by camera
     {
         odb::transaction t(db->begin());
         typedef odb::result<Exports> result_type;
@@ -197,7 +183,6 @@ TEST_F(ExportsOdbTest, QueryExports)
         EXPECT_TRUE(found3);
     }
 
-    // Query by inProgress status
     {
         odb::transaction t(db->begin());
         typedef odb::result<Exports> result_type;

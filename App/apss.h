@@ -1,25 +1,26 @@
 #pragma once
 
-#include <qdir.h>
-#include <qurl.h>
+#include <QDir.h>
+#include <QUrl.h>
 #include <vector>
-#include <opencv2/core/mat.hpp>
-#include <utils/prediction.h>
-
 #include <QString>
 #include <QStandardPaths>
 
-namespace fs = std::filesystem;
+namespace cv {
+class Mat;  // to avoid linking against the whole opencv, just for using apss.h
+}
 
 // Some common things APSS depends on
 
 // Typedefs
-using PredictionList = std::vector<Prediction>;
 using MatList = std::vector<cv::Mat>;
 
 template <typename T>
 using Vector3d = std::vector<std::vector<std::vector<T>>>;
 
+// ZMQ
+constexpr char SOCKET_SUB[] = "inproc://events/proxy_sub";
+constexpr char SOCKET_PUB[] = "inproc://events/proxy_pub";
 
 // Detection related
 constexpr float DET_MIN_CONF = 0.4f;

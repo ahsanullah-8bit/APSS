@@ -4,6 +4,7 @@ add_subdirectory(camera)
 add_subdirectory(config)
 add_subdirectory(db)
 add_subdirectory(detectors)
+add_subdirectory(events)
 add_subdirectory(track)
 add_subdirectory(utils)
 

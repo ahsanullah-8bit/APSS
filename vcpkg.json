@@ -40,6 +40,11 @@
             "version>=": "0.17.0"
         },
         {
+            "name": "cppzmq",
+            "default-features": false,
+            "version>=": "4.10.0"
+        },
+        {
             "name": "gtest",
             "version>=": "1.16.0"
         }

@@ -3,6 +3,7 @@
 #include <chrono>
 #include <optional>
 #include <memory>
+#include <shared_mutex>
 
 #include <QString>
 #include <QHash>
@@ -14,6 +15,7 @@
 
 #include <tbb_patched.h>
 #include "apss.h"
+#include "prediction.h"
 #include "detectors/licensed/utility.h"
 #include "config/platerecognizerconfig.h"
 
@@ -22,7 +24,8 @@
  * @brief A rich Frame class designed for a video processing pipeline.
  *
  * Holds the raw frame data, along with associated metadata relevant
- * to surveillance applications.
+ * to surveillance applications. It is supposed to be passed around as a shared frame.
+ * @warning you aren't supposed to draw anything on its cv::Mat.
  */
 class Frame {
 public:
@@ -54,40 +57,37 @@ public:
     TimePoint timestamp() const;
     const QHash<Prediction::Type, PredictionList> &predictions() const;
     PredictionList predictions(const Prediction::Type target) const;
-    QHash<Prediction::Type, PredictionList> &predictionsByRef();
-    PredictionList &predictionsByRef(const Prediction::Type target);
-    std::optional<cv::Rect> roi() const;
     bool hasExpired() const;
+    bool hasBeenProcessed() const;
     std::vector<PaddleOCR::OCRPredictResultList> ocrResults() const;
     std::optional<ANPRSnapshot> anprSnapshot() const;
-    bool hasBeenProcessed() const;
 
     void setCameraId(const QString &newCameraId);
     void setFrameId(const QString &newFrameId);
     void setData(cv::Mat newData);
     void setTimestamp(const TimePoint &newTimestamp);
     void setPredictions(const QHash<Prediction::Type, PredictionList> &newPredictions);
-    // void setPredictions(QHash<Prediction::Type, PredictionList> &&newPredictions);
+    void setPredictions(QHash<Prediction::Type, PredictionList> &&newPredictions);
     void setPredictions(const Prediction::Type target, const PredictionList &newPredictions);
-    // void setPredictions(const Prediction::Type target, PredictionList &&newPredictions);
-    void setRoi(std::optional<cv::Rect> newRoi);
+    void setPredictions(const Prediction::Type target, PredictionList &&newPredictions);
     void setHasExpired(bool newHasExpired);
-    // void setOcrResults(std::vector<PaddleOCR::OCRPredictResultList> &&newOcrResults);
-    void setOcrResults(const std::vector<PaddleOCR::OCRPredictResultList> &newOcrResults);
-    void setAnprSnapshot(std::optional<ANPRSnapshot> newAnprSnapshot);
     void setHasBeenProcessed(bool newHasBeenProcessed);
+    void setOcrResults(const std::vector<PaddleOCR::OCRPredictResultList> &newOcrResults);
+    void setOcrResults(std::vector<PaddleOCR::OCRPredictResultList> &&newOcrResults);
+    void setAnprSnapshot(std::optional<ANPRSnapshot> newAnprSnapshot);
 
 private:
-    std::atomic_bool m_hasExpired = false;
-    std::atomic_bool m_hasBeenProcessed = false;
     QString m_cameraId;
     QString m_frameId;
     cv::Mat m_data;
     TimePoint m_timestamp;
-    std::optional<cv::Rect> m_roi;
+    std::atomic_bool m_hasExpired = false;
+    std::atomic_bool m_hasBeenProcessed = false;
     QHash<Prediction::Type, PredictionList> m_predictions;
     std::vector<PaddleOCR::OCRPredictResultList> m_ocrResults;
     std::optional<ANPRSnapshot> m_anprSnapshot; // Comprehensive ANPR data
+
+    mutable std::shared_mutex m_mtx;
 };
 
 using SharedFrame = std::shared_ptr<Frame>;

@@ -1,6 +1,9 @@
 #pragma once
 
-#include <opencv2/opencv.hpp>
+#include <string>
+#include <vector>
+
+#include <opencv2/core/core.hpp>
 
 /**
  * @brief Struct representing a detected keypoint in pose estimation.
@@ -71,3 +74,6 @@ struct Prediction {
         LicensePlates
     };
 };
+
+using PredictionList = std::vector<Prediction>;
+

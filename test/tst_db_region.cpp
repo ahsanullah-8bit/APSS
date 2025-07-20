@@ -1,16 +1,13 @@
 #include "gtest/gtest.h"
 
-// ODB headers for database interaction
 #include <odb/core.hxx>
 #include <odb/database.hxx>
 #include <odb/transaction.hxx>
 #include <odb/session.hxx>
-#include <odb/schema-catalog.hxx> // For create_schema
+#include <odb/schema-catalog.hxx>
 
-// SQLite backend for ODB
 #include <odb/sqlite/database.hxx>
 
-// Qt headers
 #include <QtCore/QString>
 #include <QtCore/QDateTime>
 #include <QtCore/QDebug>
@@ -18,7 +15,6 @@
 #include "db/db.h"
 #include <db/region>
 
-// Define a test fixture for ODB operations
 class RegionOdbTest : public ::testing::Test
 {
 protected:
@@ -39,21 +35,17 @@ protected:
     }
 
     void TearDown() override
-    {
-        // Database destroyed on db unique_ptr scope exit
-    }
+    {}
 
-    // Helper function to create a sample Region object
     Region createSampleRegion(const QString& camera_id = "CameraDefault")
     {
         Region region;
-        region.setCamera(camera_id); // Camera is the ID for Region
+        region.setCamera(camera_id);
         region.setGrid("1,1,1,1,0,0,0,0");
         region.setLastUpdate(QDateTime::currentDateTimeUtc());
         return region;
     }
 
-    // Helper function to compare two Region objects for equality
     void expectRegionsEqual(const Region& expected, const Region& actual)
     {
         EXPECT_EQ(actual.camera(), expected.camera());
@@ -62,7 +54,6 @@ protected:
     }
 };
 
-// Test Case 1: Persistence and Loading (ID is camera string)
 TEST_F(RegionOdbTest, PersistAndLoadRegion)
 {
     Region original_region = createSampleRegion("FrontDoorCam");
@@ -75,7 +66,6 @@ TEST_F(RegionOdbTest, PersistAndLoadRegion)
 
     {
         odb::transaction t(db->begin());
-        // Load by camera ID (which is the primary key)
         QSharedPointer<Region> loaded_region(db->load<Region>(original_region.camera()));
         t.commit();
 
@@ -84,7 +74,6 @@ TEST_F(RegionOdbTest, PersistAndLoadRegion)
     }
 }
 
-// Test Case 2: Updating a Region object
 TEST_F(RegionOdbTest, UpdateRegion)
 {
     Region region_to_update = createSampleRegion("BackyardCam");
@@ -114,7 +103,6 @@ TEST_F(RegionOdbTest, UpdateRegion)
     }
 }
 
-// Test Case 3: Deleting a Region object
 TEST_F(RegionOdbTest, DeleteRegion)
 {
     Region region_to_delete = createSampleRegion("GarageCam");
@@ -144,7 +132,6 @@ TEST_F(RegionOdbTest, DeleteRegion)
     }
 }
 
-// Test Case 4: Querying Region objects
 TEST_F(RegionOdbTest, QueryRegions)
 {
     Region reg1 = createSampleRegion("CamA");
@@ -164,7 +151,6 @@ TEST_F(RegionOdbTest, QueryRegions)
         t.commit();
     }
 
-    // Query for a specific grid pattern
     {
         odb::transaction t(db->begin());
         typedef odb::result<Region> result_type;

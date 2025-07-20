@@ -1,16 +1,13 @@
 #include "gtest/gtest.h"
 
-// ODB headers for database interaction
 #include <odb/core.hxx>
 #include <odb/database.hxx>
 #include <odb/transaction.hxx>
 #include <odb/session.hxx>
-#include <odb/schema-catalog.hxx> // For create_schema
+#include <odb/schema-catalog.hxx>
 
-// SQLite backend for ODB
 #include <odb/sqlite/database.hxx>
 
-// Qt headers
 #include <QtCore/QString>
 #include <QtCore/QDateTime>
 #include <QtCore/QDebug>
@@ -18,7 +15,6 @@
 #include "db/db.h"
 #include <db/timeline>
 
-// Define a test fixture for ODB operations
 class TimelineOdbTest : public ::testing::Test
 {
 protected:
@@ -39,11 +35,8 @@ protected:
     }
 
     void TearDown() override
-    {
-        // Database destroyed on db unique_ptr scope exit
-    }
+    {}
 
-    // Helper function to create a sample Timeline object
     Timeline createSampleTimeline(long id)
     {
         Timeline tl;
@@ -57,7 +50,6 @@ protected:
         return tl;
     }
 
-    // Helper function to compare two Timeline objects for equality
     void expectTimelinesEqual(const Timeline& expected, const Timeline& actual)
     {
         EXPECT_EQ(actual.id(), expected.id());
@@ -70,7 +62,6 @@ protected:
     }
 };
 
-// Test Case 1: Persistence and Loading
 TEST_F(TimelineOdbTest, PersistAndLoadTimeline)
 {
     Timeline original_timeline = createSampleTimeline(1001);
@@ -91,7 +82,6 @@ TEST_F(TimelineOdbTest, PersistAndLoadTimeline)
     }
 }
 
-// Test Case 2: Updating a Timeline object
 TEST_F(TimelineOdbTest, UpdateTimeline)
 {
     Timeline timeline_to_update = createSampleTimeline(1002);
@@ -122,7 +112,6 @@ TEST_F(TimelineOdbTest, UpdateTimeline)
     }
 }
 
-// Test Case 3: Deleting a Timeline object
 TEST_F(TimelineOdbTest, DeleteTimeline)
 {
     Timeline timeline_to_delete = createSampleTimeline(1003);
@@ -152,7 +141,6 @@ TEST_F(TimelineOdbTest, DeleteTimeline)
     }
 }
 
-// Test Case 4: Querying Timeline objects
 TEST_F(TimelineOdbTest, QueryTimelines)
 {
     Timeline tl1 = createSampleTimeline(2001);
@@ -178,7 +166,6 @@ TEST_F(TimelineOdbTest, QueryTimelines)
         t.commit();
     }
 
-    // Query by camera
     {
         odb::transaction t(db->begin());
         typedef odb::result<Timeline> result_type;
@@ -200,7 +187,6 @@ TEST_F(TimelineOdbTest, QueryTimelines)
         EXPECT_TRUE(found3);
     }
 
-    // Query by classType and timestamp range
     {
         odb::transaction t(db->begin());
         typedef odb::result<Timeline> result_type;

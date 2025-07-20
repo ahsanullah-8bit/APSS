@@ -33,7 +33,7 @@ protected:
     bool predict(SharedFrame frame,
                  SharedFrameBoundedQueue &queue);
     // returns true, if there were any deltas
-    bool trackAndEstimateDeltas(SharedFrame frame,
+    void trackAndEstimateDeltas(SharedFrame frame,
                                 Tracker &tracker,
                                 Prediction::Type predictionType);
     PredictionList filterObjectPredictions(const PredictionList &results,

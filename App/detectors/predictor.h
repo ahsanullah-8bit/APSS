@@ -2,7 +2,10 @@
 
 #include <onnxruntime_cxx_api.h>
 
-#include <apss.h>
+#include <opencv2/core/mat.hpp>
+
+#include "apss.h"
+#include "utils/prediction.h"
 #include "config/predictorconfig.h"
 #include "onnxinference.h"
 
