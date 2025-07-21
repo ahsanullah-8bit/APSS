@@ -1,0 +1,43 @@
+version: 0.1
+cameras:
+  local_file:
+    enabled: true
+    detect:
+      enabled: false
+      fps: 5
+    ffmpeg:
+      inputs:
+        - path: C:/Users/MadGuy/Videos/ny_street.mp4
+          roles:
+            - Detect
+    objects:
+      track:
+        - bicycle
+        - car
+        - motorcycle
+        - person
+        - truck
+    push_based_timeout: 50
+    pull_based_timeout: 100
+    pull_based_order: false
+predictors:
+  yolo11_det:
+    model:
+      path: models/yolo11n.onnx
+      width: 320
+      height: 320
+    batch_size: 1
+    kpt_shape: [4, 3]
+lpr:
+  enabled: false
+  detection_threshold: 0.699999988
+  min_area: 1000
+  recognition_threshold: 0.899999976
+  min_plate_length: 4
+  match_distance: 1
+  voi:
+    - bicycle
+    - bus
+    - car
+    - motorcycle
+    - truck

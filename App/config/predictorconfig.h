@@ -11,7 +11,6 @@ enum SupportedEP {
 
 struct PredictorConfig {
     std::optional<ModelConfig> model = ModelConfig{};
-    std::optional<std::string> model_path;
     std::optional<int> batch_size = 1;
     std::optional<std::vector<int>> kpt_shape = std::vector<int>{4, 3}; // for pose model
 };

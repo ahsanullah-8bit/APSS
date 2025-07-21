@@ -16,8 +16,8 @@ class CameraProcessor : public QThread
 public:
     explicit CameraProcessor(const QString &cameraName,
                              const CameraConfig &config,
-                             const std::optional<ModelConfig> &modelConfig,
-                             const std::optional<std::map<int, std::string>> &labelmap,
+                             // const std::optional<ModelConfig> &modelConfig,
+                             // const std::optional<std::map<int, std::string>> &labelmap,
                              SharedFrameBoundedQueue &inDetectorFrameQueue,
                              SharedFrameBoundedQueue &inLPDetectorFrameQueue,
                              QSharedPointer<QWaitCondition> waitCondition,
@@ -42,8 +42,8 @@ private:
     QString m_cameraName;
     CameraConfig m_config;
     PaddleOCREngine m_ocrEngine;
-    std::optional<ModelConfig> m_modelConfig;
-    std::optional<std::map<int, std::string>> m_labelmap;
+    // std::optional<ModelConfig> m_modelConfig;
+    // std::optional<std::map<int, std::string>> m_labelmap;
     SharedFrameBoundedQueue &m_inDetectorFrameQueue;
     SharedFrameBoundedQueue &m_inLPDetectorFrameQueue;
     QSharedPointer<QWaitCondition> m_waitCondition;

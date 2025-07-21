@@ -301,8 +301,6 @@ void APSSEngine::startCameraProcessors()
         QString cam_name = QString::fromStdString(name);
         QSharedPointer<CameraProcessor> camera_thread(new CameraProcessor(cam_name,
                                                                           config,
-                                                                          m_config->model,
-                                                                          m_config->model->labelmap,
                                                                           m_inUnifiedObjDetectorQ,
                                                                           m_inUnifiedLPDetectorQ,
                                                                           m_cameraWaitConditions[cam_name],

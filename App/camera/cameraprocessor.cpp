@@ -11,8 +11,6 @@ Q_STATIC_LOGGING_CATEGORY(apss_camera_processor, "apss.camera.processor")
 
 CameraProcessor::CameraProcessor(const QString &cameraName,
                                  const CameraConfig &config,
-                                 const std::optional<ModelConfig> &modelConfig,
-                                 const std::optional<std::map<int, std::string> > &labelmap,
                                  SharedFrameBoundedQueue &inDetectorFrameQueue,
                                  SharedFrameBoundedQueue &inLPDetectorFrameQueue,
                                  QSharedPointer<QWaitCondition> waitCondition,
@@ -22,8 +20,6 @@ CameraProcessor::CameraProcessor(const QString &cameraName,
     : QThread(parent)
     , m_cameraName(cameraName)
     , m_config(config)
-    , m_modelConfig(modelConfig)
-    , m_labelmap(labelmap)
     , m_inDetectorFrameQueue(inDetectorFrameQueue)
     , m_inLPDetectorFrameQueue(inLPDetectorFrameQueue)
     , m_waitCondition(waitCondition)

@@ -49,7 +49,8 @@ TEST_F(TestConfig, apssConfig) {
     cam_config.ffmpeg.inputs.emplace_back(CameraInput( "C:/Users/MadGuy/Videos/ny_street.mp4", {CameraRoleEnum::Detect}));
 
     PredictorConfig pred_config;
-    pred_config.model_path = "models/yolo11n.onxx";
+    pred_config.model = ModelConfig();
+    pred_config.model->path = "models/yolo11n.onxx";
 
     APSSConfig config;
     config.version = "0.1";
@@ -192,7 +193,8 @@ TEST_F(TestConfig, detectorConfig)
 
     PredictorConfig predictor_config;
     // predictor_config.type = "gpu";
-    predictor_config.model_path = "models/detector.onnx";
+    predictor_config.model = ModelConfig();
+    predictor_config.model->path = "models/detector.onnx";
 
     std::string yaml_out = rfl::yaml::write(predictor_config);
 

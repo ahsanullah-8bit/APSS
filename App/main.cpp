@@ -12,6 +12,8 @@
 #include "config/apssconfig.h"
 #include "engine/apssengine.h"
 
+APSSConfig loadConfig(const QString &filepath);
+
 int main(int argc, char *argv[])
 {
     qSetMessagePattern("%{time HH:mm:ss.zzz} [%{category}] %{message}");
@@ -22,22 +24,7 @@ int main(int argc, char *argv[])
 
     // APSSEngine Setup -------------
 
-    CameraConfig cam_config;
-    cam_config.enabled = true;
-    cam_config.ffmpeg.inputs.emplace_back(CameraInput( "C:/Users/MadGuy/Videos/ny_street2.mp4", {CameraRoleEnum::Detect}));
-    cam_config.objects = ObjectConfig();
-    cam_config.objects->track = DEFAULT_TRACKED_OBJECTS;
-    cam_config.pull_based_order = true;
-
-    PredictorConfig pred_config;
-    pred_config.model = ModelConfig();
-    pred_config.model->path = "models/yolo11n.onnx";
-
-    APSSConfig config;
-    config.version = "0.1";
-    config.cameras["local_file"] = cam_config;
-    config.predictors["yolo11_det"] = pred_config;
-
+    APSSConfig config = loadConfig("config.yml");
     APSSEngine *apssEngine = new APSSEngine(&config, &engine);
     apssEngine->start();
     engine.rootContext()->setContextProperty("apssEngine", apssEngine);
@@ -61,4 +48,39 @@ int main(int argc, char *argv[])
         return -1;
 
     return app.exec();
+}
+
+
+APSSConfig loadConfig(const QString &filepath)
+{
+    if (filepath.isEmpty() || !QFile::exists(filepath))
+        qFatal() << "No config.yml found, please create one!";
+
+    try {
+        // CameraConfig cam_config;
+        // cam_config.enabled = true;
+        // cam_config.ffmpeg.inputs.emplace_back(CameraInput( "C:/Users/MadGuy/Videos/ny_street2.mp4", {CameraRoleEnum::Detect}));
+        // cam_config.objects = ObjectConfig();
+        // cam_config.objects->track = DEFAULT_TRACKED_OBJECTS;
+        // cam_config.pull_based_order = true;
+
+        // PredictorConfig pred_config;
+        // pred_config.model = ModelConfig();
+        // pred_config.model->path = "models/yolo11n.onnx";
+
+        QFile file(filepath);
+        if (file.open(QIODeviceBase::ReadOnly | QIODeviceBase::Text)) {
+            std::string conf_str = file.readAll().toStdString();
+
+            const auto yaml_config = rfl::yaml::read<APSSConfig>(conf_str);
+            if (yaml_config)
+                return APSSConfig(yaml_config.value());
+            else if (yaml_config.error())
+                qWarning() << yaml_config.error()->what();
+        }
+    } catch (const std::exception &e) {
+        qFatal() << e.what();
+    }
+
+    return APSSConfig();
 }
