@@ -1,9 +1,13 @@
+#include <QLoggingCategory>
+
 #include "cameraprocessor.h"
 
 #include "config/objectconfig.h"
 #include "detectors/image.h"
 #include "utils/eventspersecond.h"
 #include "track/tracker.h"
+
+Q_STATIC_LOGGING_CATEGORY(apss_camera_processor, "apss.camera.processor")
 
 CameraProcessor::CameraProcessor(const QString &cameraName,
                                  const CameraConfig &config,
@@ -12,6 +16,7 @@ CameraProcessor::CameraProcessor(const QString &cameraName,
                                  SharedFrameBoundedQueue &inDetectorFrameQueue,
                                  SharedFrameBoundedQueue &inLPDetectorFrameQueue,
                                  QSharedPointer<QWaitCondition> waitCondition,
+                                 SharedFrameBoundedQueue &trackedFrameQueue,
                                  SharedCameraMetrics cameraMetrics,
                                  QObject *parent)
     : QThread(parent)
@@ -22,6 +27,7 @@ CameraProcessor::CameraProcessor(const QString &cameraName,
     , m_inDetectorFrameQueue(inDetectorFrameQueue)
     , m_inLPDetectorFrameQueue(inLPDetectorFrameQueue)
     , m_waitCondition(waitCondition)
+    , m_trackedFrameQueue(trackedFrameQueue)
     , m_cameraMetrics(cameraMetrics)
 {
     setObjectName(QString("apss.thread:%1").arg(m_cameraName));
@@ -114,7 +120,8 @@ void CameraProcessor::run()
         m_cameraMetrics->setProcessFPS(process_eps.eps());
 
         // Send the frame to listensers (main GUI thread).
-        emit frameChanged(frame);
+        m_trackedFrameQueue.try_emplace(frame);
+        // emit frameChanged(frame);
     }
 
     // Empty the frame Queue
@@ -138,7 +145,7 @@ bool CameraProcessor::predict(SharedFrame frame,
             QMutexLocker<QMutex> lock(&mtx);
             if (!m_waitCondition->wait(&mtx, frame_timeout)) {
                 frame->setHasExpired(true);
-                qWarning() << std::format("Frame {} expired after {}ms. System seems to be overloaded.", frame->id().toStdString(), frame_timeout);
+                qCWarning(apss_camera_processor) << std::format("Frame {} expired after {}ms. System seems to be overloaded.", frame->id().toStdString(), frame_timeout);
                 return false;
             }
         }
@@ -155,7 +162,7 @@ bool CameraProcessor::predict(SharedFrame frame,
         if (!frame->hasBeenProcessed()) {
             QMutexLocker<QMutex> lock(&mtx);
             if (!m_waitCondition->wait(&mtx, frame_timeout)) {
-                qCritical() << std::format("Frame {} expired after {}ms, in push based mode!!!", frame->id().toStdString(), frame_timeout);
+                qCCritical(apss_camera_processor) << std::format("Frame {} expired after {}ms, in push based mode!!!", frame->id().toStdString(), frame_timeout);
                 // return false;
             }
         }
@@ -243,30 +250,9 @@ void CameraProcessor::recognizeLicensePlates(SharedFrame frame)
         cv::Mat crop;
         Utils::perspectiveCrop(frame->data(), crop, prediction.points);
         crop_batch.emplace_back(crop);
-
-        // const std::string img_dir = std::format("{}/{}", "test/results", ".lps");
-        // if (!std::filesystem::exists(img_dir))
-        //     std::filesystem::create_directories(img_dir);
-
-        // std::string img_path = std::format("{}/{}.jpg", img_dir, std::string(frame->id().toStdString() + " - " + std::to_string(prediction.conf)));
-        // cv::imwrite(img_path, crop);
     }
 
     std::vector<PaddleOCR::OCRPredictResultList> results_list = m_ocrEngine.predict(crop_batch);
-    // std::string results_str;
-    // for (const auto &reslist : results_list) {
-    //     if (reslist.empty())
-    //         continue;
-
-    //     results_str.append("[");
-    //     for (const auto &ocr : reslist) {
-    //         results_str.append(ocr.text + " : " + std::to_string(ocr.score) + ", ");
-    //     }
-    //     results_str.append("], ");
-    // }
-
-    // if (!results_str.empty())
-    //     qDebug() << results_str;
 
     frame->setOcrResults(std::move(results_list));
 }

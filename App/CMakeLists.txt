@@ -10,15 +10,19 @@ add_subdirectory(utils)
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    # camera
-    # config
-    # detectors
-    # engine
-    # utils
+    ${ODB_INCLUDE_DIRS}
 )
 
 target_sources(${CMAKE_PROJECT_NAME} PUBLIC
+    db/sqlite/camera-schema.cxx
+    db/sqlite/event-schema.cxx
+    db/sqlite/exports-schema.cxx
+    db/sqlite/recording-schema.cxx
+    db/sqlite/region-schema.cxx
+    db/sqlite/timeline-schema.cxx
+
     engine/apssengine.cpp
+    engine/trackedobjectprocessor.cpp
     models/camerametricsmodel.cpp
     main.cpp
 )
@@ -34,8 +38,10 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Qml
     Qt${QT_VERSION_MAJOR}::Multimedia
 
+    APSS::Camera
     APSS::Config
     APSS::Database
+    APSS::Events
     APSS::Predictors
     APSS::Track
     APSS::Utils

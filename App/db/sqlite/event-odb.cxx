@@ -11,7 +11,6 @@
 #include <cassert>
 #include <cstring>  // std::memcpy
 
-#include <odb/schema-catalog-impl.hxx>
 
 #include <odb/sqlite/traits.hxx>
 #include <odb/sqlite/database.hxx>
@@ -1784,75 +1783,6 @@ namespace odb
 
     return st.execute ();
   }
-}
-
-namespace odb
-{
-  static bool
-  create_schema (database& db, unsigned short pass, bool drop)
-  {
-    ODB_POTENTIALLY_UNUSED (db);
-    ODB_POTENTIALLY_UNUSED (pass);
-    ODB_POTENTIALLY_UNUSED (drop);
-
-    if (drop)
-    {
-      switch (pass)
-      {
-        case 1:
-        {
-          return true;
-        }
-        case 2:
-        {
-          db.execute ("DROP TABLE IF EXISTS \"Event\"");
-          return false;
-        }
-      }
-    }
-    else
-    {
-      switch (pass)
-      {
-        case 1:
-        {
-          db.execute ("CREATE TABLE \"Event\" (\n"
-                      "  \"id\" TEXT NOT NULL PRIMARY KEY,\n"
-                      "  \"label\" TEXT NULL,\n"
-                      "  \"subLabel\" TEXT NULL,\n"
-                      "  \"camera\" TEXT NULL,\n"
-                      "  \"startTime\" TEXT NULL,\n"
-                      "  \"endTime\" TEXT NULL,\n"
-                      "  \"topScore\" REAL NULL,\n"
-                      "  \"score\" REAL NULL,\n"
-                      "  \"falsePositive\" INTEGER NOT NULL,\n"
-                      "  \"zones\" TEXT NULL,\n"
-                      "  \"thumbnail\" TEXT NULL,\n"
-                      "  \"hasClip\" INTEGER NOT NULL,\n"
-                      "  \"hasSnapshot\" INTEGER NOT NULL,\n"
-                      "  \"region\" TEXT NULL,\n"
-                      "  \"box\" TEXT NULL,\n"
-                      "  \"area\" INTEGER NOT NULL,\n"
-                      "  \"retainIndefinitely\" INTEGER NOT NULL,\n"
-                      "  \"ratio\" REAL NULL,\n"
-                      "  \"plusId\" TEXT NULL,\n"
-                      "  \"modelHash\" TEXT NULL,\n"
-                      "  \"detectorType\" TEXT NULL,\n"
-                      "  \"modelType\" TEXT NULL,\n"
-                      "  \"data\" TEXT NULL)");
-          return false;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  static const schema_catalog_create_entry
-  create_schema_entry_ (
-    id_sqlite,
-    "",
-    &create_schema);
 }
 
 #include <odb/post.hxx>

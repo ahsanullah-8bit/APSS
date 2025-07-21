@@ -15,7 +15,7 @@
 #include "db/db.h"
 #include <db/region>
 
-class RegionOdbTest : public ::testing::Test
+class TestOdbRegion : public ::testing::Test
 {
 protected:
     std::unique_ptr<odb::database> db;
@@ -54,7 +54,7 @@ protected:
     }
 };
 
-TEST_F(RegionOdbTest, PersistAndLoadRegion)
+TEST_F(TestOdbRegion, PersistAndLoadRegion)
 {
     Region original_region = createSampleRegion("FrontDoorCam");
 
@@ -74,7 +74,7 @@ TEST_F(RegionOdbTest, PersistAndLoadRegion)
     }
 }
 
-TEST_F(RegionOdbTest, UpdateRegion)
+TEST_F(TestOdbRegion, UpdateRegion)
 {
     Region region_to_update = createSampleRegion("BackyardCam");
 
@@ -103,7 +103,7 @@ TEST_F(RegionOdbTest, UpdateRegion)
     }
 }
 
-TEST_F(RegionOdbTest, DeleteRegion)
+TEST_F(TestOdbRegion, DeleteRegion)
 {
     Region region_to_delete = createSampleRegion("GarageCam");
 
@@ -132,7 +132,7 @@ TEST_F(RegionOdbTest, DeleteRegion)
     }
 }
 
-TEST_F(RegionOdbTest, QueryRegions)
+TEST_F(TestOdbRegion, QueryRegions)
 {
     Region reg1 = createSampleRegion("CamA");
     reg1.setGrid("1,0,0,0");

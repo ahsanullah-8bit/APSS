@@ -15,7 +15,7 @@
 #include "db/db.h"
 #include <db/timeline>
 
-class TimelineOdbTest : public ::testing::Test
+class TestOdbTimeline : public ::testing::Test
 {
 protected:
     std::unique_ptr<odb::database> db;
@@ -62,7 +62,7 @@ protected:
     }
 };
 
-TEST_F(TimelineOdbTest, PersistAndLoadTimeline)
+TEST_F(TestOdbTimeline, PersistAndLoadTimeline)
 {
     Timeline original_timeline = createSampleTimeline(1001);
 
@@ -82,7 +82,7 @@ TEST_F(TimelineOdbTest, PersistAndLoadTimeline)
     }
 }
 
-TEST_F(TimelineOdbTest, UpdateTimeline)
+TEST_F(TestOdbTimeline, UpdateTimeline)
 {
     Timeline timeline_to_update = createSampleTimeline(1002);
 
@@ -112,7 +112,7 @@ TEST_F(TimelineOdbTest, UpdateTimeline)
     }
 }
 
-TEST_F(TimelineOdbTest, DeleteTimeline)
+TEST_F(TestOdbTimeline, DeleteTimeline)
 {
     Timeline timeline_to_delete = createSampleTimeline(1003);
 
@@ -141,7 +141,7 @@ TEST_F(TimelineOdbTest, DeleteTimeline)
     }
 }
 
-TEST_F(TimelineOdbTest, QueryTimelines)
+TEST_F(TestOdbTimeline, QueryTimelines)
 {
     Timeline tl1 = createSampleTimeline(2001);
     tl1.setCamera("CamA");

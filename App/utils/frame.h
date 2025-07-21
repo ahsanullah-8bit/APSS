@@ -76,6 +76,10 @@ public:
     void setOcrResults(std::vector<PaddleOCR::OCRPredictResultList> &&newOcrResults);
     void setAnprSnapshot(std::optional<ANPRSnapshot> newAnprSnapshot);
 
+    // static helpers
+    static QString makeFrameId(const QString &camera, size_t frameIndx);
+    static std::optional<std::tuple<QString, size_t>> splitFrameId(const QString &frameId);
+
 private:
     QString m_cameraId;
     QString m_frameId;

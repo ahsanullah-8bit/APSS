@@ -226,3 +226,23 @@ void Frame::setAnprSnapshot(std::optional<ANPRSnapshot> newAnprSnapshot)
     std::unique_lock<std::shared_mutex> lock(m_mtx);
     m_anprSnapshot = newAnprSnapshot;
 }
+
+QString Frame::makeFrameId(const QString &camera, size_t frameIndx)
+{
+    return QString("%1_%2").arg(camera).arg(frameIndx);
+}
+
+std::optional<std::tuple<QString, size_t> > Frame::splitFrameId(const QString &frameId)
+{
+    const auto parts = frameId.split('_', Qt::SkipEmptyParts);
+    if (parts.size() != 2)
+        return std::nullopt;
+
+    bool ok;
+    const size_t frame_indx = parts.at(1).toLongLong(&ok);
+    if (!ok)
+        return std::nullopt;
+    const QString camera = parts.at(0);
+
+    return std::tuple<QString, size_t>{ camera, frame_indx };
+}

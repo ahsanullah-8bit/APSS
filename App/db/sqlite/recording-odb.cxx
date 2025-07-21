@@ -11,7 +11,6 @@
 #include <cassert>
 #include <cstring>  // std::memcpy
 
-#include <odb/schema-catalog-impl.hxx>
 
 #include <odb/sqlite/traits.hxx>
 #include <odb/sqlite/database.hxx>
@@ -1112,63 +1111,6 @@ namespace odb
 
     return st.execute ();
   }
-}
-
-namespace odb
-{
-  static bool
-  create_schema (database& db, unsigned short pass, bool drop)
-  {
-    ODB_POTENTIALLY_UNUSED (db);
-    ODB_POTENTIALLY_UNUSED (pass);
-    ODB_POTENTIALLY_UNUSED (drop);
-
-    if (drop)
-    {
-      switch (pass)
-      {
-        case 1:
-        {
-          return true;
-        }
-        case 2:
-        {
-          db.execute ("DROP TABLE IF EXISTS \"Recording\"");
-          return false;
-        }
-      }
-    }
-    else
-    {
-      switch (pass)
-      {
-        case 1:
-        {
-          db.execute ("CREATE TABLE \"Recording\" (\n"
-                      "  \"id\" TEXT NOT NULL PRIMARY KEY,\n"
-                      "  \"camera\" TEXT NULL,\n"
-                      "  \"path\" TEXT NULL,\n"
-                      "  \"startTime\" TEXT NULL,\n"
-                      "  \"endTime\" TEXT NULL,\n"
-                      "  \"duration\" REAL NULL,\n"
-                      "  \"motion\" INTEGER NOT NULL,\n"
-                      "  \"objects\" INTEGER NOT NULL,\n"
-                      "  \"dBFS\" INTEGER NOT NULL,\n"
-                      "  \"segmentSize\" REAL NULL,\n"
-                      "  \"regions\" INTEGER NOT NULL)");
-          return false;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  static const schema_catalog_create_entry
-  create_schema_entry_ (
-    id_sqlite,
-    "",
-    &create_schema);
 }
 
 #include <odb/post.hxx>

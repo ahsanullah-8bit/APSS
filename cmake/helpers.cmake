@@ -476,7 +476,7 @@ function(apss_generate_odb_models4 db_type dst_dir)
 			# message(STATUS "\t-- Converting: ${src_file}")
 			execute_process(
 				COMMAND
-				    ${odb_EXECUTABLE} -d ${db_type} -q -s -o ${dst_dir} --profile qt --std c++17
+				    ${odb_EXECUTABLE} -d ${db_type} -q -s -o ${dst_dir} --profile qt --std c++17 --schema-format separate
 					-I${libodb_ROOT}/include "${src_file}" -I${QT_HEADERS} # Double-quote QT_HEADERS in case of spaces
 					RESULT_VARIABLE ODB_CONV_RESULT
 			)

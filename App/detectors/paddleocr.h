@@ -2,8 +2,6 @@
 
 #include <memory>
 
-#include <onnxruntime_cxx_api.h>
-
 #include "apss.h"
 #include "licensed/utility.h"
 #include "wrappers/customallocator.h"

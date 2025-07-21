@@ -3,7 +3,6 @@
 add_library(APSSEvents INTERFACE)
 add_library(APSS::Events ALIAS APSSEvents)
 
-# target_precompile_headers(APSSEvents INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/pch.h>")
 target_include_directories(APSSEvents INTERFACE
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/..

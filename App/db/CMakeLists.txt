@@ -28,8 +28,8 @@ target_include_directories(APSSDatabase PUBLIC
 	sqlite
 )
 target_include_directories(APSSDatabase PRIVATE ${ODB_INCLUDE_DIRS})
-target_link_directories(APSSDatabase PRIVATE ${ODB_LIBRARY_DIRS})
-target_link_libraries(APSSDatabase PRIVATE
+target_link_directories(APSSDatabase PUBLIC ${ODB_LIBRARY_DIRS})
+target_link_libraries(APSSDatabase PUBLIC
 	Qt6::Core
 	${ODB_LIBRARIES}
 )

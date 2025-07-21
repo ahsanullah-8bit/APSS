@@ -14,6 +14,7 @@
 
 int main(int argc, char *argv[])
 {
+    qSetMessagePattern("%{time HH:mm:ss.zzz} [%{category}] %{message}");
     set_qt_environment();
     QGuiApplication app(argc, argv);
 

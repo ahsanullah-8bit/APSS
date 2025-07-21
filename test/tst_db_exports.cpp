@@ -14,7 +14,7 @@
 
 #include <db/exports>
 
-class ExportsOdbTest : public ::testing::Test
+class TestOdbExports : public ::testing::Test
 {
 protected:
     std::unique_ptr<odb::database> db;
@@ -61,7 +61,7 @@ protected:
     }
 };
 
-TEST_F(ExportsOdbTest, PersistAndLoadExport)
+TEST_F(TestOdbExports, PersistAndLoadExport)
 {
     Exports original_export = createSampleExport("001");
 
@@ -81,7 +81,7 @@ TEST_F(ExportsOdbTest, PersistAndLoadExport)
     }
 }
 
-TEST_F(ExportsOdbTest, UpdateExport)
+TEST_F(TestOdbExports, UpdateExport)
 {
     Exports export_to_update = createSampleExport("002");
 
@@ -111,7 +111,7 @@ TEST_F(ExportsOdbTest, UpdateExport)
     }
 }
 
-TEST_F(ExportsOdbTest, DeleteExport)
+TEST_F(TestOdbExports, DeleteExport)
 {
     Exports export_to_delete = createSampleExport("003");
 
@@ -140,7 +140,7 @@ TEST_F(ExportsOdbTest, DeleteExport)
     }
 }
 
-TEST_F(ExportsOdbTest, QueryExports)
+TEST_F(TestOdbExports, QueryExports)
 {
     Exports exp1 = createSampleExport("A");
     exp1.setCamera("Cam1");

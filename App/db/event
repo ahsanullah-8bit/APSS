@@ -1,2 +1,2 @@
-// #include "odbmodels/event.h"
+#include "odbmodels/event.h"
 #include "sqlite/event-odb.hxx"

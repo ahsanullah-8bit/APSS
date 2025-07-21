@@ -22,7 +22,7 @@ inline std::ostream& operator<<(std::ostream& os, const QString& str)
     return os << str.toStdString();
 }
 
-class EventOdbTest : public ::testing::Test
+class TestOdbEvent : public ::testing::Test
 {
 protected:
     std::string m_pathPrefix = "test/db";
@@ -121,7 +121,7 @@ protected:
     }
 };
 
-TEST_F(EventOdbTest, PersistAndLoadEvent)
+TEST_F(TestOdbEvent, PersistAndLoadEvent)
 {
     Event original_event = createSampleEvent("001");
 
@@ -143,7 +143,7 @@ TEST_F(EventOdbTest, PersistAndLoadEvent)
     }
 }
 
-TEST_F(EventOdbTest, UpdateEvent)
+TEST_F(TestOdbEvent, UpdateEvent)
 {
     Event event_to_update = createSampleEvent("002");
 
@@ -174,7 +174,7 @@ TEST_F(EventOdbTest, UpdateEvent)
     }
 }
 
-TEST_F(EventOdbTest, DeleteEvent)
+TEST_F(TestOdbEvent, DeleteEvent)
 {
     Event event_to_delete = createSampleEvent("003");
 
@@ -206,7 +206,7 @@ TEST_F(EventOdbTest, DeleteEvent)
     }
 }
 
-TEST_F(EventOdbTest, QueryEvents)
+TEST_F(TestOdbEvent, QueryEvents)
 {
     Event event1 = createSampleEvent("A");
     event1.setCamera("CameraA");
@@ -297,7 +297,7 @@ TEST_F(EventOdbTest, QueryEvents)
     }
 }
 
-TEST_F(EventOdbTest, DefaultConstructorAndEmptyValues)
+TEST_F(TestOdbEvent, DefaultConstructorAndEmptyValues)
 {
     Event default_event;
     default_event.setId("default_test");
@@ -322,7 +322,7 @@ TEST_F(EventOdbTest, DefaultConstructorAndEmptyValues)
     }
 }
 
-TEST_F(EventOdbTest, PersistMultipleEvents)
+TEST_F(TestOdbEvent, PersistMultipleEvents)
 {
     std::vector<Event> original_events;
     original_events.push_back(createSampleEvent("M1"));

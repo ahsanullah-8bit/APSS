@@ -9,7 +9,7 @@ target_include_directories(APSSTrack PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/..
 )
-target_link_libraries(APSSTrack PRIVATE
+target_link_libraries(APSSTrack PUBLIC
 	Qt6::Core
 
 	Eigen3::Eigen

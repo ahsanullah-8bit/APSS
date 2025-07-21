@@ -34,11 +34,12 @@ target_include_directories(APSSPredictors PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/..			# Not a good choice, but anyway...
 )
-target_include_directories(APSSPredictors PUBLIC
+target_include_directories(APSSPredictors PRIVATE
 	${OpenCV_INCLUDE_DIRS}
 )
-target_link_libraries(APSSPredictors PRIVATE
+target_link_libraries(APSSPredictors PUBLIC
 	Qt6::Core
+
 	onnxruntime::onnxruntime
 	${OpenCV_LIBS}
 	ByteTrackEigen::ByteTrack

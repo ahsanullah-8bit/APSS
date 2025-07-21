@@ -10,12 +10,15 @@
 #include <QMediaDevices>
 #include <QSettings>
 
+#include <odb/sqlite/database.hxx>
+#include <tbb_patched.h>
+
 #include "camera/camerametrics.h"
 #include "config/apssconfig.h"
+#include "events/zmqproxy.h"
 #include "models/camerametricsmodel.h"
 #include "utils/frame.h"
-
-#include <tbb_patched.h>
+#include "trackedobjectprocessor.h"
 
 // This class will handle most of the stuff
 class APSSEngine : public QObject
@@ -78,4 +81,9 @@ private:
     QSharedPointer<QThread> m_lpdetector;
     QHash<QString, SharedCameraMetrics> m_cameraMetrics;
     SharedCameraMetricsModel m_cameraMetricsModel;
+
+    ZMQProxyThread m_intraZMQProxy;
+    std::unique_ptr<odb::database> m_db;
+    SharedFrameBoundedQueue m_trackedFramesQueue;
+    QSharedPointer<TrackedObjectProcessor> m_trackedObjectsProcessor;
 };

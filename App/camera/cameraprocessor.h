@@ -21,11 +21,9 @@ public:
                              SharedFrameBoundedQueue &inDetectorFrameQueue,
                              SharedFrameBoundedQueue &inLPDetectorFrameQueue,
                              QSharedPointer<QWaitCondition> waitCondition,
+                             SharedFrameBoundedQueue &trackedFrameQueue,
                              SharedCameraMetrics cameraMetrics,
                              QObject *parent = nullptr);
-
-signals:
-    void frameChanged(SharedFrame frame);
 
     // QThread interface
 protected:
@@ -49,5 +47,6 @@ private:
     SharedFrameBoundedQueue &m_inDetectorFrameQueue;
     SharedFrameBoundedQueue &m_inLPDetectorFrameQueue;
     QSharedPointer<QWaitCondition> m_waitCondition;
+    SharedFrameBoundedQueue &m_trackedFrameQueue;
     SharedCameraMetrics m_cameraMetrics;
 };

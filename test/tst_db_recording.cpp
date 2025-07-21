@@ -15,7 +15,7 @@
 #include "db/db.h"
 #include <db/recording>
 
-class RecordingOdbTest : public ::testing::Test
+class TestOdbRecording : public ::testing::Test
 {
 protected:
     std::unique_ptr<odb::database> db;
@@ -70,7 +70,7 @@ protected:
     }
 };
 
-TEST_F(RecordingOdbTest, PersistAndLoadRecording)
+TEST_F(TestOdbRecording, PersistAndLoadRecording)
 {
     Recording original_recording = createSampleRecording("001");
 
@@ -90,7 +90,7 @@ TEST_F(RecordingOdbTest, PersistAndLoadRecording)
     }
 }
 
-TEST_F(RecordingOdbTest, UpdateRecording)
+TEST_F(TestOdbRecording, UpdateRecording)
 {
     Recording recording_to_update = createSampleRecording("002");
 
@@ -121,7 +121,7 @@ TEST_F(RecordingOdbTest, UpdateRecording)
     }
 }
 
-TEST_F(RecordingOdbTest, DeleteRecording)
+TEST_F(TestOdbRecording, DeleteRecording)
 {
     Recording recording_to_delete = createSampleRecording("003");
 
@@ -150,7 +150,7 @@ TEST_F(RecordingOdbTest, DeleteRecording)
     }
 }
 
-TEST_F(RecordingOdbTest, QueryRecordings)
+TEST_F(TestOdbRecording, QueryRecordings)
 {
     Recording rec1 = createSampleRecording("A");
     rec1.setCamera("CamA");
