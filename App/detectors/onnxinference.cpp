@@ -57,6 +57,7 @@ ONNXInference::ONNXInference(const PredictorConfig &config,
             options["device_type"] = "AUTO:GPU,CPU";
             options["precision"] = "ACCURACY";
             options["num_of_threads"] = "4";
+            options["disable_dynamic_shapes"] = "false";
             sessionOptions.AppendExecutionProvider_OpenVINO_V2(options);
 
             m_selectedEPProviders.emplace_back("OpenVINOExecutionProvider");

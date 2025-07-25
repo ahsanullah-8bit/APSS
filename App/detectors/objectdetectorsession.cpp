@@ -91,9 +91,9 @@ void ObjectDetectorSession::run() {
 
                 frame->setPredictions(Prediction::Type::Objects, std::move(results));
                 frame->setHasBeenProcessed(true);
-                QString camera_id = frame->cameraId();
-                Q_ASSERT(m_cameraWaitConditions.contains(camera_id));
-                m_cameraWaitConditions.value(camera_id)->notify_all();    // Notify waiting camera processors.
+                QString camera_name = frame->camera();
+                Q_ASSERT(m_cameraWaitConditions.contains(camera_name));
+                m_cameraWaitConditions.value(camera_name)->notify_all();    // Notify waiting camera processors.
             }
 
             m_eps.update();

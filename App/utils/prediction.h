@@ -65,7 +65,7 @@ struct Prediction {
     std::string className;
     float conf;
     int classId = -1;
-    size_t trackerId = 0;
+    size_t trackerId = -1;
     bool hasDeltas = false;
 
     enum Type {

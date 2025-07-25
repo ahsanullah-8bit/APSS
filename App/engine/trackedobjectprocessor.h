@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QThread>
+#include <odb/sqlite/database.hxx>
 
 #include "frame.h"
 
@@ -8,7 +9,9 @@ class TrackedObjectProcessor : public QThread
 {
     Q_OBJECT
 public:
-    explicit TrackedObjectProcessor(SharedFrameBoundedQueue &frameQueue, QObject *parent = nullptr);
+    explicit TrackedObjectProcessor(SharedFrameBoundedQueue &frameQueue,
+                                    std::shared_ptr<odb::database> db,
+                                    QObject *parent = nullptr);
     void stop();
 
 signals:
@@ -20,4 +23,5 @@ protected:
 
 private:
     SharedFrameBoundedQueue &m_frameQueue;
+    std::shared_ptr<odb::database> m_db;
 };

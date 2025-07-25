@@ -1,86 +1,49 @@
 #include "frame.h"
 
-Frame::Frame(const QString &cameraId, const QString &frameId, cv::Mat data, TimePoint timestamp)
-    : m_cameraId(cameraId)
-    , m_frameId(frameId)
-    , m_data(data)
-    , m_timestamp(timestamp)
-{}
-
-Frame::Frame(const QString &cameraId, const QString &frameId, cv::Mat data, const QHash<Prediction::Type, PredictionList> &predictions, TimePoint timestamp)
-    : m_cameraId(cameraId)
-    , m_frameId(frameId)
+Frame::Frame(const QString &camera, size_t frameIndx, cv::Mat data, const QHash<Prediction::Type, PredictionList> &predictions, TimePoint timestamp)
+    : m_camera(camera)
+    , m_frameIndx(frameIndx)
     , m_data(data)
     , m_predictions(predictions)
     , m_timestamp(timestamp)
 {}
 
-Frame::Frame(const Frame &other)
-    : m_cameraId(other.m_cameraId)
-    , m_frameId(other.m_frameId)
-    , m_data(other.m_data)
-    , m_timestamp(other.m_timestamp)
-    , m_predictions(other.m_predictions)
+Frame::Frame(const QString &camera, size_t frameIndx, const cv::Mat &data,
+             const QHash<Prediction::Type, PredictionList> &predictions,
+             Frame::TimePoint timestamp,
+             const std::vector<PaddleOCR::OCRPredictResultList> &ocrResults,
+             std::optional<ANPRSnapshot> anprSnapshot)
+    : m_camera(camera),
+    m_frameIndx(std::move(frameIndx)),
+    m_data(data),
+    m_timestamp(std::move(timestamp)),
+    m_predictions(predictions),
+    m_ocrResults(ocrResults),
+    m_anprSnapshot(std::move(anprSnapshot))
 {}
-
-Frame::Frame(Frame &&other) noexcept
-    : m_cameraId(std::move(other.m_cameraId))
-    , m_frameId(std::move(other.m_frameId))
-    , m_data(std::move(other.m_data))
-    , m_timestamp(std::move(other.m_timestamp))
-    , m_predictions(std::move(other.m_predictions))
-{}
-
-Frame &Frame::operator=(const Frame &other)
-{
-    if (this == &other) {
-        return *this;
-    }
-
-    m_cameraId = other.m_cameraId;
-    m_frameId = other.m_frameId;
-    m_data = other.m_data;
-    m_timestamp = other.m_timestamp;
-    m_predictions = other.m_predictions;
-    return *this;
-}
-
-Frame &Frame::operator=(Frame &&other) noexcept
-{
-    if (this == &other) {
-        return *this;
-    }
-
-    m_cameraId = std::move(other.m_cameraId);
-    m_frameId = std::move(other.m_frameId);
-    m_data = std::move(other.m_data);
-    m_timestamp = std::move(other.m_timestamp);
-    m_predictions = std::move(other.m_predictions);
-    return *this;
-}
 
 Frame Frame::clone() const
 {
     std::shared_lock<std::shared_mutex> lock(m_mtx);
-    return Frame(m_cameraId, m_frameId, m_data.clone(), m_predictions, m_timestamp);
+
+    return Frame(m_camera, m_frameIndx, m_data.clone(),
+                 m_predictions, m_timestamp, m_ocrResults,
+                 m_anprSnapshot);
 }
 
 QString Frame::id()
 {
-    std::shared_lock<std::shared_mutex> lock(m_mtx);
-    return QString("%1_%2").arg(m_cameraId, m_frameId);
+    return makeFrameId(m_camera, m_frameIndx);
 }
 
-QString Frame::cameraId() const
+QString Frame::camera() const
 {
-    std::shared_lock<std::shared_mutex> lock(m_mtx);
-    return m_cameraId;
+    return m_camera;
 }
 
-QString Frame::frameId() const
+size_t Frame::frameIndx() const
 {
-    std::shared_lock<std::shared_mutex> lock(m_mtx);
-    return m_frameId;
+    return m_frameIndx;
 }
 
 cv::Mat Frame::data() const {
@@ -127,22 +90,10 @@ std::optional<ANPRSnapshot> Frame::anprSnapshot() const
     return m_anprSnapshot;
 }
 
-void Frame::setCameraId(const QString &newCameraId)
-{
-    std::unique_lock<std::shared_mutex> lock(m_mtx);
-    m_cameraId = newCameraId;
-}
-
-void Frame::setFrameId(const QString &newFrameId)
-{
-    std::unique_lock<std::shared_mutex> lock(m_mtx);
-    m_frameId = newFrameId;
-}
-
 void Frame::setData(cv::Mat newData)
 {
     std::unique_lock<std::shared_mutex> lock(m_mtx);
-    m_data = std::move(newData);
+    m_data = newData;
 }
 
 void Frame::setTimestamp(const TimePoint &newTimestamp)
@@ -229,12 +180,12 @@ void Frame::setAnprSnapshot(std::optional<ANPRSnapshot> newAnprSnapshot)
 
 QString Frame::makeFrameId(const QString &camera, size_t frameIndx)
 {
-    return QString("%1_%2").arg(camera).arg(frameIndx);
+    return QString("%1:%2").arg(camera).arg(frameIndx);
 }
 
-std::optional<std::tuple<QString, size_t> > Frame::splitFrameId(const QString &frameId)
+std::optional<std::tuple<QString, size_t> > Frame::splitFrameId(const QString &frameIndx)
 {
-    const auto parts = frameId.split('_', Qt::SkipEmptyParts);
+    const auto parts = frameIndx.split(':', Qt::SkipEmptyParts);
     if (parts.size() != 2)
         return std::nullopt;
 

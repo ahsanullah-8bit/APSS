@@ -105,9 +105,9 @@ void LPDetectorSession::run() {
 
             frame->setPredictions(Prediction::Type::LicensePlates, std::move(lp_predictions));
             frame->setHasBeenProcessed(true);   // NOTE: This is very necessary to prevent CameraProcessor's prediction blocking, if finished very early.
-            QString camera_id = frame->cameraId();
-            Q_ASSERT(m_cameraWaitConditions.contains(camera_id));
-            m_cameraWaitConditions.value(camera_id)->notify_all();    // Notify waiting camera processors.
+            QString camera_name = frame->camera();
+            Q_ASSERT(m_cameraWaitConditions.contains(camera_name));
+            m_cameraWaitConditions.value(camera_name)->notify_all();    // Notify waiting camera processors.
 
             m_eps.update();
         }

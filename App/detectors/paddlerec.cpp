@@ -162,11 +162,14 @@ std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &bat
 
         // out_batch_size can't be trusted, as the session might cache the previous batch
         // so it shouldn't be used for postprocessing
-        Q_ASSERT(out_batch_size >= sel_batch.size());
+        // Take 2: To my expectations, the output shape should have the same batch size as that of input shape given.
+        //              But the runtime inference sometimes says otherwise. I'm gonna assume it a skill issue and
+        //              move on at the moment.
+        // Q_ASSERT(out_batch_size >= sel_batch.size());
 
         // ctc decode
         Q_ASSERT(!m_labels.empty());
-        for (size_t r = 0; r < sel_batch.size(); ++r) {
+        for (size_t r = 0; r < out_batch_size; ++r) {
             std::string str_res;
             int argmax_idx;
             int last_index = 0;

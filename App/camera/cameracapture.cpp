@@ -202,7 +202,7 @@ void CameraCapture::run()
                           rgb_frame->data, rgb_frame->linesize);
 
                 cv::Mat cv_frame(video_codec_ctx->height, video_codec_ctx->width, CV_8UC3, rgb_frame->data[0], rgb_frame->linesize[0]);
-                SharedFrame final_frame(new Frame(m_name, QString::number(frame_index), cv_frame.clone()));
+                SharedFrame final_frame(new Frame(m_name, frame_index, cv_frame.clone()));
 
                 // Non-blocking queue insertion with abort detection
                 try {
@@ -213,7 +213,7 @@ void CameraCapture::run()
                         if (QThread::currentThread()->isInterruptionRequested())
                             break;
 
-                        qCWarning(apss_camera_capture) << "Queues overloaded, Skipping frame" << frame_index << "pts" << frame->pts;
+                        qCWarning(apss_camera_capture) << m_config.name.value_or("") << "queues overloaded, Skipping frame" << frame_index << "pts" << frame->pts;
                         // if (!m_frameQueue.wait_for(std::chrono::milliseconds(100))) {}   // error: no member named tbb::concurrent_bounded_queue::wait_for(..._
                     }
                 } catch (const tbb::user_abort&) {

@@ -24,6 +24,7 @@ target_sources(${CMAKE_PROJECT_NAME} PUBLIC
     engine/apssengine.cpp
     engine/trackedobjectprocessor.cpp
     models/camerametricsmodel.cpp
+    output/recordingsmanager.cpp
     main.cpp
 )
 

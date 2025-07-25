@@ -3,21 +3,23 @@
 
 add_executable(${CMAKE_PROJECT_NAME}Test
 	tst_config.cpp
-	tst_predictors.cpp
-	tst_predictors_paddleocr.cpp
-	tst_utils_framestore.cpp
-	# tst_timeboundedqueue.cpp
 
 	${CMAKE_SOURCE_DIR}/App/db/sqlite/event-schema.cxx
 	${CMAKE_SOURCE_DIR}/App/db/sqlite/exports-schema.cxx
 	${CMAKE_SOURCE_DIR}/App/db/sqlite/recording-schema.cxx
 	${CMAKE_SOURCE_DIR}/App/db/sqlite/region-schema.cxx
 	${CMAKE_SOURCE_DIR}/App/db/sqlite/timeline-schema.cxx
+
 	tst_db_event.cpp
 	tst_db_exports.cpp
 	tst_db_recording.cpp
 	tst_db_region.cpp
 	tst_db_timeline.cpp
+
+	tst_predictors.cpp
+	tst_predictors_paddleocr.cpp
+	tst_samples.cpp
+	tst_utils_framestore.cpp
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME}Test PRIVATE
@@ -40,6 +42,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}Test PRIVATE
 	APSS::Database
 	APSS::Events
 	APSS::Predictors
+	APSS::Utils
 )
 
 include(GoogleTest)

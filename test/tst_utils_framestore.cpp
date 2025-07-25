@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <opencv2/core.hpp>
 #include "utils/framemanager.h"
+#include "utils/frame.h"
 
 using cv::Mat;
 
@@ -21,12 +22,16 @@ inline Mat makeMat(int rows, int cols, T val) {
 }
 
 TEST_F(TestFrameManager, SingletonKeepsInitialCapacity) {
-    auto &mgr1 = FrameManager::instance(3); // set capacity
-    auto &mgr2 = FrameManager::instance(5); // no affect
+    auto &mgr1 = FrameManager::instance();
+    auto &mgr2 = FrameManager::instance();
+
+    QString cam = "camA";
+
+    // set capacity
+    mgr1.setMaxFramesPerCamera(cam, 3);
 
     // write at index 4 should wrap to index 4 % 3 = 1
-    QString cam = "camA";
-    QString id_wrapped = cam + "_4";
+    QString id_wrapped = Frame::makeFrameId(cam, 4);
     Mat img = makeMat<int>(2, 2, 42);
     mgr1.write(id_wrapped, img);
 
@@ -39,9 +44,14 @@ TEST_F(TestFrameManager, SingletonKeepsInitialCapacity) {
 }
 
 TEST_F(TestFrameManager, WriteAndGetReturnsSameMat) {
-    auto &mgr = FrameManager::instance(3);
+    auto &mgr = FrameManager::instance();
+
     QString cam = "camB";
-    QString id = cam + "_2";
+
+    // set capacity
+    mgr.setMaxFramesPerCamera(cam, 3);
+
+    QString id = Frame::makeFrameId(cam, 2);
     Mat img = makeMat<float>(3, 1, 3.14f);
 
     mgr.write(id, img);
@@ -53,10 +63,10 @@ TEST_F(TestFrameManager, WriteAndGetReturnsSameMat) {
 }
 
 TEST_F(TestFrameManager, GetNonExistentAndInvalidIDs) {
-    auto &mgr = FrameManager::instance(3);
+    auto &mgr = FrameManager::instance();
 
     // non-existent camera
-    auto no_cam = mgr.get("unknownCam_0");
+    auto no_cam = mgr.get(Frame::makeFrameId("unknownCam", 0));
     EXPECT_FALSE(no_cam.has_value());
 
     // invalid frame ID format (no underscore separator)
@@ -65,9 +75,13 @@ TEST_F(TestFrameManager, GetNonExistentAndInvalidIDs) {
 }
 
 TEST_F(TestFrameManager, RetireClearsFrame) {
-    auto &mgr = FrameManager::instance(3);
+    auto &mgr = FrameManager::instance();
+
     QString cam = "camC";
-    QString id = cam + "_1";
+    // set capacity
+    mgr.setMaxFramesPerCamera(cam, 3);
+
+    QString id = Frame::makeFrameId(cam, 1);
     Mat img = makeMat<uchar>(4, 4, 255);
 
     mgr.write(id, img);
@@ -84,10 +98,10 @@ TEST_F(TestFrameManager, RetireClearsFrame) {
 }
 
 TEST_F(TestFrameManager, RetireNonExistentAndInvalidIDs) {
-    auto &mgr = FrameManager::instance(3);
+    auto &mgr = FrameManager::instance();
 
     // non-existent camera
-    EXPECT_FALSE(mgr.retire("ghostCam_0"));
+    EXPECT_FALSE(mgr.retire(Frame::makeFrameId("ghostCam", 0)));
 
     // invalid ID format (no underscore separator)
     EXPECT_FALSE(mgr.retire("noUnderscore"));

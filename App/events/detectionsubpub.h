@@ -6,19 +6,14 @@
 class DetectionSubscriber final : public Subscriber {
 public:
     explicit DetectionSubscriber()
-        : Subscriber(m_topic)
+        : Subscriber("detection/")
     {}
-
-private:
-    std::string m_topic = "detection/";
 };
 
 
 class DetectionPublisher final : public Publisher {
+public:
     explicit DetectionPublisher()
-        : Publisher(m_topic)
+        : Publisher("detection/")
     {}
-
-private:
-    std::string m_topic = "detection/";
 };

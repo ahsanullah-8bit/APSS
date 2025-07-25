@@ -33,26 +33,27 @@ public:
     using TypePredictionsHash = QHash<Prediction::Type, PredictionList>;
 
     Frame() = default;
-    Frame(const QString &cameraId,
-          const QString &frameId,
-          cv::Mat data,
+    Frame(const QString &camera, size_t frameIndx, cv::Mat data,
+          const QHash<Prediction::Type, PredictionList> &predictions = {},
           TimePoint timestamp = std::chrono::system_clock::now());
-    Frame(const QString &cameraId,
-          const QString &frameId,
-          cv::Mat data,
+
+    Frame(const QString &camera, size_t frameIndx, const cv::Mat &data,
           const QHash<Prediction::Type, PredictionList> &predictions,
-          TimePoint timestamp = std::chrono::system_clock::now());
-    Frame(const Frame &other);
-    Frame(Frame &&other) noexcept;
-    Frame& operator=(const Frame &other);
-    Frame& operator=(Frame &&other) noexcept;
+          TimePoint timestamp,
+          const std::vector<PaddleOCR::OCRPredictResultList> &ocrResults,
+          std::optional<ANPRSnapshot> anprSnapshot);
+
+    Frame(const Frame &other)            = delete;
+    Frame(Frame &&other)                 = delete;
+    Frame& operator=(const Frame &other) = delete;
+    Frame& operator=(Frame &&other)      = delete;
     Frame clone() const;
 
     // Accessors and Mutators
 
     QString id();
-    QString cameraId() const;
-    QString frameId() const;
+    QString camera() const;
+    size_t frameIndx() const;
     cv::Mat data() const;
     TimePoint timestamp() const;
     const QHash<Prediction::Type, PredictionList> &predictions() const;
@@ -62,8 +63,6 @@ public:
     std::vector<PaddleOCR::OCRPredictResultList> ocrResults() const;
     std::optional<ANPRSnapshot> anprSnapshot() const;
 
-    void setCameraId(const QString &newCameraId);
-    void setFrameId(const QString &newFrameId);
     void setData(cv::Mat newData);
     void setTimestamp(const TimePoint &newTimestamp);
     void setPredictions(const QHash<Prediction::Type, PredictionList> &newPredictions);
@@ -78,11 +77,11 @@ public:
 
     // static helpers
     static QString makeFrameId(const QString &camera, size_t frameIndx);
-    static std::optional<std::tuple<QString, size_t>> splitFrameId(const QString &frameId);
+    static std::optional<std::tuple<QString, size_t>> splitFrameId(const QString &frameIndx);
 
 private:
-    QString m_cameraId;
-    QString m_frameId;
+    QString m_camera;
+    size_t m_frameIndx;
     cv::Mat m_data;
     TimePoint m_timestamp;
     std::atomic_bool m_hasExpired = false;
