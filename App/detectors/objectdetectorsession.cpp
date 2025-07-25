@@ -89,7 +89,7 @@ void ObjectDetectorSession::run() {
                 if (!frame || frame->hasExpired())
                     continue;
 
-                frame->setPredictions(Prediction::Type::Objects, std::move(results));
+                frame->addPredictions(std::move(results));
                 frame->setHasBeenProcessed(true);
                 QString camera_name = frame->camera();
                 Q_ASSERT(m_cameraWaitConditions.contains(camera_name));

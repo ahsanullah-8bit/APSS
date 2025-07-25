@@ -1,6 +1,10 @@
 #include "frame.h"
 
-Frame::Frame(const QString &camera, size_t frameIndx, cv::Mat data, const QHash<Prediction::Type, PredictionList> &predictions, TimePoint timestamp)
+Frame::Frame(const QString &camera,
+             size_t frameIndx,
+             cv::Mat data,
+             const PredictionList &predictions,
+             TimePoint timestamp)
     : m_camera(camera)
     , m_frameIndx(frameIndx)
     , m_data(data)
@@ -8,8 +12,10 @@ Frame::Frame(const QString &camera, size_t frameIndx, cv::Mat data, const QHash<
     , m_timestamp(timestamp)
 {}
 
-Frame::Frame(const QString &camera, size_t frameIndx, const cv::Mat &data,
-             const QHash<Prediction::Type, PredictionList> &predictions,
+Frame::Frame(const QString &camera,
+             size_t frameIndx,
+             const cv::Mat &data,
+             const PredictionList &predictions,
              Frame::TimePoint timestamp,
              const std::vector<PaddleOCR::OCRPredictResultList> &ocrResults,
              std::optional<ANPRSnapshot> anprSnapshot)
@@ -56,17 +62,17 @@ Frame::TimePoint Frame::timestamp() const {
     return m_timestamp;
 }
 
-const QHash<Prediction::Type, PredictionList> &Frame::predictions() const
+PredictionList Frame::predictions() const
 {
     std::shared_lock<std::shared_mutex> lock(m_mtx);
     return m_predictions;
 }
 
-PredictionList Frame::predictions(const Prediction::Type target) const
-{
-    std::shared_lock<std::shared_mutex> lock(m_mtx);
-    return m_predictions.value(target, {});
-}
+// PredictionList Frame::predictions(const Prediction::Type target) const
+// {
+//     std::shared_lock<std::shared_mutex> lock(m_mtx);
+//     return m_predictions.value(target, {});
+// }
 
 bool Frame::hasExpired() const
 {
@@ -102,29 +108,41 @@ void Frame::setTimestamp(const TimePoint &newTimestamp)
     m_timestamp = newTimestamp;
 }
 
-void Frame::setPredictions(const QHash<Prediction::Type, PredictionList> &newPredictions)
+void Frame::setPredictions(const PredictionList &newPredictions)
 {
     std::unique_lock<std::shared_mutex> lock(m_mtx);
     m_predictions = newPredictions;
 }
 
-void Frame::setPredictions(QHash<Prediction::Type, PredictionList> &&newPredictions)
+void Frame::setPredictions(PredictionList &&newPredictions)
 {
     std::unique_lock<std::shared_mutex> lock(m_mtx);
     m_predictions = std::move(newPredictions);
 }
 
-void Frame::setPredictions(const Prediction::Type target, const PredictionList &newPredictions)
+void Frame::addPredictions(const PredictionList &newPredictions)
 {
-    std::unique_lock<std::shared_mutex> lock(m_mtx);
-    m_predictions.insertOrAssign(target, newPredictions);
+    m_predictions.reserve(m_predictions.size() + newPredictions.size());
+    std::copy(newPredictions.begin(), newPredictions.end(), std::back_inserter(m_predictions));
 }
 
-void Frame::setPredictions(const Prediction::Type target, PredictionList &&newPredictions)
+void Frame::addPredictions(PredictionList &&newPredictions)
 {
-    std::unique_lock<std::shared_mutex> lock(m_mtx);
-    m_predictions.insertOrAssign(target, std::move(newPredictions));
+    m_predictions.reserve(m_predictions.size() + newPredictions.size());
+    std::move(newPredictions.begin(), newPredictions.end(), std::back_inserter(m_predictions));
 }
+
+// void Frame::setPredictions(const Prediction::Type target, const PredictionList &newPredictions)
+// {
+//     std::unique_lock<std::shared_mutex> lock(m_mtx);
+//     m_predictions.insertOrAssign(target, newPredictions);
+// }
+
+// void Frame::setPredictions(const Prediction::Type target, PredictionList &&newPredictions)
+// {
+//     std::unique_lock<std::shared_mutex> lock(m_mtx);
+//     m_predictions.insertOrAssign(target, std::move(newPredictions));
+// }
 
 void Frame::setHasExpired(bool newHasExpired)
 {

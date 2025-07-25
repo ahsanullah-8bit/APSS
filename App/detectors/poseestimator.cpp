@@ -33,7 +33,7 @@ void PoseEstimator::draw(cv::Mat &image, const PredictionList &predictions, floa
         return;
     }
 
-    Utils::drawPoseEstimation(image, predictions, inferSession().classNames(), m_classColors, m_skeleton);
+    Utils::drawPoseEstimation(image, predictions, inferSession().classNames(), m_skeleton);
 }
 
 void PoseEstimator::setPoseSkeleton(const std::vector<std::pair<int, int>> &poseSkeleton)
@@ -72,7 +72,7 @@ std::vector<PredictionList> PoseEstimator::postprocess(const MatList &originalIm
         std::vector<cv::Rect> boxes;
         std::vector<float> confs;
         std::vector<int> class_ids;
-        std::vector<std::vector<KeyPoint>> keypoints_list;
+        std::vector<std::vector<cv::Point3f>> keypoints_list;
         std::vector<cv::Rect> nms_boxes;
         boxes.reserve(num_predictions);
         confs.reserve(num_predictions);
@@ -134,18 +134,17 @@ std::vector<PredictionList> PoseEstimator::postprocess(const MatList &originalIm
             nms_box.y += class_id * 7880;
 
             // Extracting Keypoints
-            std::vector<KeyPoint> keypoints;
+            std::vector<cv::Point3f> keypoints;
             for (int k = 0; k < num_keypoints; ++k) {
                 const int offset = 4 + num_classes + k * features_per_keypoint;
                 const int x = batch_offsetptr[offset * num_predictions + i];
                 const int y = batch_offsetptr[(1 + offset) * num_predictions + i];
                 const int conf = batch_offsetptr[(2 + offset) * num_predictions + i];
 
-                KeyPoint kpt = Utils::scaleCoords(resizedImageShape,
+                cv::Point2f kpt = Utils::scaleCoords(resizedImageShape,
                                                   cv::Point2f(x, y),
                                                   cv::Size(orig_w, orig_h));
-                kpt.conf = conf;
-                keypoints.emplace_back(kpt);
+                keypoints.emplace_back(cv::Point3f(kpt.x, kpt.y, conf));
             }
 
             boxes.emplace_back(scaled_box);

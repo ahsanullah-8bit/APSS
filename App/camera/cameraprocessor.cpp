@@ -1,3 +1,5 @@
+#include <ranges>
+
 #include <QLoggingCategory>
 
 #include "cameraprocessor.h"
@@ -37,7 +39,7 @@ void CameraProcessor::run()
 
     Tracker tracker(objects_config.track);
 
-    // COCO class names
+    // COCO class names and their colors
     const std::vector<std::string> class_names = {
         "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck",
         "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench",
@@ -52,8 +54,6 @@ void CameraProcessor::run()
         "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier",
         "toothbrush"
     };
-
-    // Unique scalar colors per class (RGB)
     const std::vector<cv::Scalar> class_colors = {
         {255, 0, 0}, {255, 128, 0}, {255, 255, 0}, {128, 255, 0}, {0, 255, 0},
         {0, 255, 128}, {0, 255, 255}, {0, 128, 255}, {0, 0, 255}, {128, 0, 255},
@@ -73,6 +73,9 @@ void CameraProcessor::run()
         {128, 128, 128}, {0, 0, 0}
     };
 
+    const std::vector<std::string> lp_classes = { "license_plate" };
+    const std::vector<std::pair<int, int>> lp_skeleton = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
+
     EventsPerSecond process_eps;
     process_eps.start();
 
@@ -89,7 +92,7 @@ void CameraProcessor::run()
             continue;
 
         // Track and Filter predictions
-        trackAndEstimateDeltas(frame, tracker, Prediction::Objects);
+        trackAndEstimateDeltas(frame, tracker);
 
         if (!predict(frame, m_inLPDetectorFrameQueue))
             continue;
@@ -97,27 +100,22 @@ void CameraProcessor::run()
         detectors_eps.update();
         m_cameraMetrics->setDetectionFPS(detectors_eps.eps());
 
-        recognizeLicensePlates(frame);
+        recognizeLicensePlates(frame, lp_classes);
 
         // draw results
-        Frame::TypePredictionsHash predictions_list = frame->predictions();
+        PredictionList predictions = frame->predictions();
         cv::Mat frame_mat = frame->data();
-        const auto &objects = predictions_list[Prediction::Objects];
-        const auto &lps = predictions_list[Prediction::LicensePlates];
 
-        static const std::vector<std::pair<int, int>> skeleton = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
-
-        Utils::drawBoundingBox(frame_mat, objects, class_names, class_colors);
-        Utils::drawPoseEstimation(frame_mat, lps, skeleton, true);
+        Utils::drawBoundingBox(frame_mat, predictions, class_names, class_colors);
+        Utils::drawPoseEstimation(frame_mat, predictions, lp_classes, lp_skeleton, true);
         frame->setData(frame_mat);
         // -- draw results
 
         process_eps.update();
         m_cameraMetrics->setProcessFPS(process_eps.eps());
 
-        // Send the frame to listensers (main GUI thread).
+        // Send the frame to listensers.
         m_trackedFrameQueue.try_emplace(frame);
-        // emit frameChanged(frame);
     }
 
     // Empty the frame Queue
@@ -170,7 +168,7 @@ bool CameraProcessor::predict(SharedFrame frame,
     return true;
 }
 
-void CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker, Prediction::Type predictionType)
+void CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker)
 {
     // TODO: Find a proper way to hold seen ids.
     // Don't mistaken this for the tracker remembering objects. This one is for us to avoid going to another
@@ -181,7 +179,9 @@ void CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker
     bool has_deltas = false;
 
     // Filter predictions
-    PredictionList obj_predictions = frame->predictions(predictionType);
+    // TODO: This may have a bug, as we filter track_objects inside the tracker
+    // and only return track ids for this selected objects
+    PredictionList obj_predictions = frame->predictions();
     std::vector<int> track_ids = tracker.track(obj_predictions);
 
     for (int i = 0; i < track_ids.size(); ++i) {
@@ -205,7 +205,7 @@ void CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker
         }
     }
 
-    frame->setPredictions(predictionType, std::move(obj_predictions));
+    frame->setPredictions(std::move(obj_predictions));
 }
 
 PredictionList CameraProcessor::filterObjectPredictions(const PredictionList &results, const std::map<std::string, FilterConfig> &objectsToFilter)
@@ -234,15 +234,18 @@ PredictionList CameraProcessor::filterObjectPredictions(const PredictionList &re
     return filtered_results;
 }
 
-void CameraProcessor::recognizeLicensePlates(SharedFrame frame)
+void CameraProcessor::recognizeLicensePlates(SharedFrame frame, std::vector<std::string> lp_classes)
 {
     // crop images
-    PredictionList predictions = frame->predictions(Prediction::LicensePlates);
+    PredictionList predictions = frame->predictions();
     if (predictions.empty())
         return;
 
     MatList crop_batch;
     for (const auto &prediction : predictions) {
+        if (std::find(lp_classes.begin(), lp_classes.end(), prediction.className) == lp_classes.end())
+            continue;
+
         cv::Mat crop;
         Utils::perspectiveCrop(frame->data(), crop, prediction.points);
         crop_batch.emplace_back(crop);

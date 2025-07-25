@@ -247,6 +247,7 @@ public:
     static void drawPoseEstimation(cv::Mat &image,
                                    const std::vector<Prediction> &predictions,
                                    const std::vector<std::pair<int, int>> &poseSkeleton,
+                                   const std::vector<std::string> &classNames,
                                    bool bbox = false,
                                    const std::vector<cv::Scalar> posePalette = {
                                        cv::Scalar(0,128,255),    // 0
@@ -286,7 +287,6 @@ public:
     static void drawPoseEstimation(cv::Mat &image,
                                    const std::vector<Prediction> &predictions,
                                    const std::vector<std::string> &classNames,
-                                   const std::vector<cv::Scalar> &classColors,
                                    const std::vector<std::pair<int, int>> &poseSkeleton,
                                    bool drawBox = false,
                                    bool drawLabels = false,
@@ -343,8 +343,8 @@ public:
      * @param dstPoints Vector of 4 points to crop to, meaning just the resulting coordinates of the crop.
      */
     static void perspectiveCrop(const cv::Mat &img, cv::Mat &res,
-                                const std::vector<KeyPoint> &srcPoints,
-                                const std::vector<KeyPoint> &dstPoints);
+                                const std::vector<cv::Point3f> &srcPoints,
+                                const std::vector<cv::Point2f> &dstPoints);
 
     /**
      * @brief Crops a warped image from the source points to the destination points calculated from the srcPoints, by taking the longest height and width.
@@ -354,5 +354,5 @@ public:
      * @param srcPoints Vector of 4 points to crop.
      */
     static void perspectiveCrop(const cv::Mat &img, cv::Mat &res,
-                                const std::vector<KeyPoint> &srcPoints);
+                                const std::vector<cv::Point3f> &srcPoints);
 };

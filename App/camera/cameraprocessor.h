@@ -32,11 +32,10 @@ protected:
                  SharedFrameBoundedQueue &queue);
     // returns true, if there were any deltas
     void trackAndEstimateDeltas(SharedFrame frame,
-                                Tracker &tracker,
-                                Prediction::Type predictionType);
+                                Tracker &tracker);
     PredictionList filterObjectPredictions(const PredictionList &results,
                                            const std::map<std::string, FilterConfig> &objectsToFilter);
-    void recognizeLicensePlates(SharedFrame frame);
+    void recognizeLicensePlates(SharedFrame frame, std::vector<std::string> lp_classes);
 
 private:
     QString m_cameraName;

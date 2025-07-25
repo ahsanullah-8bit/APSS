@@ -30,15 +30,15 @@
 class Frame {
 public:
     using TimePoint = std::chrono::time_point<std::chrono::system_clock>;
-    using TypePredictionsHash = QHash<Prediction::Type, PredictionList>;
+    // using TypePredictionsHash = QHash<Prediction::Type, PredictionList>;
 
     Frame() = default;
     Frame(const QString &camera, size_t frameIndx, cv::Mat data,
-          const QHash<Prediction::Type, PredictionList> &predictions = {},
+          const PredictionList &predictions = {},
           TimePoint timestamp = std::chrono::system_clock::now());
 
     Frame(const QString &camera, size_t frameIndx, const cv::Mat &data,
-          const QHash<Prediction::Type, PredictionList> &predictions,
+          const PredictionList &predictions,
           TimePoint timestamp,
           const std::vector<PaddleOCR::OCRPredictResultList> &ocrResults,
           std::optional<ANPRSnapshot> anprSnapshot);
@@ -56,8 +56,8 @@ public:
     size_t frameIndx() const;
     cv::Mat data() const;
     TimePoint timestamp() const;
-    const QHash<Prediction::Type, PredictionList> &predictions() const;
-    PredictionList predictions(const Prediction::Type target) const;
+    PredictionList predictions() const;
+    // PredictionList predictions(const Prediction::Type target) const;
     bool hasExpired() const;
     bool hasBeenProcessed() const;
     std::vector<PaddleOCR::OCRPredictResultList> ocrResults() const;
@@ -65,10 +65,10 @@ public:
 
     void setData(cv::Mat newData);
     void setTimestamp(const TimePoint &newTimestamp);
-    void setPredictions(const QHash<Prediction::Type, PredictionList> &newPredictions);
-    void setPredictions(QHash<Prediction::Type, PredictionList> &&newPredictions);
-    void setPredictions(const Prediction::Type target, const PredictionList &newPredictions);
-    void setPredictions(const Prediction::Type target, PredictionList &&newPredictions);
+    void setPredictions(const PredictionList &newPredictions);
+    void setPredictions(PredictionList &&newPredictions);
+    void addPredictions(const PredictionList &newPredictions);
+    void addPredictions(PredictionList &&newPredictions);
     void setHasExpired(bool newHasExpired);
     void setHasBeenProcessed(bool newHasBeenProcessed);
     void setOcrResults(const std::vector<PaddleOCR::OCRPredictResultList> &newOcrResults);
@@ -86,7 +86,8 @@ private:
     TimePoint m_timestamp;
     std::atomic_bool m_hasExpired = false;
     std::atomic_bool m_hasBeenProcessed = false;
-    QHash<Prediction::Type, PredictionList> m_predictions;
+    // QHash<Prediction::Type, PredictionList> m_predictions;
+    PredictionList m_predictions;
     std::vector<PaddleOCR::OCRPredictResultList> m_ocrResults;
     std::optional<ANPRSnapshot> m_anprSnapshot; // Comprehensive ANPR data
 

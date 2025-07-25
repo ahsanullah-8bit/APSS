@@ -51,8 +51,7 @@ void LPDetectorSession::run() {
 
             // Detect LPs for a single frame.
             // We only need no-copy Mats from each frame that that are one of the filtered classes
-            const auto predictions = frame->predictions();
-            const PredictionList &object_predictions = predictions[Prediction::Type::Objects];
+            const PredictionList &object_predictions = frame->predictions();
             PredictionList filtered_vehicle_predictions;
 
             for (const auto& prediction : object_predictions) {
@@ -103,7 +102,7 @@ void LPDetectorSession::run() {
             if (!frame || frame->hasExpired())
                 continue;
 
-            frame->setPredictions(Prediction::Type::LicensePlates, std::move(lp_predictions));
+            frame->addPredictions(std::move(lp_predictions));
             frame->setHasBeenProcessed(true);   // NOTE: This is very necessary to prevent CameraProcessor's prediction blocking, if finished very early.
             QString camera_name = frame->camera();
             Q_ASSERT(m_cameraWaitConditions.contains(camera_name));

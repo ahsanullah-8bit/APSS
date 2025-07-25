@@ -274,6 +274,10 @@ void Utils::drawBoundingBox(cv::Mat &image, const std::vector<Prediction> &predi
         if (prediction.classId < 0 || static_cast<size_t>(prediction.classId) >= classNames.size())
             continue;
 
+        // Ensure the class names from the prediction and the list matches
+        if (prediction.className != classNames[prediction.classId])
+            continue;
+
         // Select color based on object ID for consistent coloring
         const cv::Scalar& color = colors[prediction.classId % colors.size()];
 
@@ -731,7 +735,12 @@ void Utils::drawsSegmentations(cv::Mat &image, const std::vector<Prediction> &pr
     }
 }
 
-void Utils::drawPoseEstimation(cv::Mat &image, const std::vector<Prediction> &predictions, const std::vector<std::pair<int, int> > &poseSkeleton, bool bbox, const std::vector<cv::Scalar> posePalette)
+void Utils::drawPoseEstimation(cv::Mat &image,
+                               const std::vector<Prediction> &predictions,
+                               const std::vector<std::pair<int, int> > &poseSkeleton,
+                               const std::vector<std::string> &classNames,
+                               bool bbox,
+                               const std::vector<cv::Scalar> posePalette)
 {
     if (predictions.empty())
         return;
@@ -754,6 +763,13 @@ void Utils::drawPoseEstimation(cv::Mat &image, const std::vector<Prediction> &pr
 
     // Loop through each prediction
     for (const auto& prediction : predictions) {
+
+        if (prediction.classId < 0 || prediction.classId >= classNames.size())
+            continue;
+
+        if (prediction.className != classNames.at(prediction.classId))
+            continue;
+
         // Draw bounding box (optional)
         if (bbox) {
             cv::rectangle(image, prediction.box, cv::Scalar(0, 255, 0), line_thickness);
@@ -786,12 +802,16 @@ void Utils::drawPoseEstimation(cv::Mat &image, const std::vector<Prediction> &pr
                          line_thickness, cv::LINE_AA);
             }
         }
-
-        // (Optional) Add text labels such as confidence scores here if desired.
     }
 }
 
-void Utils::drawPoseEstimation(cv::Mat &image, const std::vector<Prediction> &predictions, const std::vector<std::string> &classNames, const std::vector<cv::Scalar> &classColors, const std::vector<std::pair<int, int> > &poseSkeleton, bool drawBox, bool drawLabels, bool drawKeypoints, bool drawSkeleton, const std::vector<cv::Scalar> &posePalette)
+void Utils::drawPoseEstimation(cv::Mat &image,
+                               const std::vector<Prediction> &predictions,
+                               const std::vector<std::string> &classNames,
+                               const std::vector<std::pair<int, int>> &poseSkeleton,
+                               bool drawBox, bool drawLabels,
+                               bool drawKeypoints, bool drawSkeleton,
+                               const std::vector<cv::Scalar> &posePalette)
 {
     if (predictions.empty()) return;
 
@@ -813,16 +833,15 @@ void Utils::drawPoseEstimation(cv::Mat &image, const std::vector<Prediction> &pr
     };
 
     for (const auto& pred : predictions) {
-        // Validate class ID
-        const bool validClass = pred.classId >= 0 &&
-                                static_cast<size_t>(pred.classId) < classNames.size();
 
-        const cv::Scalar& boxColor = validClass ?
-                                         classColors[pred.classId % classColors.size()] : cv::Scalar(0, 255, 0);
+        if (pred.classId < 0 || static_cast<size_t>(pred.classId) >= classNames.size())
+            continue;
 
-        // -----------------------------
-        // Draw bounding box (optional)
-        // -----------------------------
+        if (pred.className != classNames.at(pred.classId))
+            continue;
+
+        const cv::Scalar& boxColor = cv::Scalar(0, 255, 0);
+
         if (drawBox) {
             cv::rectangle(image, pred.box, boxColor, line_thickness);
         }
@@ -882,7 +901,7 @@ void Utils::drawPoseEstimation(cv::Mat &image, const std::vector<Prediction> &pr
         // -----------------------------
         // Draw label (optional)
         // -----------------------------
-        if (drawLabels && validClass && !pred.box.empty()) {
+        if (drawLabels && !pred.box.empty()) {
             std::string label;
             if (pred.trackerId >= 0) {
                 label = std::format("{}:{} ({}%)",
@@ -928,6 +947,7 @@ void Utils::crop(const cv::Mat &img, cv::Mat &res, const cv::Rect &box) {
     res = img(cv::Range(y1, y2), cv::Range(x1, x2)).clone();
 }
 
+// Point2f
 void Utils::perspectiveCrop(const cv::Mat &img, cv::Mat &res, const std::vector<cv::Point2f> &srcPoints, const std::vector<cv::Point2f> &dstPoints) {
     if (img.empty() || srcPoints.empty() || dstPoints.empty())
         return;
@@ -962,10 +982,21 @@ void Utils::perspectiveCrop(const cv::Mat &img, cv::Mat &res, const std::vector<
     perspectiveCrop(img, res, srcPoints, dst_points);
 }
 
-void Utils::perspectiveCrop(const cv::Mat &img, cv::Mat &res, const std::vector<KeyPoint> &srcPoints, const std::vector<KeyPoint> &dstPoints) {
-    perspectiveCrop(img, res, KeyPoint::toPoints(srcPoints), KeyPoint::toPoints(dstPoints));
+// Point3f
+void Utils::perspectiveCrop(const cv::Mat &img, cv::Mat &res, const std::vector<cv::Point3f> &srcPoints, const std::vector<cv::Point2f> &dstPoints)
+{
+    std::vector<cv::Point2f> points;
+    for (const auto &p : srcPoints)
+        points.emplace_back(p.x, p.y);
+
+    perspectiveCrop(img, res, points, dstPoints);
 }
 
-void Utils::perspectiveCrop(const cv::Mat &img, cv::Mat &res, const std::vector<KeyPoint> &srcPoints) {
-    perspectiveCrop(img, res, KeyPoint::toPoints(srcPoints));
+void Utils::perspectiveCrop(const cv::Mat &img, cv::Mat &res, const std::vector<cv::Point3f> &srcPoints)
+{
+    std::vector<cv::Point2f> points;
+    for (const auto &p : srcPoints)
+        points.emplace_back(p.x, p.y);
+
+    perspectiveCrop(img, res, points);
 }
