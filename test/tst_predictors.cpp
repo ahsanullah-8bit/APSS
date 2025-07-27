@@ -12,9 +12,8 @@
 
 class TestPredictors : public ::testing::Test {
 protected:
-
     static void SetUpTestSuite() {
-        std::filesystem::create_directories("test/resutls");
+        std::filesystem::create_directories("test/results");
     }
 
     static void TearDownTestSuite() {
@@ -51,7 +50,7 @@ TEST_F(TestPredictors,  ObjectDetector) {
     ASSERT_TRUE(predictions.size() > 0);
     ASSERT_TRUE(predictions[0].size() > 0);
 
-    std::string output_path = "test/resutls/obj_detector_tst.jpg";
+    std::string output_path = "test/results/obj_detector_tst.jpg";
     cv::imwrite(output_path, img1);
     qDebug() << "Results written to" << output_path;
 

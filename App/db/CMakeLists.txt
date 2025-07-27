@@ -1,12 +1,13 @@
 # WARNING: You should mention absolute paths, because the function definition takes
 # it from its own directory's perspective
 set(ODB_HEADERS
-	${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/camera.h
+	# ${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/camera.h
 	${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/event.h
-	${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/exports.h
+	# ${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/exports.h
+	${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/frameprediction.h
 	${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/recording.h
-	${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/region.h
-	${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/timeline.h
+	# ${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/region.h
+	# ${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/timeline.h
 )
 apss_generate_odb_models4("sqlite"
 	${CMAKE_CURRENT_SOURCE_DIR}/sqlite
@@ -14,10 +15,11 @@ apss_generate_odb_models4("sqlite"
 
 add_library(APSSDatabase STATIC
 	sqlite/event-odb.cxx
-	sqlite/exports-odb.cxx
+	# sqlite/exports-odb.cxx
+	sqlite/frameprediction-odb.cxx
 	sqlite/recording-odb.cxx
-	sqlite/region-odb.cxx
-	sqlite/timeline-odb.cxx
+	# sqlite/region-odb.cxx
+	# sqlite/timeline-odb.cxx
 )
 add_library(APSS::Database ALIAS APSSDatabase)
 

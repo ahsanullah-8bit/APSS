@@ -49,12 +49,12 @@ private:
     void ensureDirs();
     void initCameraMetrics();
     void initQueues();
-    // void initDatabase();
+    void initDatabase();
     void initRecordingManager();
     // ...
     void startDetectors();
     // void initEmbeddingsManager();
-    void bindDatabase();
+    // void bindDatabase();
     // void initEmbeddingsClient();
     // void initIntraProcessComunicator();
     // void startVideoOutputProcessor();

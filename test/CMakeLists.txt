@@ -5,16 +5,16 @@ add_executable(${CMAKE_PROJECT_NAME}Test
 	tst_config.cpp
 
 	${CMAKE_SOURCE_DIR}/App/db/sqlite/event-schema.cxx
-	${CMAKE_SOURCE_DIR}/App/db/sqlite/exports-schema.cxx
+	# ${CMAKE_SOURCE_DIR}/App/db/sqlite/exports-schema.cxx
 	${CMAKE_SOURCE_DIR}/App/db/sqlite/recording-schema.cxx
-	${CMAKE_SOURCE_DIR}/App/db/sqlite/region-schema.cxx
-	${CMAKE_SOURCE_DIR}/App/db/sqlite/timeline-schema.cxx
+	# ${CMAKE_SOURCE_DIR}/App/db/sqlite/region-schema.cxx
+	# ${CMAKE_SOURCE_DIR}/App/db/sqlite/timeline-schema.cxx
 
 	tst_db_event.cpp
-	tst_db_exports.cpp
+	# tst_db_exports.cpp
 	tst_db_recording.cpp
-	tst_db_region.cpp
-	tst_db_timeline.cpp
+	# tst_db_region.cpp
+	# tst_db_timeline.cpp
 
 	tst_predictors.cpp
 	tst_predictors_paddleocr.cpp

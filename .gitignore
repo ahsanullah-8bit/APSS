@@ -12,6 +12,9 @@ scripts/**
 # Un-ignore .py files
 !scripts/*.py
 
+# Ignore odb models
+App/db/sqlite
+
 # CMake files
 CMakeCache.txt
 CMakeFiles/

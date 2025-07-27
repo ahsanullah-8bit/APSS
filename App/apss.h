@@ -31,6 +31,7 @@ constexpr float OCR_MIN_CONF = 0.4f;
 constexpr float OCR_MIN_IOU_THRESH = 0.4f;
 constexpr float DET_RECONSIDER_AREA_INCREASE = 0.30f;   // Percentage, Reconsider sending a seen object to go through the pipeline again, if area is increase by the %.
 constexpr int   TRACKER_DELTA_OBJECT_LIMIT = 40 * 24;   // 40 secs * 24 FPS, 960 ids at the moment
+constexpr int   TRACKER_OBJECT_LOSS_LIMIT = 15;         // upto five frames
 
 const QDir APSS_DIR(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
 const QDir CONFIG_DIR =         APSS_DIR.cleanPath("config");

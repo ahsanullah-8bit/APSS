@@ -4,7 +4,7 @@ Frame::Frame(const QString &camera,
              size_t frameIndx,
              cv::Mat data,
              const PredictionList &predictions,
-             TimePoint timestamp)
+             QDateTime timestamp)
     : m_camera(camera)
     , m_frameIndx(frameIndx)
     , m_data(data)
@@ -16,7 +16,7 @@ Frame::Frame(const QString &camera,
              size_t frameIndx,
              const cv::Mat &data,
              const PredictionList &predictions,
-             Frame::TimePoint timestamp,
+             QDateTime timestamp,
              const std::vector<PaddleOCR::OCRPredictResultList> &ocrResults,
              std::optional<ANPRSnapshot> anprSnapshot)
     : m_camera(camera),
@@ -57,7 +57,7 @@ cv::Mat Frame::data() const {
     return m_data;
 }
 
-Frame::TimePoint Frame::timestamp() const {
+QDateTime Frame::timestamp() const {
     std::shared_lock<std::shared_mutex> lock(m_mtx);
     return m_timestamp;
 }
@@ -102,7 +102,7 @@ void Frame::setData(cv::Mat newData)
     m_data = newData;
 }
 
-void Frame::setTimestamp(const TimePoint &newTimestamp)
+void Frame::setTimestamp(const QDateTime &newTimestamp)
 {
     std::unique_lock<std::shared_mutex> lock(m_mtx);
     m_timestamp = newTimestamp;

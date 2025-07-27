@@ -1,7 +1,7 @@
 #pragma once
 
 #pragma db object
-class Prediction {
+class FramePrediction {
 public:
     #pragma db id auto
     size_t id;

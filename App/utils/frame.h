@@ -35,11 +35,11 @@ public:
     Frame() = default;
     Frame(const QString &camera, size_t frameIndx, cv::Mat data,
           const PredictionList &predictions = {},
-          TimePoint timestamp = std::chrono::system_clock::now());
+          QDateTime timestamp = QDateTime::currentDateTimeUtc());
 
     Frame(const QString &camera, size_t frameIndx, const cv::Mat &data,
           const PredictionList &predictions,
-          TimePoint timestamp,
+          QDateTime timestamp,
           const std::vector<PaddleOCR::OCRPredictResultList> &ocrResults,
           std::optional<ANPRSnapshot> anprSnapshot);
 
@@ -55,7 +55,7 @@ public:
     QString camera() const;
     size_t frameIndx() const;
     cv::Mat data() const;
-    TimePoint timestamp() const;
+    QDateTime timestamp() const;
     PredictionList predictions() const;
     // PredictionList predictions(const Prediction::Type target) const;
     bool hasExpired() const;
@@ -64,7 +64,7 @@ public:
     std::optional<ANPRSnapshot> anprSnapshot() const;
 
     void setData(cv::Mat newData);
-    void setTimestamp(const TimePoint &newTimestamp);
+    void setTimestamp(const QDateTime &newTimestamp);
     void setPredictions(const PredictionList &newPredictions);
     void setPredictions(PredictionList &&newPredictions);
     void addPredictions(const PredictionList &newPredictions);
@@ -83,7 +83,7 @@ private:
     QString m_camera;
     size_t m_frameIndx;
     cv::Mat m_data;
-    TimePoint m_timestamp;
+    QDateTime m_timestamp;
     std::atomic_bool m_hasExpired = false;
     std::atomic_bool m_hasBeenProcessed = false;
     // QHash<Prediction::Type, PredictionList> m_predictions;

@@ -17,7 +17,7 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-Q_STATIC_LOGGING_CATEGORY(apss_camera_capture, "apss.camera.capture")
+Q_STATIC_LOGGING_CATEGORY(logger, "apss.camera.capture")
 
 CameraCapture::CameraCapture(const QString &name,
                              SharedCameraMetrics metrics,
@@ -59,7 +59,7 @@ void CameraCapture::run()
 
     try {
         // 1. Initialize FFmpeg
-        av_log_set_level(AV_LOG_ERROR);
+        av_log_set_level(AV_LOG_WARNING);
         avformat_network_init();
 
         // Allocate format context and set interrupt callback
@@ -162,7 +162,7 @@ void CameraCapture::run()
             if (read_result < 0) {
                 if (read_result != AVERROR_EOF) {
                     av_strerror(read_result, errbuf, sizeof(errbuf));
-                    qCWarning(apss_camera_capture) << "Read error:" << errbuf;
+                    qCWarning(logger) << "Read error:" << errbuf;
                 }
                 break;
             }
@@ -175,7 +175,7 @@ void CameraCapture::run()
             int send_result = avcodec_send_packet(video_codec_ctx, packet);
             if (send_result < 0 && send_result != AVERROR(EAGAIN)) {
                 av_strerror(send_result, errbuf, sizeof(errbuf));
-                qCWarning(apss_camera_capture) << "Decoder error:" << errbuf;
+                qCWarning(logger) << "Decoder error:" << errbuf;
                 av_packet_unref(packet);
                 continue;
             }
@@ -193,7 +193,7 @@ void CameraCapture::run()
 
                 if (recv_result < 0) {
                     av_strerror(recv_result, errbuf, sizeof(errbuf));
-                    qCWarning(apss_camera_capture) << "Frame error:" << errbuf;
+                    qCWarning(logger) << "Frame error:" << errbuf;
                     break;
                 }
 
@@ -213,7 +213,7 @@ void CameraCapture::run()
                         if (QThread::currentThread()->isInterruptionRequested())
                             break;
 
-                        qCWarning(apss_camera_capture) << m_config.name.value_or("") << "queues overloaded, Skipping frame" << frame_index << "pts" << frame->pts;
+                        qCWarning(logger) << m_config.name.value_or("") << "queues overloaded, Skipping frame" << frame_index << "pts" << frame->pts;
                         // if (!m_frameQueue.wait_for(std::chrono::milliseconds(100))) {}   // error: no member named tbb::concurrent_bounded_queue::wait_for(..._
                     }
                 } catch (const tbb::user_abort&) {
@@ -276,9 +276,9 @@ void CameraCapture::run()
     } catch (const tbb::user_abort &) {
         // Nothing to do
     } catch (const std::exception &e) {
-        qCCritical(apss_camera_capture) << e.what();
+        qCCritical(logger) << e.what();
     } catch (...) {
-        qCCritical(apss_camera_capture) << "Uknown exception thrown at" << QThread().currentThread()->objectName() << "thread";
+        qCCritical(logger) << "Uknown exception thrown at" << QThread().currentThread()->objectName() << "thread";
     }
 
     // Free the resources
@@ -295,7 +295,7 @@ void CameraCapture::run()
     }
     avformat_network_deinit();
 
-    qCInfo(apss_camera_capture) << "Aborting on thread" << QThread::currentThread()->objectName();
+    qCInfo(logger) << "Aborting on thread" << QThread::currentThread()->objectName();
 }
 
 #include "moc_cameracapture.cpp"

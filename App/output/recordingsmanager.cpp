@@ -6,6 +6,7 @@
 #include <QImage>
 #include <QVideoFrame>
 #include <QThread>
+#include <QJsonObject>
 
 #include <opencv2/videoio/videoio.hpp>
 
@@ -140,11 +141,31 @@ void RecordingsManager::onRecordFrame(SharedFrame frame)
     QMetaObject::invokeMethod(worker, "recordFrame",
                               Qt::QueuedConnection,
                               Q_ARG(QVideoFrame, QVideoFrame(img)));
-    // emit worker->recordFrame(QVideoFrame(img));
-
-    // qDebug() << "Receiving frame" << frame->id();
 
     // TODO: Save frame data to the database
+
+    // odb::transaction t(m_db->begin());
+    // try {
+
+    //     // QList<Predictions> predictions_to_save;
+    //     // for (const auto &prediction : frame->predictions()) {
+
+    //     //     Predictions pred;
+    //     //     pred.frame_id = frame->id();
+    //     // }
+
+    //     // m_db->persist(prediction);
+    //     t.commit();
+    // } catch (const odb::exception &e) {
+    //     qCCritical(output_rec_mngr) << e.what();
+    //     t.rollback();
+    // }
 }
 
 #include "moc_recordingsmanager.cpp"
+
+
+/*
+    - We can store with timestamps
+    - Then based on duration, we can determine detections.
+*/

@@ -1,11 +1,12 @@
 #include <QLoggingCategory>
 
-#include "db/event"
+#include "db/sqlite/event-odb.hxx"
+#include "db/sqlite/frameprediction-odb.hxx"
 #include "events/detectionsubpub.h"
 #include "trackedobjectprocessor.h"
 #include "utils/framemanager.h"
 
-Q_STATIC_LOGGING_CATEGORY(object_proc, "apss.engine.object_proc")
+Q_STATIC_LOGGING_CATEGORY(logger, "apss.engine.object_proc")
 
 TrackedObjectProcessor::TrackedObjectProcessor(SharedFrameBoundedQueue &frameQueue,
                                                std::shared_ptr<odb::database> db,
@@ -23,28 +24,30 @@ void TrackedObjectProcessor::stop()
         if (isRunning()) {
             requestInterruption();
 
-            qCDebug(object_proc) << "Waiting for" << objectName() << "to exit gracefully...";
+            qCDebug(logger) << "Waiting for" << objectName() << "to exit gracefully...";
             if (!wait(3000)) {
-                qCDebug(object_proc) << objectName() << "didn't exit. Applying force killing...";
+                qCDebug(logger) << objectName() << "didn't exit. Applying force killing...";
                 terminate();
                 wait();
             }
-            qCDebug(object_proc) << objectName() << "thread has exited...";
+            qCDebug(logger) << objectName() << "thread has exited...";
         }
     } catch (const std::exception &e) {
-        qCDebug(object_proc) << e.what();
+        qCDebug(logger) << e.what();
     } catch (...) {
-        qCCritical(object_proc) << "Uknown/Uncaught exception occurred!";
+        qCCritical(logger) << "Uknown/Uncaught exception occurred!";
     }
 }
 
 
 void TrackedObjectProcessor::run()
 {
-    qCInfo(object_proc) << "Starting" << objectName() << "thread";
+    qCInfo(logger) << "Starting" << objectName() << "thread";
 
-    Publisher publisher("record/");
-    FrameManager &frame_manager = FrameManager::instance();
+    QHash<int, Event> active_events;            // trackerId -> Event
+    QHash<int, PredictionList> object_history;  // trackerId -> Prediction history
+    QHash<int, int> lost_counts;                // trackerId -> Consecutive lost frames
+    QHash<int, QDateTime> last_seen_timestamps; // trackerId -> Last seen timestamp
 
     try {
         while(!isInterruptionRequested()) {
@@ -53,22 +56,82 @@ void TrackedObjectProcessor::run()
             if (!frame)
                 continue;
 
-            frame_manager.write(frame->id(), frame->data());
-            publisher.publish(frame->id().toStdString(), "frame_id");
+            const PredictionList& predictions = frame->predictions();
+            const QDateTime frame_time = frame->timestamp();
 
-            if (!frame->predictions().empty()) {
-                // if frame has predictions, push it to the frame manager/store
-                // odb::transaction t(m_db->begin());
-                // try {
-                //     Event event;
-                //     event.setId(frame->id());
-                //     event.setLabel(frame->id());
-                //     m_db->persist(event);
-                //     t.commit();
-                // } catch (const odb::exception& e) {
-                //     t.rollback();
-                // }
+            // Process active objects first
+            const QList<int> active_ids = object_history.keys();
+            for (int tracker_id : active_ids) {
+                // Check if object appears in current predictions
+                bool found = std::any_of(predictions.cbegin(), predictions.cend(),
+                                         [tracker_id](const Prediction& p) { return p.trackerId == tracker_id; });
 
+                if (found) {
+                    // Reset lost counter on reappearance
+                    lost_counts[tracker_id] = 0;
+                } else {
+                    // Handle lost object
+                    if (!lost_counts.contains(tracker_id)) {
+                        lost_counts[tracker_id] = 1;
+                    } else {
+                        lost_counts[tracker_id]++;
+                    }
+
+                    // Remove if exceeded loss limit
+                    if (lost_counts[tracker_id] > TRACKER_OBJECT_LOSS_LIMIT) {
+                        if (!active_events.contains(tracker_id)) {
+                            qCWarning(logger) << "Missing event during cleanup for" << tracker_id;
+                        } else {
+                            Event& event = active_events[tracker_id];
+                            event.setEndTime(last_seen_timestamps[tracker_id]); // Last seen time
+                            event.setArea(tracker_id);
+
+                            // Persist event with prediction history
+                            // event.setPredictionHistory(objectHistory[tracker_id]);
+
+                            odb::transaction t(m_db->begin());
+                            try {
+                                m_db->persist(event);
+                                t.commit();
+                            } catch (const odb::exception& e) {
+                                t.rollback();
+                                qCCritical(logger) << "DB Error:" << e.what();
+                            }
+                        }
+
+                        // qCDebug(logger) << "Removed:" << tracker_id;
+
+                        // Cleanup tracking data
+                        object_history.remove(tracker_id);
+                        active_events.remove(tracker_id);
+                        lost_counts.remove(tracker_id);
+                        last_seen_timestamps.remove(tracker_id);
+                    }
+                }
+            }
+
+            // Process current predictions
+            for (const Prediction& pred : predictions) {
+                if (pred.trackerId == -1) continue;
+                const int tracker_id = pred.trackerId;
+
+                if (!object_history.contains(tracker_id)) {
+                    // Initialize new event
+                    Event newEvent;
+                    newEvent.setId(QString("%1-%2")
+                                       .arg(frame_time.toString(Qt::ISODateWithMs))
+                                       .arg(QUuid::createUuid().toString(QUuid::WithoutBraces)));
+                    newEvent.setStartTime(frame_time);
+
+                    // Store first prediction
+                    object_history[tracker_id] = {pred};
+                    active_events[tracker_id] = newEvent;
+                    last_seen_timestamps[tracker_id] = frame_time;
+                } else {
+                    // Update existing event
+                    object_history[tracker_id].push_back(pred);
+                    last_seen_timestamps[tracker_id] = frame_time;
+                }
             }
 
             emit frameChanged(frame);
@@ -76,11 +139,11 @@ void TrackedObjectProcessor::run()
     }
     catch(const tbb::user_abort &) {}
     catch(const std::exception &e) {
-        qCCritical(object_proc) << e.what();
+        qCCritical(logger) << e.what();
     }
     catch(...) {
-        qCCritical(object_proc) << "Uknown/Uncaught exception occurred.";
+        qCCritical(logger) << "Uknown/Uncaught exception occurred.";
     }
 
-    qCInfo(object_proc) << "Stopping" << objectName() << "thread";
+    qCInfo(logger) << "Stopping" << objectName() << "thread";
 }

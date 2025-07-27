@@ -13,9 +13,8 @@
 #include <odb/sqlite/database.hxx>
 
 #include "db/sqlite/event-odb.hxx"
-#include "db/sqlite/exports-odb.hxx"
+#include "db/sqlite/frameprediction-odb.hxx"
 #include "db/sqlite/recording-odb.hxx"
-#include "db/sqlite/timeline-odb.hxx"
 
 #include "apss.h"
 #include "camera/cameraprocessor.h"
@@ -24,7 +23,7 @@
 #include "detectors/lpdetectorsession.h"
 #include "utils/framemanager.h"
 
-Q_STATIC_LOGGING_CATEGORY(apss_engine, "apss.engine")
+Q_STATIC_LOGGING_CATEGORY(logger, "apss.engine")
 
 APSSEngine::APSSEngine(APSSConfig *config, QObject *parent)
     : QObject{parent}
@@ -41,16 +40,16 @@ SharedCameraMetricsModel APSSEngine::cameraMetricsModel() const
 
 void APSSEngine::start()
 {
-    qCInfo(apss_engine) << "Starting APSSEngine";
+    qCInfo(logger) << "Starting APSSEngine";
 
     // ensureDirs();
     initCameraMetrics();
     initQueues();
-    // initDatabase();
+    initDatabase();
     initRecordingManager();
     startDetectors();
     // initEmbeddingsManager();
-    bindDatabase();
+    // bindDatabase();
     // initEmbeddingsClient();
     // initIntraProcessComunicator();
     // startVideoOutputProcessor();
@@ -68,7 +67,7 @@ void APSSEngine::start()
 
 void APSSEngine::stop()
 {
-    qCInfo(apss_engine) << "Stopping APSSEngine";
+    qCInfo(logger) << "Stopping APSSEngine";
     // Stop the producer and consumer. Though only one will be stopped by this in case of
     // different frequency of production/consumption.
     try {
@@ -78,11 +77,11 @@ void APSSEngine::stop()
         for (const auto &name : metrics_keys) {
             QSharedPointer<QThread> capture_thread = m_cameraMetrics[name]->captureThread();
             if (capture_thread) {
-                qCInfo(apss_engine) << "Requesting a gracefull interupt of camera capture thread" << name;
+                qCInfo(logger) << "Requesting a gracefull interupt of camera capture thread" << name;
                 capture_thread->requestInterruption();
 
                 if (!capture_thread->wait(500)) {
-                    qCWarning(apss_engine) << "Gracefull termination timed-out for camera capture thread" << name << ", forcing termination";
+                    qCWarning(logger) << "Gracefull termination timed-out for camera capture thread" << name << ", forcing termination";
                     capture_thread->terminate();
                     capture_thread->wait();
                 }
@@ -93,11 +92,11 @@ void APSSEngine::stop()
         for (const auto &name : metrics_keys) {
             QSharedPointer<QThread> camera_thread = m_cameraMetrics[name]->thread();
             if (camera_thread) {
-                qCInfo(apss_engine) << "Requesting a gracefull interupt of camera processor thread" << name;
+                qCInfo(logger) << "Requesting a gracefull interupt of camera processor thread" << name;
                 camera_thread->requestInterruption();
 
                 if (!camera_thread->wait(500)) {
-                    qCWarning(apss_engine) << "Gracefull termination timed-out for camera processor thread" << name << ", forcing termination";
+                    qCWarning(logger) << "Gracefull termination timed-out for camera processor thread" << name << ", forcing termination";
                     camera_thread->terminate();
                     camera_thread->wait();
                 }
@@ -109,7 +108,7 @@ void APSSEngine::stop()
         // Stop detectors
         const QList<QString> detector_keys = m_detectors.keys();
         for (const auto& name : detector_keys) {
-            qCInfo(apss_engine) << "Requesting a gracefull interupt of detector thread" << name;
+            qCInfo(logger) << "Requesting a gracefull interupt of detector thread" << name;
             QSharedPointer<QThread> detector_thread = m_detectors[name];
 
             if (detector_thread) {
@@ -117,7 +116,7 @@ void APSSEngine::stop()
                 m_inUnifiedObjDetectorQ.abort();
 
                 if (!detector_thread->wait(500)) {
-                    qCWarning(apss_engine) << "Gracefull termination timed-out for detector thread" << name << ", forcing termination";
+                    qCWarning(logger) << "Gracefull termination timed-out for detector thread" << name << ", forcing termination";
                     detector_thread->terminate();
                     detector_thread->wait();
                 }
@@ -128,7 +127,7 @@ void APSSEngine::stop()
         m_lpdetector->requestInterruption();
         m_inUnifiedLPDetectorQ.abort();
         if (m_lpdetector->wait(500)) {
-            qCWarning(apss_engine) << "Gracefull termination timed-out for detector thread"
+            qCWarning(logger) << "Gracefull termination timed-out for detector thread"
                        << m_lpdetector->objectName() << ", forcing termination";
             m_lpdetector->terminate();
             m_lpdetector->wait();
@@ -137,7 +136,7 @@ void APSSEngine::stop()
         m_trackedObjectsProcessor->requestInterruption();
         m_trackedFramesQueue.abort();
         if (m_trackedObjectsProcessor->wait(500)) {
-            qCWarning(apss_engine) << "Gracefull termination timed-out for tracked object processor thread"
+            qCWarning(logger) << "Gracefull termination timed-out for tracked object processor thread"
                        << m_trackedObjectsProcessor->objectName() << ", forcing termination";
             m_trackedObjectsProcessor->terminate();
             m_trackedObjectsProcessor->wait();
@@ -150,17 +149,17 @@ void APSSEngine::stop()
         // manager->stop();
         thread->quit();
         if (thread->wait(1000)) {
-            qCWarning(apss_engine) << "Gracefull termination timed-out for recording manager thread"
+            qCWarning(logger) << "Gracefull termination timed-out for recording manager thread"
                                    << thread->objectName() << ", forcing termination";
             thread->terminate();
             thread->wait();
         }
     }
     catch (const std::exception &e) {
-        qCInfo(apss_engine) << "Uncaught exception" << e.what();
+        qCInfo(logger) << "Uncaught exception" << e.what();
     }
     catch (...) {
-       qCFatal(apss_engine) << "Uncaught/Uknown exception";
+       qCFatal(logger) << "Uncaught/Uknown exception";
     }
 }
 
@@ -168,7 +167,7 @@ void APSSEngine::onFrameChanged(SharedFrame frame)
 {
     const QString camera_name = frame->camera();
     if (!m_cameraMetrics.contains(camera_name)) {
-        qCWarning(apss_engine) << QString("No such camera as %1, skipping frame %2.").arg(camera_name, frame->frameIndx());
+        qCWarning(logger) << QString("No such camera as %1, skipping frame %2.").arg(camera_name, frame->frameIndx());
         return;
     }
 
@@ -202,11 +201,11 @@ void APSSEngine::onFrameChanged(SharedFrame frame)
 
 //     for (const auto &dir : dirs) {
 //         if (!dir.exists()) {
-//             qCInfo(apss_engine) << "Creating directory" << dir.path();
+//             qCInfo(logger) << "Creating directory" << dir.path();
 //             // Seems like a very poor way to create the current dir, but we'll see.
 //             dir.mkdir(dir.dirName());
 //         } else {
-//             qCInfo(apss_engine) << "Skipping directory" << dir.path();
+//             qCInfo(logger) << "Skipping directory" << dir.path();
 //         }
 //     }
 // }
@@ -227,8 +226,23 @@ void APSSEngine::initQueues()
     m_trackedFramesQueue.set_capacity(20);
 }
 
-// void APSSEngine::initDatabase()
-// {}
+void APSSEngine::initDatabase()
+{
+    const std::string path = "apss.db";
+    std::string sqlite_uri = "sqlite://" + std::string(path) +
+                             "?auto_vacuum=FULL&cache_size=-512000&synchronous=NORMAL";
+
+    m_db = std::make_shared<odb::sqlite::database>(path, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+
+    odb::transaction t(m_db->begin());
+    try {
+        odb::schema_catalog::create_schema(*m_db);
+        t.commit();
+    } catch (const odb::exception& e) {
+        t.rollback();
+        qCFatal(logger) << "Failed to create database schema" << e.what();
+    }
+}
 
 void APSSEngine::initRecordingManager()
 {
@@ -258,7 +272,7 @@ void APSSEngine::startDetectors()
                                                                                m_cameraWaitConditions,
                                                                                detector_config));
         m_detectors[_name]->start();
-        qCInfo(apss_engine) << "Detector" << name << "has started:" << m_detectors[_name]->isRunning();
+        qCInfo(logger) << "Detector" << name << "has started:" << m_detectors[_name]->isRunning();
     }
 
     // lp detector
@@ -274,23 +288,8 @@ void APSSEngine::startDetectors()
     m_lpdetector->start();
 }
 
-void APSSEngine::bindDatabase()
-{
-    const std::string path = "apss.db";
-    std::string sqlite_uri = "sqlite://" + std::string(path) +
-                             "?auto_vacuum=FULL&cache_size=-512000&synchronous=NORMAL";
-
-    m_db = std::make_shared<odb::sqlite::database>(path, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
-
-    odb::transaction t(m_db->begin());
-    try {
-        odb::schema_catalog::create_schema(*m_db);
-        t.commit();
-    } catch (const odb::exception& e) {
-        t.rollback();
-       qCFatal(apss_engine) << "Failed to create database schema" << e.what();
-    }
-}
+// void APSSEngine::bindDatabase()
+// {}
 
 void APSSEngine::startDetectedFramesProcessor()
 {
@@ -307,7 +306,7 @@ void APSSEngine::startCameraProcessors()
 {
     for (const auto&[name, config] : m_config->cameras) {
         if (!config.enabled) {
-            qCInfo(apss_engine) << std::format("Camera processor not started for disabled camera {}", name);
+            qCInfo(logger) << std::format("Camera processor not started for disabled camera {}", name);
             continue;
         }
 
@@ -332,7 +331,7 @@ void APSSEngine::startCameraCaptureProcesses()
 
     for(const auto &[name, config] : m_config->cameras) {
         if (!config.enabled) {
-            qCInfo(apss_engine) << std::format("Camera {} is disabled", name);
+            qCInfo(logger) << std::format("Camera {} is disabled", name);
             continue;
         }
 
@@ -350,7 +349,7 @@ void APSSEngine::startCameraCaptureProcesses()
         // TODO: Launch with a Higher Thread Priority
         capture_thread->start();
 
-        qCInfo(apss_engine) << std::format("{} camera capture started...", name);
+        qCInfo(logger) << std::format("{} camera capture started...", name);
     }
 }
 
