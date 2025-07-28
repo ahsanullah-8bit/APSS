@@ -536,204 +536,204 @@ void Utils::drawOCR(cv::Mat &image,
     }
 }
 
-void Utils::drawSegmentationsAndBoxes(cv::Mat &image, const std::vector<Prediction> &predictions, const std::vector<std::string> &classNames, const std::vector<cv::Scalar> &classColors, float maskAlpha)
-{
-    for (const auto &seg : predictions) {
-        const cv::Scalar &color = classColors[seg.classId % classColors.size()];
+// void Utils::drawSegmentationsAndBoxes(cv::Mat &image, const std::vector<Prediction> &predictions, const std::vector<std::string> &classNames, const std::vector<cv::Scalar> &classColors, float maskAlpha)
+// {
+//     for (const auto &seg : predictions) {
+//         const cv::Scalar &color = classColors[seg.classId % classColors.size()];
 
-        // -----------------------------
-        // 1. Draw Bounding Box
-        // -----------------------------
-        cv::rectangle(image, seg.box, color, 2);
+//         // -----------------------------
+//         // 1. Draw Bounding Box
+//         // -----------------------------
+//         cv::rectangle(image, seg.box, color, 2);
 
-        // -----------------------------
-        // 2. Draw Label
-        // -----------------------------
-        std::string label = classNames[seg.classId] + " " + std::to_string(static_cast<int>(seg.conf * 100)) + "%";
-        int baseLine = 0;
-        constexpr double fontScale = 0.5;
-        constexpr int thickness = 1;
-        cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, fontScale, thickness, &baseLine);
-        int top = std::max(seg.box.y, labelSize.height + 5);
-        cv::rectangle(image,
-                      cv::Point(seg.box.x, top - labelSize.height - 5),
-                      cv::Point(seg.box.x + labelSize.width + 5, top),
-                      color, cv::FILLED);
-        cv::putText(image, label,
-                    cv::Point(seg.box.x + 2, top - 2),
-                    cv::FONT_HERSHEY_SIMPLEX,
-                    fontScale,
-                    cv::Scalar(255, 255, 255),
-                    thickness);
+//         // -----------------------------
+//         // 2. Draw Label
+//         // -----------------------------
+//         std::string label = classNames[seg.classId] + " " + std::to_string(static_cast<int>(seg.conf * 100)) + "%";
+//         int baseLine = 0;
+//         constexpr double fontScale = 0.5;
+//         constexpr int thickness = 1;
+//         cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, fontScale, thickness, &baseLine);
+//         int top = std::max(seg.box.y, labelSize.height + 5);
+//         cv::rectangle(image,
+//                       cv::Point(seg.box.x, top - labelSize.height - 5),
+//                       cv::Point(seg.box.x + labelSize.width + 5, top),
+//                       color, cv::FILLED);
+//         cv::putText(image, label,
+//                     cv::Point(seg.box.x + 2, top - 2),
+//                     cv::FONT_HERSHEY_SIMPLEX,
+//                     fontScale,
+//                     cv::Scalar(255, 255, 255),
+//                     thickness);
 
-        // -----------------------------
-        // 3. Apply Segmentation Mask
-        // -----------------------------
-        if (!seg.mask.empty()) {
-            // Ensure the mask is single-channel
-            cv::Mat mask_gray;
-            if (seg.mask.channels() == 3) {
-                cv::cvtColor(seg.mask, mask_gray, cv::COLOR_BGR2GRAY);
-            } else {
-                mask_gray = seg.mask.clone();
-            }
+//         // -----------------------------
+//         // 3. Apply Segmentation Mask
+//         // -----------------------------
+//         if (!seg.mask.empty()) {
+//             // Ensure the mask is single-channel
+//             cv::Mat mask_gray;
+//             if (seg.mask.channels() == 3) {
+//                 cv::cvtColor(seg.mask, mask_gray, cv::COLOR_BGR2GRAY);
+//             } else {
+//                 mask_gray = seg.mask.clone();
+//             }
 
-            // Threshold the mask to binary (object: 255, background: 0)
-            cv::Mat mask_binary;
-            cv::threshold(mask_gray, mask_binary, 127, 255, cv::THRESH_BINARY);
+//             // Threshold the mask to binary (object: 255, background: 0)
+//             cv::Mat mask_binary;
+//             cv::threshold(mask_gray, mask_binary, 127, 255, cv::THRESH_BINARY);
 
-            // Create a colored version of the mask
-            cv::Mat colored_mask;
-            cv::cvtColor(mask_binary, colored_mask, cv::COLOR_GRAY2BGR);
-            colored_mask.setTo(color, mask_binary); // Apply color where mask is present
+//             // Create a colored version of the mask
+//             cv::Mat colored_mask;
+//             cv::cvtColor(mask_binary, colored_mask, cv::COLOR_GRAY2BGR);
+//             colored_mask.setTo(color, mask_binary); // Apply color where mask is present
 
-            // Blend the colored mask with the original image
-            cv::addWeighted(image, 1.0, colored_mask, maskAlpha, 0, image);
-        }
-    }
-}
+//             // Blend the colored mask with the original image
+//             cv::addWeighted(image, 1.0, colored_mask, maskAlpha, 0, image);
+//         }
+//     }
+// }
 
-void Utils::drawSegmentations(cv::Mat &image, const std::vector<Prediction> &predictions, const std::vector<std::string> &classNames, const std::vector<cv::Scalar> &classColors, float maskAlpha)
-{
-    Q_UNUSED(classNames);
+// void Utils::drawSegmentations(cv::Mat &image, const std::vector<Prediction> &predictions, const std::vector<std::string> &classNames, const std::vector<cv::Scalar> &classColors, float maskAlpha)
+// {
+//     Q_UNUSED(classNames);
 
-    for (const auto &seg : predictions) {
-        const cv::Scalar &color = classColors[seg.classId % classColors.size()];
+//     for (const auto &seg : predictions) {
+//         const cv::Scalar &color = classColors[seg.classId % classColors.size()];
 
-        // -----------------------------
-        // Draw Segmentation Mask Only
-        // -----------------------------
-        if (!seg.mask.empty()) {
-            // Ensure the mask is single-channel
-            cv::Mat mask_gray;
-            if (seg.mask.channels() == 3) {
-                cv::cvtColor(seg.mask, mask_gray, cv::COLOR_BGR2GRAY);
-            } else {
-                mask_gray = seg.mask.clone();
-            }
+//         // -----------------------------
+//         // Draw Segmentation Mask Only
+//         // -----------------------------
+//         if (!seg.mask.empty()) {
+//             // Ensure the mask is single-channel
+//             cv::Mat mask_gray;
+//             if (seg.mask.channels() == 3) {
+//                 cv::cvtColor(seg.mask, mask_gray, cv::COLOR_BGR2GRAY);
+//             } else {
+//                 mask_gray = seg.mask.clone();
+//             }
 
-            // Threshold the mask to binary (object: 255, background: 0)
-            cv::Mat mask_binary;
-            cv::threshold(mask_gray, mask_binary, 127, 255, cv::THRESH_BINARY);
+//             // Threshold the mask to binary (object: 255, background: 0)
+//             cv::Mat mask_binary;
+//             cv::threshold(mask_gray, mask_binary, 127, 255, cv::THRESH_BINARY);
 
-            // Create a colored version of the mask
-            cv::Mat colored_mask;
-            cv::cvtColor(mask_binary, colored_mask, cv::COLOR_GRAY2BGR);
-            colored_mask.setTo(color, mask_binary); // Apply color where mask is present
+//             // Create a colored version of the mask
+//             cv::Mat colored_mask;
+//             cv::cvtColor(mask_binary, colored_mask, cv::COLOR_GRAY2BGR);
+//             colored_mask.setTo(color, mask_binary); // Apply color where mask is present
 
-            // Blend the colored mask with the original image
-            cv::addWeighted(image, 1.0, colored_mask, maskAlpha, 0, image);
-        }
-    }
-}
+//             // Blend the colored mask with the original image
+//             cv::addWeighted(image, 1.0, colored_mask, maskAlpha, 0, image);
+//         }
+//     }
+// }
 
-void Utils::drawsSegmentations(cv::Mat &image, const std::vector<Prediction> &predictions, const std::vector<std::string> &classNames, const std::vector<cv::Scalar> &classColors, bool drawMasks, float maskAlpha, bool drawBoxes, bool drawLabels) {
-    // Validate input
-    if (image.empty()) {
-        qWarning() << "Empty image provided to drawDetections, skipping!";
-        return;
-    }
+// void Utils::drawsSegmentations(cv::Mat &image, const std::vector<Prediction> &predictions, const std::vector<std::string> &classNames, const std::vector<cv::Scalar> &classColors, bool drawMasks, float maskAlpha, bool drawBoxes, bool drawLabels) {
+//     // Validate input
+//     if (image.empty()) {
+//         qWarning() << "Empty image provided to drawDetections, skipping!";
+//         return;
+//     }
 
-    const int imgHeight = image.rows;
-    const int imgWidth = image.cols;
+//     const int imgHeight = image.rows;
+//     const int imgWidth = image.cols;
 
-    // Precompute dynamic properties once
-    const double fontScale = std::min(imgHeight, imgWidth) * 0.0006;
-    const int textThickness = std::max(1, static_cast<int>(std::min(imgHeight, imgWidth) * 0.001));
-    const int boxThickness = std::max(1, static_cast<int>(std::min(imgHeight, imgWidth) * 0.002));
+//     // Precompute dynamic properties once
+//     const double fontScale = std::min(imgHeight, imgWidth) * 0.0006;
+//     const int textThickness = std::max(1, static_cast<int>(std::min(imgHeight, imgWidth) * 0.001));
+//     const int boxThickness = std::max(1, static_cast<int>(std::min(imgHeight, imgWidth) * 0.002));
 
-    // Create mask layer if needed
-    cv::Mat maskLayer;
-    if (drawMasks) {
-        maskLayer = cv::Mat::zeros(image.size(), image.type());
-    }
+//     // Create mask layer if needed
+//     cv::Mat maskLayer;
+//     if (drawMasks) {
+//         maskLayer = cv::Mat::zeros(image.size(), image.type());
+//     }
 
-    // Process each detection
-    for (const auto& pred : predictions) {
-        // Validate class ID
-        if (pred.classId < 0 || static_cast<size_t>(pred.classId) >= classNames.size()) {
-            continue;
-        }
+//     // Process each detection
+//     for (const auto& pred : predictions) {
+//         // Validate class ID
+//         if (pred.classId < 0 || static_cast<size_t>(pred.classId) >= classNames.size()) {
+//             continue;
+//         }
 
-        const cv::Scalar& color = classColors[pred.classId % classColors.size()];
-        const cv::Rect& box = pred.box;
+//         const cv::Scalar& color = classColors[pred.classId % classColors.size()];
+//         const cv::Rect& box = pred.box;
 
-        // -----------------------------
-        // Process segmentation mask
-        // -----------------------------
-        if (drawMasks && !pred.mask.empty()) {
-            cv::Mat maskGray;
-            // Convert to single channel if needed
-            if (pred.mask.channels() == 3) {
-                cv::cvtColor(pred.mask, maskGray, cv::COLOR_BGR2GRAY);
-            } else {
-                maskGray = pred.mask;
-            }
+//         // -----------------------------
+//         // Process segmentation mask
+//         // -----------------------------
+//         if (drawMasks && !pred.mask.empty()) {
+//             cv::Mat maskGray;
+//             // Convert to single channel if needed
+//             if (pred.mask.channels() == 3) {
+//                 cv::cvtColor(pred.mask, maskGray, cv::COLOR_BGR2GRAY);
+//             } else {
+//                 maskGray = pred.mask;
+//             }
 
-            // Threshold to binary mask
-            cv::Mat maskBinary;
-            cv::threshold(maskGray, maskBinary, 127, 255, cv::THRESH_BINARY);
+//             // Threshold to binary mask
+//             cv::Mat maskBinary;
+//             cv::threshold(maskGray, maskBinary, 127, 255, cv::THRESH_BINARY);
 
-            // Create colored mask
-            cv::Mat coloredMask;
-            cv::cvtColor(maskBinary, coloredMask, cv::COLOR_GRAY2BGR);
-            coloredMask.setTo(color, maskBinary);
+//             // Create colored mask
+//             cv::Mat coloredMask;
+//             cv::cvtColor(maskBinary, coloredMask, cv::COLOR_GRAY2BGR);
+//             coloredMask.setTo(color, maskBinary);
 
-            // Add to mask layer
-            cv::addWeighted(maskLayer, 1.0, coloredMask, 1.0, 0, maskLayer);
-        }
+//             // Add to mask layer
+//             cv::addWeighted(maskLayer, 1.0, coloredMask, 1.0, 0, maskLayer);
+//         }
 
-        // -----------------------------
-        // Draw bounding box
-        // -----------------------------
-        if (drawBoxes) {
-            cv::rectangle(image, box, color, boxThickness, cv::LINE_AA);
-        }
+//         // -----------------------------
+//         // Draw bounding box
+//         // -----------------------------
+//         if (drawBoxes) {
+//             cv::rectangle(image, box, color, boxThickness, cv::LINE_AA);
+//         }
 
-        // -----------------------------
-        // Draw label
-        // -----------------------------
-        if (drawLabels) {
-            // Format label text
-            std::string label;
-            if (pred.trackerId >= 0) {
-                label = std::format("{}:{} ({}%)",
-                                    classNames[pred.classId],
-                                    pred.trackerId,
-                                    static_cast<int>(pred.conf * 100));
-            } else {
-                label = std::format("{} ({}%)",
-                                    classNames[pred.classId],
-                                    static_cast<int>(pred.conf * 100));
-            }
+//         // -----------------------------
+//         // Draw label
+//         // -----------------------------
+//         if (drawLabels) {
+//             // Format label text
+//             std::string label;
+//             if (pred.trackerId >= 0) {
+//                 label = std::format("{}:{} ({}%)",
+//                                     classNames[pred.classId],
+//                                     pred.trackerId,
+//                                     static_cast<int>(pred.conf * 100));
+//             } else {
+//                 label = std::format("{} ({}%)",
+//                                     classNames[pred.classId],
+//                                     static_cast<int>(pred.conf * 100));
+//             }
 
-            // Calculate text size
-            int baseline = 0;
-            cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX,
-                                                 fontScale, textThickness, &baseline);
+//             // Calculate text size
+//             int baseline = 0;
+//             cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX,
+//                                                  fontScale, textThickness, &baseline);
 
-            // Calculate label position (avoid top edge)
-            int labelY = std::max(box.y, labelSize.height + 2);
-            cv::Point textOrg(box.x, labelY - 2);
+//             // Calculate label position (avoid top edge)
+//             int labelY = std::max(box.y, labelSize.height + 2);
+//             cv::Point textOrg(box.x, labelY - 2);
 
-            // Draw label background
-            cv::rectangle(image,
-                          cv::Point(box.x, labelY - labelSize.height - 2),
-                          cv::Point(box.x + labelSize.width + 5, labelY + baseline),
-                          color, cv::FILLED);
+//             // Draw label background
+//             cv::rectangle(image,
+//                           cv::Point(box.x, labelY - labelSize.height - 2),
+//                           cv::Point(box.x + labelSize.width + 5, labelY + baseline),
+//                           color, cv::FILLED);
 
-            // Draw text
-            cv::putText(image, label, textOrg,
-                        cv::FONT_HERSHEY_SIMPLEX, fontScale,
-                        cv::Scalar(255, 255, 255), textThickness, cv::LINE_AA);
-        }
-    }
+//             // Draw text
+//             cv::putText(image, label, textOrg,
+//                         cv::FONT_HERSHEY_SIMPLEX, fontScale,
+//                         cv::Scalar(255, 255, 255), textThickness, cv::LINE_AA);
+//         }
+//     }
 
-    // Apply mask layer if created
-    if (drawMasks && !maskLayer.empty()) {
-        cv::addWeighted(maskLayer, maskAlpha, image, 1.0, 0, image);
-    }
-}
+//     // Apply mask layer if created
+//     if (drawMasks && !maskLayer.empty()) {
+//         cv::addWeighted(maskLayer, maskAlpha, image, 1.0, 0, image);
+//     }
+// }
 
 void Utils::drawPoseEstimation(cv::Mat &image,
                                const std::vector<Prediction> &predictions,

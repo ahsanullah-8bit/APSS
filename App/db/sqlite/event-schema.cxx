@@ -48,6 +48,7 @@ namespace odb
                       "  \"camera\" TEXT NULL,\n"
                       "  \"startTime\" TEXT NULL,\n"
                       "  \"endTime\" TEXT NULL,\n"
+                      "  \"trackerId\" INTEGER NOT NULL,\n"
                       "  \"topScore\" REAL NULL,\n"
                       "  \"score\" REAL NULL,\n"
                       "  \"falsePositive\" INTEGER NOT NULL,\n"

@@ -14,7 +14,7 @@ public:
                      float matchThresh = 0.8,
                      int videoFrameRate = 30);
 
-    // returns track ids
+    // returns track ids, filtered_ids
     std::vector<int> track(const PredictionList &results);
     float trackThresh() const;
     int trackBuffer() const;

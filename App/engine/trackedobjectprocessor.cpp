@@ -1,5 +1,7 @@
 #include <QLoggingCategory>
 
+#include <rfl/json.hpp>
+
 #include "db/sqlite/event-odb.hxx"
 #include "db/sqlite/frameprediction-odb.hxx"
 #include "events/detectionsubpub.h"
@@ -59,34 +61,43 @@ void TrackedObjectProcessor::run()
             const PredictionList& predictions = frame->predictions();
             const QDateTime frame_time = frame->timestamp();
 
-            // Process active objects first
+            // process active objects first
             const QList<int> active_ids = object_history.keys();
             for (int tracker_id : active_ids) {
-                // Check if object appears in current predictions
+                // check if object appears in current predictions
                 bool found = std::any_of(predictions.cbegin(), predictions.cend(),
                                          [tracker_id](const Prediction& p) { return p.trackerId == tracker_id; });
 
                 if (found) {
-                    // Reset lost counter on reappearance
+                    // reset lost counter on reappearance
                     lost_counts[tracker_id] = 0;
                 } else {
-                    // Handle lost object
+                    // handle lost object
                     if (!lost_counts.contains(tracker_id)) {
                         lost_counts[tracker_id] = 1;
                     } else {
                         lost_counts[tracker_id]++;
                     }
 
-                    // Remove if exceeded loss limit
+                    // remove if exceeded loss limit
                     if (lost_counts[tracker_id] > TRACKER_OBJECT_LOSS_LIMIT) {
                         if (!active_events.contains(tracker_id)) {
                             qCWarning(logger) << "Missing event during cleanup for" << tracker_id;
                         } else {
                             Event& event = active_events[tracker_id];
-                            event.setEndTime(last_seen_timestamps[tracker_id]); // Last seen time
-                            event.setArea(tracker_id);
 
-                            // Persist event with prediction history
+                            const auto &prediction_history = object_history[tracker_id];
+                            const std::string label = prediction_history.empty() ? "Uknown"     // I hope this first condition is not true
+                                                                             : prediction_history.at(0).className;
+                            event.setLabel(QString::fromStdString(label));
+                            event.setCamera(frame->camera());
+                            event.setEndTime(last_seen_timestamps[tracker_id]); // last seen time
+                            event.setTrackerId(tracker_id);
+
+                            const std::string predictions = rfl::json::write(prediction_history);
+                            event.setData(QString::fromStdString(predictions));
+
+                            // persist event with prediction history
                             // event.setPredictionHistory(objectHistory[tracker_id]);
 
                             odb::transaction t(m_db->begin());
@@ -101,7 +112,7 @@ void TrackedObjectProcessor::run()
 
                         // qCDebug(logger) << "Removed:" << tracker_id;
 
-                        // Cleanup tracking data
+                        // cleanup tracking data
                         object_history.remove(tracker_id);
                         active_events.remove(tracker_id);
                         lost_counts.remove(tracker_id);
@@ -110,27 +121,34 @@ void TrackedObjectProcessor::run()
                 }
             }
 
-            // Process current predictions
+            // process current predictions
             for (const Prediction& pred : predictions) {
                 if (pred.trackerId == -1) continue;
                 const int tracker_id = pred.trackerId;
 
                 if (!object_history.contains(tracker_id)) {
-                    // Initialize new event
+                    // initialize new event
                     Event newEvent;
                     newEvent.setId(QString("%1-%2")
-                                       .arg(frame_time.toString(Qt::ISODateWithMs))
-                                       .arg(QUuid::createUuid().toString(QUuid::WithoutBraces)));
+                                       .arg(frame_time.toString(Qt::ISODateWithMs),
+                                            QUuid::createUuid().toString(QUuid::WithoutBraces)));
                     newEvent.setStartTime(frame_time);
+                    newEvent.setTopScore(pred.conf);
 
-                    // Store first prediction
+                    // store first prediction
                     object_history[tracker_id] = {pred};
                     active_events[tracker_id] = newEvent;
                     last_seen_timestamps[tracker_id] = frame_time;
                 } else {
-                    // Update existing event
+                    // update existing event
                     object_history[tracker_id].push_back(pred);
                     last_seen_timestamps[tracker_id] = frame_time;
+
+                    auto &event = active_events[tracker_id];
+                    if (event.topScore() < pred.conf)
+                        event.setTopScore(pred.conf);
+
+                    event.setScore(pred.conf);
                 }
             }
 

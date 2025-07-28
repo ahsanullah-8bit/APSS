@@ -118,21 +118,25 @@ namespace odb
       grew = true;
     }
 
-    // m_topScore
+    // m_trackerId
     //
     t[6UL] = false;
 
-    // m_score
+    // m_topScore
     //
     t[7UL] = false;
 
-    // m_falsePositive
+    // m_score
     //
     t[8UL] = false;
 
+    // m_falsePositive
+    //
+    t[9UL] = false;
+
     // m_zones
     //
-    if (t[9UL])
+    if (t[10UL])
     {
       i.m_zones_value.capacity (i.m_zones_size);
       grew = true;
@@ -140,7 +144,7 @@ namespace odb
 
     // m_thumbnail
     //
-    if (t[10UL])
+    if (t[11UL])
     {
       i.m_thumbnail_value.capacity (i.m_thumbnail_size);
       grew = true;
@@ -148,15 +152,15 @@ namespace odb
 
     // m_hasClip
     //
-    t[11UL] = false;
+    t[12UL] = false;
 
     // m_hasSnapshot
     //
-    t[12UL] = false;
+    t[13UL] = false;
 
     // m_region
     //
-    if (t[13UL])
+    if (t[14UL])
     {
       i.m_region_value.capacity (i.m_region_size);
       grew = true;
@@ -164,7 +168,7 @@ namespace odb
 
     // m_box
     //
-    if (t[14UL])
+    if (t[15UL])
     {
       i.m_box_value.capacity (i.m_box_size);
       grew = true;
@@ -172,19 +176,19 @@ namespace odb
 
     // m_area
     //
-    t[15UL] = false;
+    t[16UL] = false;
 
     // m_retainIndefinitely
     //
-    t[16UL] = false;
+    t[17UL] = false;
 
     // m_ratio
     //
-    t[17UL] = false;
+    t[18UL] = false;
 
     // m_plusId
     //
-    if (t[18UL])
+    if (t[19UL])
     {
       i.m_plusId_value.capacity (i.m_plusId_size);
       grew = true;
@@ -192,7 +196,7 @@ namespace odb
 
     // m_modelHash
     //
-    if (t[19UL])
+    if (t[20UL])
     {
       i.m_modelHash_value.capacity (i.m_modelHash_size);
       grew = true;
@@ -200,7 +204,7 @@ namespace odb
 
     // m_detectorType
     //
-    if (t[20UL])
+    if (t[21UL])
     {
       i.m_detectorType_value.capacity (i.m_detectorType_size);
       grew = true;
@@ -208,7 +212,7 @@ namespace odb
 
     // m_modelType
     //
-    if (t[21UL])
+    if (t[22UL])
     {
       i.m_modelType_value.capacity (i.m_modelType_size);
       grew = true;
@@ -216,7 +220,7 @@ namespace odb
 
     // m_data
     //
-    if (t[22UL])
+    if (t[23UL])
     {
       i.m_data_value.capacity (i.m_data_size);
       grew = true;
@@ -303,6 +307,13 @@ namespace odb
     b[n].size = &i.m_endTime_size;
     b[n].capacity = i.m_endTime_value.capacity ();
     b[n].is_null = &i.m_endTime_null;
+    n++;
+
+    // m_trackerId
+    //
+    b[n].type = sqlite::bind::integer;
+    b[n].buffer = &i.m_trackerId_value;
+    b[n].is_null = &i.m_trackerId_null;
     n++;
 
     // m_topScore
@@ -600,6 +611,22 @@ namespace odb
         v);
       i.m_endTime_null = is_null;
       grew = grew || (cap != i.m_endTime_value.capacity ());
+    }
+
+    // m_trackerId
+    //
+    {
+      int const& v =
+        o.trackerId ();
+
+      bool is_null (false);
+      sqlite::value_traits<
+          int,
+          sqlite::id_integer >::set_image (
+        i.m_trackerId_value,
+        is_null,
+        v);
+      i.m_trackerId_null = is_null;
     }
 
     // m_topScore
@@ -1009,6 +1036,21 @@ namespace odb
       o.setEndTime (v);
     }
 
+    // m_trackerId
+    //
+    {
+      int v;
+
+      sqlite::value_traits<
+          int,
+          sqlite::id_integer >::set_value (
+        v,
+        i.m_trackerId_value,
+        i.m_trackerId_null);
+
+      o.setTrackerId (v);
+    }
+
     // m_topScore
     //
     {
@@ -1304,6 +1346,7 @@ namespace odb
   "\"camera\", "
   "\"startTime\", "
   "\"endTime\", "
+  "\"trackerId\", "
   "\"topScore\", "
   "\"score\", "
   "\"falsePositive\", "
@@ -1322,7 +1365,7 @@ namespace odb
   "\"modelType\", "
   "\"data\") "
   "VALUES "
-  "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
   const char access::object_traits_impl< ::Event, id_sqlite >::find_statement[] =
   "SELECT "
@@ -1332,6 +1375,7 @@ namespace odb
   "\"Event\".\"camera\", "
   "\"Event\".\"startTime\", "
   "\"Event\".\"endTime\", "
+  "\"Event\".\"trackerId\", "
   "\"Event\".\"topScore\", "
   "\"Event\".\"score\", "
   "\"Event\".\"falsePositive\", "
@@ -1360,6 +1404,7 @@ namespace odb
   "\"camera\"=?, "
   "\"startTime\"=?, "
   "\"endTime\"=?, "
+  "\"trackerId\"=?, "
   "\"topScore\"=?, "
   "\"score\"=?, "
   "\"falsePositive\"=?, "
@@ -1391,6 +1436,7 @@ namespace odb
   "\"Event\".\"camera\", "
   "\"Event\".\"startTime\", "
   "\"Event\".\"endTime\", "
+  "\"Event\".\"trackerId\", "
   "\"Event\".\"topScore\", "
   "\"Event\".\"score\", "
   "\"Event\".\"falsePositive\", "

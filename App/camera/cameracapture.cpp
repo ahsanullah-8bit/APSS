@@ -41,7 +41,7 @@ void CameraCapture::run()
     QSharedPointer<SharedFrameBoundedQueue> frame_queue = m_metrics->frameQueue();
     Q_ASSERT(frame_queue);
 
-    // TODO: Do a proper settup of this
+    // TODO: Do a proper setup of this
     std::string path = m_config.ffmpeg.inputs[0].path;
     const char *filename = path.c_str();
     AVFormatContext *fmt_ctx = nullptr;

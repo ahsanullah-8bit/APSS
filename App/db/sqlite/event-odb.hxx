@@ -190,6 +190,18 @@ namespace odb
 
     static const endTime_type_ endTime;
 
+    // trackerId
+    //
+    typedef
+    sqlite::query_column<
+      sqlite::value_traits<
+        int,
+        sqlite::id_integer >::query_type,
+      sqlite::id_integer >
+    trackerId_type_;
+
+    static const trackerId_type_ trackerId;
+
     // topScore
     //
     typedef
@@ -426,6 +438,11 @@ namespace odb
   endTime (A::table_name, "\"endTime\"", 0);
 
   template <typename A>
+  const typename query_columns< ::Event, id_sqlite, A >::trackerId_type_
+  query_columns< ::Event, id_sqlite, A >::
+  trackerId (A::table_name, "\"trackerId\"", 0);
+
+  template <typename A>
   const typename query_columns< ::Event, id_sqlite, A >::topScore_type_
   query_columns< ::Event, id_sqlite, A >::
   topScore (A::table_name, "\"topScore\"", 0);
@@ -568,6 +585,11 @@ namespace odb
       std::size_t m_endTime_size;
       bool m_endTime_null;
 
+      // m_trackerId
+      //
+      long long m_trackerId_value;
+      bool m_trackerId_null;
+
       // m_topScore
       //
       double m_topScore_value;
@@ -701,7 +723,7 @@ namespace odb
 
     typedef sqlite::query_base query_base_type;
 
-    static const std::size_t column_count = 23UL;
+    static const std::size_t column_count = 24UL;
     static const std::size_t id_column_count = 1UL;
     static const std::size_t inverse_column_count = 0UL;
     static const std::size_t readonly_column_count = 0UL;

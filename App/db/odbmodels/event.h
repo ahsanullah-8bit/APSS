@@ -34,6 +34,7 @@ public:
     QString detectorType() const;
     QString modelType() const;
     QString data() const;
+    int trackerId() const;
 
     void setId(const QString &newId);
     void setLabel(const QString &newLabel);
@@ -58,6 +59,7 @@ public:
     void setDetectorType(const QString &newDetectorType);
     void setModelType(const QString &newModelType);
     void setData(const QString &newData);
+    void setTrackerId(int newTrackerId);
 
 private:
     #pragma db id
@@ -67,6 +69,7 @@ private:
     QString m_camera;
     QDateTime m_startTime;
     QDateTime m_endTime;
+    int m_trackerId = -1;
     float m_topScore = 0.0f;
     float m_score = 0.0f;
     bool m_falsePositive = false;
@@ -201,6 +204,11 @@ inline QString Event::modelType() const
 inline QString Event::data() const
 {
     return m_data;
+}
+
+inline int Event::trackerId() const
+{
+    return m_trackerId;
 }
 
 inline void Event::setId(const QString &newId)
@@ -385,6 +393,11 @@ inline void Event::setData(const QString &newData)
         return;
     m_data = newData;
     // emit dataChanged(m_data);
+}
+
+inline void Event::setTrackerId(int newTrackerId)
+{
+    m_trackerId = newTrackerId;
 }
 
 // Q_OBJECT

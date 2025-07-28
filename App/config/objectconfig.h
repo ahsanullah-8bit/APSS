@@ -1,6 +1,6 @@
 #pragma once
 
-inline const std::set<std::string> DEFAULT_TRACKED_OBJECTS = {"person", "car", "truck", "motorcycle", "bicycle"};
+inline const std::set<std::string> DEFAULT_TRACKED_OBJECTS = {"person", "car", "truck", "motorcycle", "bicycle", "bus"};
 
 struct FilterConfig {
     std::optional<float> min_area = 0.0f;

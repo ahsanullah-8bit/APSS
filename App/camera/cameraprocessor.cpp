@@ -92,7 +92,10 @@ void CameraProcessor::run()
             continue;
 
         // Track and Filter predictions
-        trackAndEstimateDeltas(frame, tracker);
+        if (objects_config.filters)
+            frame->setPredictions(filterObjectPredictions(frame->predictions(), objects_config.filters.value()));
+
+        trackAndEstimateDeltas2(frame, tracker);
 
         if (!predict(frame, m_inLPDetectorFrameQueue))
             continue;
@@ -182,7 +185,7 @@ void CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker
     // TODO: This may have a bug, as we filter track_objects inside the tracker
     // and only return track ids for this selected objects
     PredictionList obj_predictions = frame->predictions();
-    std::vector<int> track_ids = tracker.track(obj_predictions);
+    const auto track_ids = tracker.track(obj_predictions);
 
     for (int i = 0; i < track_ids.size(); ++i) {
         int id = track_ids.at(i);
@@ -202,6 +205,88 @@ void CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker
 
             delta_objects[delta_indx] = std::pair(id, box_area);
             obj_predictions[i].hasDeltas = true;
+        }
+    }
+
+    frame->setPredictions(std::move(obj_predictions));
+}
+
+struct TrackedObjectHistory {
+    int last_seen_frame;
+    int last_triggered_area = -1;  // -1 = never triggered
+    int max_observed_area = 0;
+};
+
+void CameraProcessor::trackAndEstimateDeltas2(SharedFrame frame, Tracker &tracker)
+{
+    static int frame_counter = 0;
+    static std::unordered_map<int, TrackedObjectHistory> object_histories;
+    frame_counter++;
+
+    // remove old histories
+    const int track_buffer = tracker.trackBuffer();
+    for (auto it = object_histories.begin(); it != object_histories.end(); ) {
+        if (frame_counter - it->second.last_seen_frame > track_buffer) {
+            it = object_histories.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    PredictionList obj_predictions = frame->predictions();
+    const auto track_ids = tracker.track(obj_predictions);
+
+    const int MIN_AREA = 15'625;            // (125 x 125) minimum area to consider
+    const float MAX_ASPECT_RATIO = 2.5f;    // max w/h for valid view
+    const float APPROACH_THRESHOLD = 1.1f;  // 10% area increase
+    const float DEPART_THRESHOLD = 0.8f;    // 20% area decrease
+
+    for (int i = 0; i < track_ids.size(); ++i) {
+        const int id = track_ids[i];
+        if (id == -1) continue;
+
+        auto& pred = obj_predictions[i];
+        pred.trackerId = id;
+
+        // get or create history
+        TrackedObjectHistory& history = object_histories[id];
+        history.last_seen_frame = frame_counter;
+
+        const int box_area = pred.box.area();
+        // qDebug() << id << box_area;
+        const float aspect_ratio = static_cast<float>(pred.box.width) / pred.box.height;
+        history.max_observed_area = std::max(history.max_observed_area, box_area);
+
+        // skip if too small or side view
+        if (box_area < MIN_AREA || aspect_ratio > MAX_ASPECT_RATIO) {
+            pred.hasDeltas = false;
+            continue;
+        }
+
+        bool is_approaching = false;
+        bool is_departing = false;
+
+        if (history.last_triggered_area != -1) {
+            const int ref_area = history.last_triggered_area;
+            is_approaching = (box_area >= ref_area * APPROACH_THRESHOLD);
+            is_departing = (box_area <= ref_area * DEPART_THRESHOLD);
+        }
+
+        // trigger license plate detection when:
+        // - first valid observation
+        // - vehicle is approaching significantly
+        // - new maximum area observed (even if stationary)
+        if (history.last_triggered_area == -1 || is_approaching || box_area > history.max_observed_area) {
+            pred.hasDeltas = true;
+            history.last_triggered_area = box_area;
+            history.max_observed_area = box_area;  // Reset max for new approach
+        }
+        // Reset trigger if vehicle is departing
+        else if (is_departing) {
+            pred.hasDeltas = false;
+            history.last_triggered_area = -1;  // Reset to force re-trigger
+        } else {
+            pred.hasDeltas = false;
         }
     }
 
