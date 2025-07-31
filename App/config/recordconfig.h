@@ -33,6 +33,7 @@ struct RecordConfig {
     std::optional<bool> enabled = false;
     std::optional<bool> sync_recordings = false;
     std::optional<int> expire_interval = 60;
+    std::optional<int> max_record_limit = 60; // mins
     std::optional<RecordRetainConfig> retain = RecordRetainConfig{};
     std::optional<EventsConfig> detections = EventsConfig{};
     std::optional<EventsConfig> alerts = EventsConfig{};

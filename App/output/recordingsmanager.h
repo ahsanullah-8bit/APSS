@@ -50,18 +50,14 @@ private:
     struct Recorder {
         VideoRecorder *recorder = nullptr;
         QThread *thread = nullptr;
-        bool isFree = true;
-        int assignedTo = -1;
+        QDateTime startTime;
+        bool isRecording = false;
     };
 
     const APSSConfig &m_apssConfig;
     std::shared_ptr<odb::database> m_db;
 
-    // isFree, <recorder, thread>
-    QList<Recorder> m_recorderPool;
-    // QHash<int, Recorder*> m_assignedRecorders;
-    // recorder_indx, tracker_id
-    // QHash<int, int> m_assignedRecorders;
-    QHash<QString, bool> m_eventsToRecord;
+    // camera, recorder
+    QHash<QString, Recorder> m_recorderPool;
 };
 
