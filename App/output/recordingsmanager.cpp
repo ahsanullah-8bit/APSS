@@ -26,7 +26,7 @@ void VideoRecorder::init()
     m_videoFrameInput = new QVideoFrameInput(this);
 
     QMediaFormat format;
-    format.setFileFormat(QMediaFormat::MPEG4);
+    format.setFileFormat(QMediaFormat::Matroska);
     format.setVideoCodec(QMediaFormat::VideoCodec::H264);
 
     m_recorder->setMediaFormat(format);
@@ -41,8 +41,6 @@ void VideoRecorder::init()
     connect(m_recorder, &QMediaRecorder::errorOccurred, this, [this] (QMediaRecorder::Error error, const QString &errorString) {
         qCCritical(output_recorder) << "Failure for path" << m_path << errorString << error;
     });
-
-    qDebug() << "Initialized recorder";
 }
 
 void VideoRecorder::recordFrame(const QVideoFrame &frame)
@@ -69,7 +67,9 @@ void VideoRecorder::start(const QString &path)
 
 void VideoRecorder::stop()
 {
+    qCDebug(output_recorder) << "Stopping a Recorder";
     recordFrame(QVideoFrame());
+    m_recorder->stop();
 }
 
 
@@ -105,7 +105,7 @@ void RecordingsManager::stop()
     for (const auto &recorder : std::as_const(m_recorderPool)) {
         QThread *thread = recorder.thread;
 
-        QMetaObject::invokeMethod(recorder.recorder, "stop", Qt::QueuedConnection);
+        QMetaObject::invokeMethod(recorder.recorder, "stop");
         thread->quit();
         if (!thread->wait(1000)) {
             qCWarning(output_rec_mngr) << "Gracefull termination failed for" << thread->objectName() + "." << "forcing termination.";
@@ -120,7 +120,7 @@ QFileInfo makeRecordingPath(const QDateTime &datetime, const QString &camera, in
     const QString hh = datetime.toString("hh");
     const QString mmsszzz = datetime.toString("mm.ss.zzz");
 
-    return QFileInfo(QString("%1/%2/%3/%4/%5_%6.mp4")
+    return QFileInfo(QString("%1/%2/%3/%4/%5_%6.mkv")
                          .arg(RECORD_DIR.absolutePath(),
                               yymmdd, hh, camera, mmsszzz,
                               QString::number(trackerId)));
@@ -139,11 +139,11 @@ void RecordingsManager::onRecordFrame(SharedFrame frame, const QList<int> &activ
     for (int id : activeEvents) {
         auto rec_it = std::find_if(m_recorderPool.begin(), m_recorderPool.end(), [&id](const Recorder &rec) { return rec.assignedTo == id; });
         if (rec_it == m_recorderPool.end()) {
-            continue;
             // id was not assigned
             // look for a free recorder
             auto it = std::find_if(m_recorderPool.begin(), m_recorderPool.end(), [] (const Recorder &recorder) { return recorder.isFree; });
             if (it == m_recorderPool.end()) {
+                continue;
                 // couldn't find a free recorder
                 // spawn a new one
                 auto *worker = new VideoRecorder;
@@ -157,7 +157,6 @@ void RecordingsManager::onRecordFrame(SharedFrame frame, const QList<int> &activ
                 m_recorderPool.emplaceBack(worker, thread, false, id);
                 thread->start();
 
-                qDebug() << m_recorderPool.size();
                 // take the recorder's iterator
                 it = m_recorderPool.begin() + (m_recorderPool.size() - 1);
             } else {
@@ -169,7 +168,7 @@ void RecordingsManager::onRecordFrame(SharedFrame frame, const QList<int> &activ
             // start the recorder
             const QFileInfo file_info = makeRecordingPath(frame->timestamp(), camera, id);
             file_info.dir().mkpath(".");
-            QMetaObject::invokeMethod(it->recorder, "start", Qt::QueuedConnection, Q_ARG(QString, file_info.absolutePath()));
+            QMetaObject::invokeMethod(it->recorder, "start", Qt::AutoConnection, Q_ARG(QString, file_info.filePath()));
             rec_it = it;
         }
 
@@ -177,7 +176,7 @@ void RecordingsManager::onRecordFrame(SharedFrame frame, const QList<int> &activ
         cv::Mat bgr = frame->data();
         QImage img(bgr.data, bgr.cols, bgr.rows, static_cast<int>(bgr.step), QImage::Format_BGR888);
         QMetaObject::invokeMethod(rec_it->recorder, "recordFrame",
-                                  Qt::QueuedConnection,
+                                  Qt::AutoConnection,
                                   Q_ARG(QVideoFrame, QVideoFrame(img)));
     }
 
@@ -186,7 +185,7 @@ void RecordingsManager::onRecordFrame(SharedFrame frame, const QList<int> &activ
         int id = it->assignedTo;
 
         if (!activeEvents.contains(id)) {
-            QMetaObject::invokeMethod(it->recorder, "stop", Qt::QueuedConnection);
+            QMetaObject::invokeMethod(it->recorder, "stop");
             // reset the flags
             it->isFree = true;
             it->assignedTo = -1;
