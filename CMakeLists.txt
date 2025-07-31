@@ -19,7 +19,7 @@ set(PKG_CONFIG_EXECUTABLE "${VCPKG_INSTALLED_DIR}/x64-windows/tools/pkgconf/pkgc
 include(cmake/helpers.cmake)
 apss_init_dependencies()
 
-find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Qml Quick Widgets Multimedia)
+find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Qml Quick Widgets Multimedia Sql)
 find_package(onnxruntime CONFIG REQUIRED)
 find_package(OpenVINO CONFIG REQUIRED)
 find_package(OpenCV 4.10.0 CONFIG REQUIRED)
@@ -55,6 +55,7 @@ qt_add_resources(${CMAKE_PROJECT_NAME} "configuration"
     qtquickcontrols2.conf)
 
 apss_copy_runtime_files()
+apss_copy_config_file("${CMAKE_SOURCE_DIR}/config.yml" ${CMAKE_BINARY_DIR})
 
 add_subdirectory(ext)
 include(qds)

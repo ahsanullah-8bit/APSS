@@ -46,7 +46,6 @@ inline void Publisher::publish(const std::string &data, const std::string &subTo
 inline void Publisher::stop()
 {
     m_socket.close();
-    m_context.close();
 }
 
 inline std::string Publisher::topic() const

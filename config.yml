@@ -7,7 +7,7 @@ cameras:
       fps: 5
     ffmpeg:
       inputs:
-        - path: C:/Users/MadGuy/Videos/ny_street.mp4
+        - path: C:/Users/MadGuy/Videos/ny_street2.mp4
           roles:
             - Detect
     objects:
@@ -19,15 +19,14 @@ cameras:
         - truck
     push_based_timeout: 50
     pull_based_timeout: 100
-    pull_based_order: false
+    pull_based_order: true
 predictors:
   yolo11_det:
     model:
-      path: models/yolo11n.onnx
+      path: models/yolo11n-640.onnx
       width: 320
       height: 320
     batch_size: 1
-    kpt_shape: [4, 3]
 lpr:
   enabled: false
   detection_threshold: 0.699999988

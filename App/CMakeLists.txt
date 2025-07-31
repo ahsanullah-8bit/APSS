@@ -21,6 +21,7 @@ target_sources(${CMAKE_PROJECT_NAME} PUBLIC
     engine/apssengine.cpp
     engine/trackedobjectprocessor.cpp
     models/camerametricsmodel.cpp
+    models/eventsmodel.cpp
     output/recordingsmanager.cpp
     main.cpp
 )
@@ -35,6 +36,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Quick
     Qt${QT_VERSION_MAJOR}::Qml
     Qt${QT_VERSION_MAJOR}::Multimedia
+    Qt${QT_VERSION_MAJOR}::Sql
 
     APSS::Camera
     APSS::Config

@@ -79,16 +79,6 @@ protected:
         event.setZones("ZoneA,ZoneB");
         event.setThumbnail("/path/to/thumbnail.jpg");
         event.setHasClip(true);
-        event.setHasSnapshot(true);
-        event.setRegion("Region1");
-        event.setBox("10,20,30,40");
-        event.setArea(1200);
-        event.setRetainIndefinitely(false);
-        event.setRatio(1.77f);
-        event.setPlusId("plus_id_xyz");
-        event.setModelHash("model_hash_abc");
-        event.setDetectorType("YOLO");
-        event.setModelType("v5s");
         event.setData("{\"confidence\":0.9,\"objects\":[\"person\"]}");
         return event;
     }
@@ -107,16 +97,6 @@ protected:
         EXPECT_EQ(actual.zones(), expected.zones());
         EXPECT_EQ(actual.thumbnail(), expected.thumbnail());
         EXPECT_EQ(actual.hasClip(), expected.hasClip());
-        EXPECT_EQ(actual.hasSnapshot(), expected.hasSnapshot());
-        EXPECT_EQ(actual.region(), expected.region());
-        EXPECT_EQ(actual.box(), expected.box());
-        EXPECT_EQ(actual.area(), expected.area());
-        EXPECT_EQ(actual.retainIndefinitely(), expected.retainIndefinitely());
-        EXPECT_FLOAT_EQ(actual.ratio(), expected.ratio());
-        EXPECT_EQ(actual.plusId(), expected.plusId());
-        EXPECT_EQ(actual.modelHash(), expected.modelHash());
-        EXPECT_EQ(actual.detectorType(), expected.detectorType());
-        EXPECT_EQ(actual.modelType(), expected.modelType());
         EXPECT_EQ(actual.data(), expected.data());
     }
 };

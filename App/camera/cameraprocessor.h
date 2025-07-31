@@ -50,4 +50,9 @@ private:
     QSharedPointer<QWaitCondition> m_waitCondition;
     SharedFrameBoundedQueue &m_trackedFrameQueue;
     SharedCameraMetrics m_cameraMetrics;
+
+    // Counts lpr retries for an object with a tracker id
+    // if the license plate has been confirmed a number of times,
+    // don't detect license plate for that vehicle
+    QHash<int, std::pair<QString, int>> m_lprRetries; // tracker_id, <prev_lpr_result, count>
 };

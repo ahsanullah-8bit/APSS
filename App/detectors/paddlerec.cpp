@@ -169,7 +169,7 @@ std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &bat
 
         // ctc decode
         Q_ASSERT(!m_labels.empty());
-        for (size_t r = 0; r < out_batch_size; ++r) {
+        for (size_t r = 0; r < sel_batch_size; ++r) {
             std::string str_res;
             int argmax_idx;
             int last_index = 0;

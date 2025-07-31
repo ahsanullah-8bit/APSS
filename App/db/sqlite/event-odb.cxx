@@ -154,73 +154,9 @@ namespace odb
     //
     t[12UL] = false;
 
-    // m_hasSnapshot
-    //
-    t[13UL] = false;
-
-    // m_region
-    //
-    if (t[14UL])
-    {
-      i.m_region_value.capacity (i.m_region_size);
-      grew = true;
-    }
-
-    // m_box
-    //
-    if (t[15UL])
-    {
-      i.m_box_value.capacity (i.m_box_size);
-      grew = true;
-    }
-
-    // m_area
-    //
-    t[16UL] = false;
-
-    // m_retainIndefinitely
-    //
-    t[17UL] = false;
-
-    // m_ratio
-    //
-    t[18UL] = false;
-
-    // m_plusId
-    //
-    if (t[19UL])
-    {
-      i.m_plusId_value.capacity (i.m_plusId_size);
-      grew = true;
-    }
-
-    // m_modelHash
-    //
-    if (t[20UL])
-    {
-      i.m_modelHash_value.capacity (i.m_modelHash_size);
-      grew = true;
-    }
-
-    // m_detectorType
-    //
-    if (t[21UL])
-    {
-      i.m_detectorType_value.capacity (i.m_detectorType_size);
-      grew = true;
-    }
-
-    // m_modelType
-    //
-    if (t[22UL])
-    {
-      i.m_modelType_value.capacity (i.m_modelType_size);
-      grew = true;
-    }
-
     // m_data
     //
-    if (t[23UL])
+    if (t[13UL])
     {
       i.m_data_value.capacity (i.m_data_size);
       grew = true;
@@ -364,100 +300,6 @@ namespace odb
     b[n].type = sqlite::bind::integer;
     b[n].buffer = &i.m_hasClip_value;
     b[n].is_null = &i.m_hasClip_null;
-    n++;
-
-    // m_hasSnapshot
-    //
-    b[n].type = sqlite::bind::integer;
-    b[n].buffer = &i.m_hasSnapshot_value;
-    b[n].is_null = &i.m_hasSnapshot_null;
-    n++;
-
-    // m_region
-    //
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_region_value.data ();
-    b[n].size = &i.m_region_size;
-    b[n].capacity = i.m_region_value.capacity ();
-    b[n].is_null = &i.m_region_null;
-    n++;
-
-    // m_box
-    //
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_box_value.data ();
-    b[n].size = &i.m_box_size;
-    b[n].capacity = i.m_box_value.capacity ();
-    b[n].is_null = &i.m_box_null;
-    n++;
-
-    // m_area
-    //
-    b[n].type = sqlite::bind::integer;
-    b[n].buffer = &i.m_area_value;
-    b[n].is_null = &i.m_area_null;
-    n++;
-
-    // m_retainIndefinitely
-    //
-    b[n].type = sqlite::bind::integer;
-    b[n].buffer = &i.m_retainIndefinitely_value;
-    b[n].is_null = &i.m_retainIndefinitely_null;
-    n++;
-
-    // m_ratio
-    //
-    b[n].type = sqlite::bind::real;
-    b[n].buffer = &i.m_ratio_value;
-    b[n].is_null = &i.m_ratio_null;
-    n++;
-
-    // m_plusId
-    //
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_plusId_value.data ();
-    b[n].size = &i.m_plusId_size;
-    b[n].capacity = i.m_plusId_value.capacity ();
-    b[n].is_null = &i.m_plusId_null;
-    n++;
-
-    // m_modelHash
-    //
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_modelHash_value.data ();
-    b[n].size = &i.m_modelHash_size;
-    b[n].capacity = i.m_modelHash_value.capacity ();
-    b[n].is_null = &i.m_modelHash_null;
-    n++;
-
-    // m_detectorType
-    //
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_detectorType_value.data ();
-    b[n].size = &i.m_detectorType_size;
-    b[n].capacity = i.m_detectorType_value.capacity ();
-    b[n].is_null = &i.m_detectorType_null;
-    n++;
-
-    // m_modelType
-    //
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_modelType_value.data ();
-    b[n].size = &i.m_modelType_size;
-    b[n].capacity = i.m_modelType_value.capacity ();
-    b[n].is_null = &i.m_modelType_null;
     n++;
 
     // m_data
@@ -731,184 +573,6 @@ namespace odb
       i.m_hasClip_null = is_null;
     }
 
-    // m_hasSnapshot
-    //
-    {
-      bool const& v =
-        o.hasSnapshot ();
-
-      bool is_null (false);
-      sqlite::value_traits<
-          bool,
-          sqlite::id_integer >::set_image (
-        i.m_hasSnapshot_value,
-        is_null,
-        v);
-      i.m_hasSnapshot_null = is_null;
-    }
-
-    // m_region
-    //
-    {
-      ::QString const& v =
-        o.region ();
-
-      bool is_null (true);
-      std::size_t cap (i.m_region_value.capacity ());
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_region_value,
-        i.m_region_size,
-        is_null,
-        v);
-      i.m_region_null = is_null;
-      grew = grew || (cap != i.m_region_value.capacity ());
-    }
-
-    // m_box
-    //
-    {
-      ::QString const& v =
-        o.box ();
-
-      bool is_null (true);
-      std::size_t cap (i.m_box_value.capacity ());
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_box_value,
-        i.m_box_size,
-        is_null,
-        v);
-      i.m_box_null = is_null;
-      grew = grew || (cap != i.m_box_value.capacity ());
-    }
-
-    // m_area
-    //
-    {
-      long int const& v =
-        o.area ();
-
-      bool is_null (false);
-      sqlite::value_traits<
-          long int,
-          sqlite::id_integer >::set_image (
-        i.m_area_value,
-        is_null,
-        v);
-      i.m_area_null = is_null;
-    }
-
-    // m_retainIndefinitely
-    //
-    {
-      bool const& v =
-        o.retainIndefinitely ();
-
-      bool is_null (false);
-      sqlite::value_traits<
-          bool,
-          sqlite::id_integer >::set_image (
-        i.m_retainIndefinitely_value,
-        is_null,
-        v);
-      i.m_retainIndefinitely_null = is_null;
-    }
-
-    // m_ratio
-    //
-    {
-      float const& v =
-        o.ratio ();
-
-      bool is_null (true);
-      sqlite::value_traits<
-          float,
-          sqlite::id_real >::set_image (
-        i.m_ratio_value,
-        is_null,
-        v);
-      i.m_ratio_null = is_null;
-    }
-
-    // m_plusId
-    //
-    {
-      ::QString const& v =
-        o.plusId ();
-
-      bool is_null (true);
-      std::size_t cap (i.m_plusId_value.capacity ());
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_plusId_value,
-        i.m_plusId_size,
-        is_null,
-        v);
-      i.m_plusId_null = is_null;
-      grew = grew || (cap != i.m_plusId_value.capacity ());
-    }
-
-    // m_modelHash
-    //
-    {
-      ::QString const& v =
-        o.modelHash ();
-
-      bool is_null (true);
-      std::size_t cap (i.m_modelHash_value.capacity ());
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_modelHash_value,
-        i.m_modelHash_size,
-        is_null,
-        v);
-      i.m_modelHash_null = is_null;
-      grew = grew || (cap != i.m_modelHash_value.capacity ());
-    }
-
-    // m_detectorType
-    //
-    {
-      ::QString const& v =
-        o.detectorType ();
-
-      bool is_null (true);
-      std::size_t cap (i.m_detectorType_value.capacity ());
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_detectorType_value,
-        i.m_detectorType_size,
-        is_null,
-        v);
-      i.m_detectorType_null = is_null;
-      grew = grew || (cap != i.m_detectorType_value.capacity ());
-    }
-
-    // m_modelType
-    //
-    {
-      ::QString const& v =
-        o.modelType ();
-
-      bool is_null (true);
-      std::size_t cap (i.m_modelType_value.capacity ());
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_modelType_value,
-        i.m_modelType_size,
-        is_null,
-        v);
-      i.m_modelType_null = is_null;
-      grew = grew || (cap != i.m_modelType_value.capacity ());
-    }
-
     // m_data
     //
     {
@@ -1143,162 +807,6 @@ namespace odb
       o.setHasClip (v);
     }
 
-    // m_hasSnapshot
-    //
-    {
-      bool v;
-
-      sqlite::value_traits<
-          bool,
-          sqlite::id_integer >::set_value (
-        v,
-        i.m_hasSnapshot_value,
-        i.m_hasSnapshot_null);
-
-      o.setHasSnapshot (v);
-    }
-
-    // m_region
-    //
-    {
-      ::QString v;
-
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_region_value,
-        i.m_region_size,
-        i.m_region_null);
-
-      o.setRegion (v);
-    }
-
-    // m_box
-    //
-    {
-      ::QString v;
-
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_box_value,
-        i.m_box_size,
-        i.m_box_null);
-
-      o.setBox (v);
-    }
-
-    // m_area
-    //
-    {
-      long int v;
-
-      sqlite::value_traits<
-          long int,
-          sqlite::id_integer >::set_value (
-        v,
-        i.m_area_value,
-        i.m_area_null);
-
-      o.setArea (v);
-    }
-
-    // m_retainIndefinitely
-    //
-    {
-      bool v;
-
-      sqlite::value_traits<
-          bool,
-          sqlite::id_integer >::set_value (
-        v,
-        i.m_retainIndefinitely_value,
-        i.m_retainIndefinitely_null);
-
-      o.setRetainIndefinitely (v);
-    }
-
-    // m_ratio
-    //
-    {
-      float v;
-
-      sqlite::value_traits<
-          float,
-          sqlite::id_real >::set_value (
-        v,
-        i.m_ratio_value,
-        i.m_ratio_null);
-
-      o.setRatio (v);
-    }
-
-    // m_plusId
-    //
-    {
-      ::QString v;
-
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_plusId_value,
-        i.m_plusId_size,
-        i.m_plusId_null);
-
-      o.setPlusId (v);
-    }
-
-    // m_modelHash
-    //
-    {
-      ::QString v;
-
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_modelHash_value,
-        i.m_modelHash_size,
-        i.m_modelHash_null);
-
-      o.setModelHash (v);
-    }
-
-    // m_detectorType
-    //
-    {
-      ::QString v;
-
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_detectorType_value,
-        i.m_detectorType_size,
-        i.m_detectorType_null);
-
-      o.setDetectorType (v);
-    }
-
-    // m_modelType
-    //
-    {
-      ::QString v;
-
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_modelType_value,
-        i.m_modelType_size,
-        i.m_modelType_null);
-
-      o.setModelType (v);
-    }
-
     // m_data
     //
     {
@@ -1353,19 +861,9 @@ namespace odb
   "\"zones\", "
   "\"thumbnail\", "
   "\"hasClip\", "
-  "\"hasSnapshot\", "
-  "\"region\", "
-  "\"box\", "
-  "\"area\", "
-  "\"retainIndefinitely\", "
-  "\"ratio\", "
-  "\"plusId\", "
-  "\"modelHash\", "
-  "\"detectorType\", "
-  "\"modelType\", "
   "\"data\") "
   "VALUES "
-  "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
   const char access::object_traits_impl< ::Event, id_sqlite >::find_statement[] =
   "SELECT "
@@ -1382,16 +880,6 @@ namespace odb
   "\"Event\".\"zones\", "
   "\"Event\".\"thumbnail\", "
   "\"Event\".\"hasClip\", "
-  "\"Event\".\"hasSnapshot\", "
-  "\"Event\".\"region\", "
-  "\"Event\".\"box\", "
-  "\"Event\".\"area\", "
-  "\"Event\".\"retainIndefinitely\", "
-  "\"Event\".\"ratio\", "
-  "\"Event\".\"plusId\", "
-  "\"Event\".\"modelHash\", "
-  "\"Event\".\"detectorType\", "
-  "\"Event\".\"modelType\", "
   "\"Event\".\"data\" "
   "FROM \"Event\" "
   "WHERE \"Event\".\"id\"=?";
@@ -1411,16 +899,6 @@ namespace odb
   "\"zones\"=?, "
   "\"thumbnail\"=?, "
   "\"hasClip\"=?, "
-  "\"hasSnapshot\"=?, "
-  "\"region\"=?, "
-  "\"box\"=?, "
-  "\"area\"=?, "
-  "\"retainIndefinitely\"=?, "
-  "\"ratio\"=?, "
-  "\"plusId\"=?, "
-  "\"modelHash\"=?, "
-  "\"detectorType\"=?, "
-  "\"modelType\"=?, "
   "\"data\"=? "
   "WHERE \"id\"=?";
 
@@ -1443,16 +921,6 @@ namespace odb
   "\"Event\".\"zones\", "
   "\"Event\".\"thumbnail\", "
   "\"Event\".\"hasClip\", "
-  "\"Event\".\"hasSnapshot\", "
-  "\"Event\".\"region\", "
-  "\"Event\".\"box\", "
-  "\"Event\".\"area\", "
-  "\"Event\".\"retainIndefinitely\", "
-  "\"Event\".\"ratio\", "
-  "\"Event\".\"plusId\", "
-  "\"Event\".\"modelHash\", "
-  "\"Event\".\"detectorType\", "
-  "\"Event\".\"modelType\", "
   "\"Event\".\"data\" "
   "FROM \"Event\"";
 

@@ -42,9 +42,6 @@ public slots:
     void stop();
     void onFrameChanged(SharedFrame frame);
 
-signals:
-    void frameChanged(SharedFrame frame);
-
 private:
     void ensureDirs();
     void initCameraMetrics();
@@ -83,7 +80,7 @@ private:
     QHash<QString, SharedCameraMetrics> m_cameraMetrics;
     SharedCameraMetricsModel m_cameraMetricsModel;
 
-    ZMQProxyThread m_intraZMQProxy;
+    ZMQProxyThread *m_intraZMQProxy;
     std::shared_ptr<odb::database> m_db;
     SharedFrameBoundedQueue m_trackedFramesQueue;
     QSharedPointer<TrackedObjectProcessor> m_trackedObjectsProcessor;

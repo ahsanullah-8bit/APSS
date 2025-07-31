@@ -22,6 +22,7 @@ public:
 public slots:
     void init();
     void start(const QString &path);
+    void stop();
     void recordFrame(const QVideoFrame &frame);
 
 private:
@@ -43,15 +44,24 @@ public:
 public slots:
     void init();
     void stop();
-    void onRecordFrame(SharedFrame frame);
+    void onRecordFrame(SharedFrame frame, const QList<int> &activeEvents);
 
 private:
+    struct Recorder {
+        VideoRecorder *recorder = nullptr;
+        QThread *thread = nullptr;
+        bool isFree = true;
+        int assignedTo = -1;
+    };
+
     const APSSConfig &m_apssConfig;
     std::shared_ptr<odb::database> m_db;
 
-    // camera, <recorder, thread>
-    QHash<QString, QPair<VideoRecorder*, QThread*>> m_recorderPool;
+    // isFree, <recorder, thread>
+    QList<Recorder> m_recorderPool;
+    // QHash<int, Recorder*> m_assignedRecorders;
     // recorder_indx, tracker_id
     // QHash<int, int> m_assignedRecorders;
+    QHash<QString, bool> m_eventsToRecord;
 };
 

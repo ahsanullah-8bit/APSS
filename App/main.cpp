@@ -4,6 +4,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QtSql/QSqlError>
 
 #include "autogen/environment.h"
 
@@ -11,6 +12,7 @@
 
 #include "config/apssconfig.h"
 #include "engine/apssengine.h"
+#include "models/eventsmodel.h"
 
 APSSConfig loadConfig(const QString &filepath);
 
@@ -29,6 +31,17 @@ int main(int argc, char *argv[])
     apssEngine->start();
     engine.rootContext()->setContextProperty("apssEngine", apssEngine);
     QObject::connect(&app, &QGuiApplication::aboutToQuit, apssEngine, &APSSEngine::stop);
+
+    // --------------------------
+
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", "event_reader_conn");
+    db.setDatabaseName("apss.db");
+
+    if (!db.open() || !db.isValid()) {
+        qCritical() << "Failed to open a database connection:" << db.lastError().text();
+    }
+    EventsModel events_model(db);
+    engine.rootContext()->setContextProperty("eventsModel", &events_model);
 
     // --------------------------
 

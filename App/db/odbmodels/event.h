@@ -23,16 +23,11 @@ public:
     QString zones() const;
     QString thumbnail() const;
     bool hasClip() const;
-    bool hasSnapshot() const;
-    QString region() const;
-    QString box() const;
-    long area() const;
-    bool retainIndefinitely() const;
-    float ratio() const;
-    QString plusId() const;
-    QString modelHash() const;
-    QString detectorType() const;
-    QString modelType() const;
+    // bool hasSnapshot() const;
+    // QString region() const;
+    // QString box() const;
+    // long area() const;
+    // bool retainIndefinitely() const;
     QString data() const;
     int trackerId() const;
 
@@ -48,16 +43,11 @@ public:
     void setZones(const QString &newZones);
     void setThumbnail(const QString &newThumbnail);
     void setHasClip(bool newHasClip);
-    void setHasSnapshot(bool newHasSnapshot);
-    void setRegion(const QString &newRegion);
-    void setBox(const QString &newBox);
-    void setArea(long newArea);
-    void setRetainIndefinitely(bool newRetainIndefinitely);
-    void setRatio(float newRatio);
-    void setPlusId(const QString &newPlusId);
-    void setModelHash(const QString &newModelHash);
-    void setDetectorType(const QString &newDetectorType);
-    void setModelType(const QString &newModelType);
+    // void setHasSnapshot(bool newHasSnapshot);
+    // void setRegion(const QString &newRegion);
+    // void setBox(const QString &newBox);
+    // void setArea(long newArea);
+    // void setRetainIndefinitely(bool newRetainIndefinitely);
     void setData(const QString &newData);
     void setTrackerId(int newTrackerId);
 
@@ -76,16 +66,11 @@ private:
     QString m_zones;
     QString m_thumbnail;
     bool m_hasClip = false;
-    bool m_hasSnapshot = false;
-    QString m_region;
-    QString m_box;
-    long m_area = 0l;
-    bool m_retainIndefinitely = false;
-    float m_ratio = false;
-    QString m_plusId;
-    QString m_modelHash;
-    QString m_detectorType;
-    QString m_modelType;
+    // bool m_hasSnapshot = false;
+    // QString m_region;
+    // QString m_box;
+    // long m_area = 0l;
+    // bool m_retainIndefinitely = false;
     QString m_data;
 };
 
@@ -151,55 +136,25 @@ inline bool Event::hasClip() const
     return m_hasClip;
 }
 
-inline bool Event::hasSnapshot() const
-{
-    return m_hasSnapshot;
-}
+// inline bool Event::hasSnapshot() const
+// {
+//     return m_hasSnapshot;
+// }
 
-inline QString Event::region() const
-{
-    return m_region;
-}
+// inline QString Event::region() const
+// {
+//     return m_region;
+// }
 
-inline QString Event::box() const
-{
-    return m_box;
-}
+// inline QString Event::box() const
+// {
+//     return m_box;
+// }
 
-inline long Event::area() const
-{
-    return m_area;
-}
-
-inline bool Event::retainIndefinitely() const
-{
-    return m_retainIndefinitely;
-}
-
-inline float Event::ratio() const
-{
-    return m_ratio;
-}
-
-inline QString Event::plusId() const
-{
-    return m_plusId;
-}
-
-inline QString Event::modelHash() const
-{
-    return m_modelHash;
-}
-
-inline QString Event::detectorType() const
-{
-    return m_detectorType;
-}
-
-inline QString Event::modelType() const
-{
-    return m_modelType;
-}
+// inline bool Event::retainIndefinitely() const
+// {
+//     return m_retainIndefinitely;
+// }
 
 inline QString Event::data() const
 {
@@ -307,85 +262,29 @@ inline void Event::setHasClip(bool newHasClip)
     // emit hasClipChanged(m_hasClip);
 }
 
-inline void Event::setHasSnapshot(bool newHasSnapshot)
-{
-    if (m_hasSnapshot == newHasSnapshot)
-        return;
-    m_hasSnapshot = newHasSnapshot;
-    // emit hasSnapshotChanged(m_hasSnapshot);
-}
+// inline void Event::setHasSnapshot(bool newHasSnapshot)
+// {
+//     if (m_hasSnapshot == newHasSnapshot)
+//         return;
+//     m_hasSnapshot = newHasSnapshot;
+//     // emit hasSnapshotChanged(m_hasSnapshot);
+// }
 
-inline void Event::setRegion(const QString &newRegion)
-{
-    if (m_region == newRegion)
-        return;
-    m_region = newRegion;
-    // emit regionChanged(m_region);
-}
+// inline void Event::setRegion(const QString &newRegion)
+// {
+//     if (m_region == newRegion)
+//         return;
+//     m_region = newRegion;
+//     // emit regionChanged(m_region);
+// }
 
-inline void Event::setBox(const QString &newBox)
-{
-    if (m_box == newBox)
-        return;
-    m_box = newBox;
-    // emit boxChanged(m_box);
-}
-
-inline void Event::setArea(long newArea)
-{
-    if (m_area == newArea)
-        return;
-    m_area = newArea;
-    // emit areaChanged(m_area);
-}
-
-inline void Event::setRetainIndefinitely(bool newRetainIndefinitely)
-{
-    if (m_retainIndefinitely == newRetainIndefinitely)
-        return;
-    m_retainIndefinitely = newRetainIndefinitely;
-    // emit retainIndefinitelyChanged(m_retainIndefinitely);
-}
-
-inline void Event::setRatio(float newRatio)
-{
-    if (m_ratio == newRatio)
-        return;
-    m_ratio = newRatio;
-    // emit ratioChanged(m_ratio);
-}
-
-inline void Event::setPlusId(const QString &newPlusId)
-{
-    if (m_plusId == newPlusId)
-        return;
-    m_plusId = newPlusId;
-    // emit plusIdChanged(m_plusId);
-}
-
-inline void Event::setModelHash(const QString &newModelHash)
-{
-    if (m_modelHash == newModelHash)
-        return;
-    m_modelHash = newModelHash;
-    // emit modelHashChanged(m_modelHash);
-}
-
-inline void Event::setDetectorType(const QString &newDetectorType)
-{
-    if (m_detectorType == newDetectorType)
-        return;
-    m_detectorType = newDetectorType;
-    // emit detectorTypeChanged(m_detectorType);
-}
-
-inline void Event::setModelType(const QString &newModelType)
-{
-    if (m_modelType == newModelType)
-        return;
-    m_modelType = newModelType;
-    // emit modelTypeChanged(m_modelType);
-}
+// inline void Event::setRetainIndefinitely(bool newRetainIndefinitely)
+// {
+//     if (m_retainIndefinitely == newRetainIndefinitely)
+//         return;
+//     m_retainIndefinitely = newRetainIndefinitely;
+//     // emit retainIndefinitelyChanged(m_retainIndefinitely);
+// }
 
 inline void Event::setData(const QString &newData)
 {
@@ -399,54 +298,3 @@ inline void Event::setTrackerId(int newTrackerId)
 {
     m_trackerId = newTrackerId;
 }
-
-// Q_OBJECT
-// Q_PROPERTY(std::string id READ id WRITE setId NOTIFY idChanged FINAL)
-// Q_PROPERTY(std::string label READ label WRITE setLabel NOTIFY labelChanged FINAL)
-// Q_PROPERTY(std::string subLabel READ subLabel WRITE setSubLabel NOTIFY subLabelChanged FINAL)
-// Q_PROPERTY(std::string camera READ camera WRITE setCamera NOTIFY cameraChanged FINAL)
-// Q_PROPERTY(std::string startTime READ startTime WRITE setStartTime NOTIFY startTimeChanged FINAL)
-// Q_PROPERTY(std::string endTime READ endTime WRITE setEndTime NOTIFY endTimeChanged FINAL)
-// Q_PROPERTY(float topScore READ topScore WRITE setTopScore NOTIFY topScoreChanged FINAL)
-// Q_PROPERTY(float score READ score WRITE setScore NOTIFY scoreChanged FINAL)
-// Q_PROPERTY(bool falsePositive READ falsePositive WRITE setFalsePositive NOTIFY falsePositiveChanged FINAL)
-// Q_PROPERTY(std::string zones READ zones WRITE setZones NOTIFY zonesChanged FINAL)
-// Q_PROPERTY(std::string thumbnail READ thumbnail WRITE setThumbnail NOTIFY thumbnailChanged FINAL)
-// Q_PROPERTY(bool hasClip READ hasClip WRITE setHasClip NOTIFY hasClipChanged FINAL)
-// Q_PROPERTY(bool hasSnapshot READ hasSnapshot WRITE setHasSnapshot NOTIFY hasSnapshotChanged FINAL)
-// Q_PROPERTY(std::string region READ region WRITE setRegion NOTIFY regionChanged FINAL)
-// Q_PROPERTY(std::string box READ box WRITE setBox NOTIFY boxChanged FINAL)
-// Q_PROPERTY(long area READ area WRITE setArea NOTIFY areaChanged FINAL)
-// Q_PROPERTY(bool retainIndefinitely READ retainIndefinitely WRITE setRetainIndefinitely NOTIFY retainIndefinitelyChanged FINAL)
-// Q_PROPERTY(float ratio READ ratio WRITE setRatio NOTIFY ratioChanged FINAL)
-// Q_PROPERTY(std::string plusId READ plusId WRITE setPlusId NOTIFY plusIdChanged FINAL)
-// Q_PROPERTY(std::string modelHash READ modelHash WRITE setModelHash NOTIFY modelHashChanged FINAL)
-// Q_PROPERTY(std::string detectorType READ detectorType WRITE setDetectorType NOTIFY detectorTypeChanged FINAL)
-// Q_PROPERTY(std::string modelType READ modelType WRITE setModelType NOTIFY modelTypeChanged FINAL)
-// Q_PROPERTY(std::string data READ data WRITE setData NOTIFY dataChanged FINAL)
-
-
-// signals:
-//     void idChanged(std::string id);
-//     void labelChanged(std::string label);
-//     void subLabelChanged(std::string subLabel);
-//     void cameraChanged(std::string camera);
-//     void startTimeChanged(std::string startTime);
-//     void endTimeChanged(std::string endTime);
-//     void topScoreChanged(float topScore);
-//     void scoreChanged(float score);
-//     void falsePositiveChanged(bool falsePositive);
-//     void zonesChanged(std::string zones);
-//     void thumbnailChanged(std::string thumbnail);
-//     void hasClipChanged(bool hasClip);
-//     void hasSnapshotChanged(bool hasSnapshot);
-//     void regionChanged(std::string region);
-//     void boxChanged(std::string box);
-//     void areaChanged(long area);
-//     void retainIndefinitelyChanged(bool retainIndefinitely);
-//     void ratioChanged(float ratio);
-//     void plusIdChanged(std::string plusId);
-//     void modelHashChanged(std::string modelHash);
-//     void detectorTypeChanged(std::string detectorType);
-//     void modelTypeChanged(std::string modelType);
-//     void dataChanged(std::string data);

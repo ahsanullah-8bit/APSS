@@ -32,19 +32,20 @@ constexpr float OCR_MIN_IOU_THRESH = 0.4f;
 constexpr float DET_RECONSIDER_AREA_INCREASE = 0.30f;   // Percentage, Reconsider sending a seen object to go through the pipeline again, if area is increase by the %.
 constexpr int   TRACKER_DELTA_OBJECT_LIMIT = 40 * 24;   // 40 secs * 24 FPS, 960 ids at the moment
 constexpr int   TRACKER_OBJECT_LOSS_LIMIT = 15;         // upto five frames
+constexpr int   LPR_MAX_RETRIES = 5;
 
-const QDir APSS_DIR(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
-const QDir CONFIG_DIR =         APSS_DIR.cleanPath("config");
-const QDir DEFAULT_DB_PATH =    CONFIG_DIR.cleanPath("apss.db");
-const QDir MODEL_CACHE_DIR =    CONFIG_DIR.cleanPath("model_cache");
-// const QDir BASE_DIR = (APSS_DIR.cleanPath("media/apss"));
-const QDir EXPORT_DIR =         APSS_DIR.cleanPath("exports");
-const QDir RECORD_DIR =         APSS_DIR.cleanPath("recordings");
-const QDir CLIPS_DIR =          APSS_DIR.cleanPath("clips");
-const QDir CLIPS_CACHE_DIR =    CLIPS_DIR.cleanPath("cache");
-const QDir FACE_DIR =           CLIPS_DIR.cleanPath("faces");
-const QDir THUMB_DIR =          CLIPS_DIR.cleanPath("thumbs");
-const QDir CACHE_DIR =          APSS_DIR.cleanPath("tmp/cache");
+const QDir APSS_DIR(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/APSSData");
+const QDir CONFIG_DIR =         APSS_DIR.filePath("config");
+const QDir DEFAULT_DB_PATH =    CONFIG_DIR.filePath("apss.db");
+const QDir MODEL_CACHE_DIR =    CONFIG_DIR.filePath("model_cache");
+// const QDir BASE_DIR = (APSS_DIR.filePath("media/apss"));
+const QDir EXPORT_DIR =         APSS_DIR.filePath("exports");
+const QDir RECORD_DIR =         APSS_DIR.filePath("recordings");
+const QDir CLIPS_DIR =          APSS_DIR.filePath("clips");
+const QDir CLIPS_CACHE_DIR =    CLIPS_DIR.filePath("cache");
+const QDir FACE_DIR =           CLIPS_DIR.filePath("faces");
+const QDir THUMB_DIR =          CLIPS_DIR.filePath("thumbs");
+const QDir CACHE_DIR =          APSS_DIR.filePath("tmp/cache");
 
 // Attribute & Object constants
 

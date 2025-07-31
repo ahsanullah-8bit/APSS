@@ -18,10 +18,10 @@ Rectangle {
 
     color: Constants.backgroundColor
 
-    // Side-bar
     RowLayout {
         anchors.fill: parent
 
+        // Side-bar
         Pane {
             Layout.fillHeight: true
             Layout.preferredWidth: 70
@@ -40,19 +40,36 @@ Rectangle {
                 RoundButton {
                     text: "Home"
                     checkable: true
+                    checked: true
+                    display: RoundButton.IconOnly
+                    icon.source: "icons/home-solid.svg"
 
                     height: 50
                     width: 50
                     radius: 10
+
+                    onCheckedChanged: function () {
+                        if (checked) {
+                            mainSwipeView.setCurrentIndex(0)
+                        }
+                    }
                 }
 
                 RoundButton {
-                    text: "Preview"
+                    text: "Review"
                     checkable: true
+                    display: RoundButton.IconOnly
+                    icon.source: "icons/camera-solid.svg"
 
                     height: 50
                     width: 50
                     radius: 10
+
+                    onCheckedChanged: function () {
+                        if (checked) {
+                            mainSwipeView.setCurrentIndex(1)
+                        }
+                    }
                 }
 
                 RoundButton {
@@ -66,60 +83,23 @@ Rectangle {
             }
         }
 
-        GridLayout {
+        SwipeView {
+            id: mainSwipeView
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            rows: 2
-            columns: 2
+            interactive: false
+            orientation: Qt.Vertical
 
-            Repeater {
-                model: Constants.isPreviewMode ? 1 : apssEngine.cameraMetricsModel
-
-                delegate: LivePlaybackCard {
-                    id: liveplaycard
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    metricsList: Constants.isPreviewMode ? [] : [["Process FPS", model.processfps], ["Detection FPS", model.detectionfps]]
-                    name: Constants.isPreviewMode ? "uknown" : model.name
-                    visible: true
-
-                    Component.onCompleted: {
-                        // VideoSink must be set, so the engine can forward frames
-                        if (!Constants.isPreviewMode) {
-                            model.videosink = videoOutput.videoSink
-                        }
-                    }
-
-                    Connections {
-                        target: fpsTimer
-
-                        onTriggered: function () {
-                            var metrics = liveplaycard.metricsList
-
-                            if (!Constants.isPreviewMode) {
-                                // metrics[0][1] = model.camerafps
-                                metrics[0][1] = model.processfps
-                                metrics[1][1] = model.detectionfps
-                            }
-
-                            liveplaycard.metricsList = metrics
-                        }
-                    }
-                }
-            }
+            HomePage {}
+            ReviewPage {}
         }
-    }
 
-    Timer {
-        id: fpsTimer
+        PageIndicator {
+            id: indicator
 
-        interval: 1000 // 1sec
-        repeat: true
-
-        Component.onCompleted: function () {
-            fpsTimer.start()
+            count: mainSwipeView.count
+            currentIndex: mainSwipeView.currentIndex
         }
     }
 }

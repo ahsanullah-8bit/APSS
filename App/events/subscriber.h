@@ -58,7 +58,6 @@ inline std::optional<std::tuple<std::string, std::string> > Subscriber::checkFor
 inline void Subscriber::stop()
 {
     m_socket.close();
-    m_context.close();
 }
 
 inline std::string Subscriber::topic() const

@@ -7,7 +7,7 @@
 
 class ZMQProxyThread : public QThread {
 public:
-    explicit ZMQProxyThread();
+    explicit ZMQProxyThread(QObject *parent = nullptr);
     ~ZMQProxyThread();
     void stop();
     static zmq::context_t &context();
@@ -30,7 +30,8 @@ private:
 
 
 // definitions
-inline ZMQProxyThread::ZMQProxyThread()
+inline ZMQProxyThread::ZMQProxyThread(QObject *parent)
+    : QThread(parent)
 {}
 
 inline ZMQProxyThread::~ZMQProxyThread()
@@ -40,6 +41,7 @@ inline ZMQProxyThread::~ZMQProxyThread()
 
 inline void ZMQProxyThread::stop()
 {
+    m_context.close();
     m_context.shutdown();
 
     if (isRunning()) {

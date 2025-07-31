@@ -55,16 +55,6 @@ namespace odb
                       "  \"zones\" TEXT NULL,\n"
                       "  \"thumbnail\" TEXT NULL,\n"
                       "  \"hasClip\" INTEGER NOT NULL,\n"
-                      "  \"hasSnapshot\" INTEGER NOT NULL,\n"
-                      "  \"region\" TEXT NULL,\n"
-                      "  \"box\" TEXT NULL,\n"
-                      "  \"area\" INTEGER NOT NULL,\n"
-                      "  \"retainIndefinitely\" INTEGER NOT NULL,\n"
-                      "  \"ratio\" REAL NULL,\n"
-                      "  \"plusId\" TEXT NULL,\n"
-                      "  \"modelHash\" TEXT NULL,\n"
-                      "  \"detectorType\" TEXT NULL,\n"
-                      "  \"modelType\" TEXT NULL,\n"
                       "  \"data\" TEXT NULL)");
           return false;
         }

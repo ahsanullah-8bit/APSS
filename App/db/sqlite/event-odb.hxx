@@ -274,126 +274,6 @@ namespace odb
 
     static const hasClip_type_ hasClip;
 
-    // hasSnapshot
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        bool,
-        sqlite::id_integer >::query_type,
-      sqlite::id_integer >
-    hasSnapshot_type_;
-
-    static const hasSnapshot_type_ hasSnapshot;
-
-    // region
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        ::QString,
-        sqlite::id_text >::query_type,
-      sqlite::id_text >
-    region_type_;
-
-    static const region_type_ region;
-
-    // box
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        ::QString,
-        sqlite::id_text >::query_type,
-      sqlite::id_text >
-    box_type_;
-
-    static const box_type_ box;
-
-    // area
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        long int,
-        sqlite::id_integer >::query_type,
-      sqlite::id_integer >
-    area_type_;
-
-    static const area_type_ area;
-
-    // retainIndefinitely
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        bool,
-        sqlite::id_integer >::query_type,
-      sqlite::id_integer >
-    retainIndefinitely_type_;
-
-    static const retainIndefinitely_type_ retainIndefinitely;
-
-    // ratio
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        float,
-        sqlite::id_real >::query_type,
-      sqlite::id_real >
-    ratio_type_;
-
-    static const ratio_type_ ratio;
-
-    // plusId
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        ::QString,
-        sqlite::id_text >::query_type,
-      sqlite::id_text >
-    plusId_type_;
-
-    static const plusId_type_ plusId;
-
-    // modelHash
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        ::QString,
-        sqlite::id_text >::query_type,
-      sqlite::id_text >
-    modelHash_type_;
-
-    static const modelHash_type_ modelHash;
-
-    // detectorType
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        ::QString,
-        sqlite::id_text >::query_type,
-      sqlite::id_text >
-    detectorType_type_;
-
-    static const detectorType_type_ detectorType;
-
-    // modelType
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        ::QString,
-        sqlite::id_text >::query_type,
-      sqlite::id_text >
-    modelType_type_;
-
-    static const modelType_type_ modelType;
-
     // data
     //
     typedef
@@ -471,56 +351,6 @@ namespace odb
   const typename query_columns< ::Event, id_sqlite, A >::hasClip_type_
   query_columns< ::Event, id_sqlite, A >::
   hasClip (A::table_name, "\"hasClip\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::hasSnapshot_type_
-  query_columns< ::Event, id_sqlite, A >::
-  hasSnapshot (A::table_name, "\"hasSnapshot\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::region_type_
-  query_columns< ::Event, id_sqlite, A >::
-  region (A::table_name, "\"region\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::box_type_
-  query_columns< ::Event, id_sqlite, A >::
-  box (A::table_name, "\"box\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::area_type_
-  query_columns< ::Event, id_sqlite, A >::
-  area (A::table_name, "\"area\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::retainIndefinitely_type_
-  query_columns< ::Event, id_sqlite, A >::
-  retainIndefinitely (A::table_name, "\"retainIndefinitely\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::ratio_type_
-  query_columns< ::Event, id_sqlite, A >::
-  ratio (A::table_name, "\"ratio\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::plusId_type_
-  query_columns< ::Event, id_sqlite, A >::
-  plusId (A::table_name, "\"plusId\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::modelHash_type_
-  query_columns< ::Event, id_sqlite, A >::
-  modelHash (A::table_name, "\"modelHash\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::detectorType_type_
-  query_columns< ::Event, id_sqlite, A >::
-  detectorType (A::table_name, "\"detectorType\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::modelType_type_
-  query_columns< ::Event, id_sqlite, A >::
-  modelType (A::table_name, "\"modelType\"", 0);
 
   template <typename A>
   const typename query_columns< ::Event, id_sqlite, A >::data_type_
@@ -622,62 +452,6 @@ namespace odb
       long long m_hasClip_value;
       bool m_hasClip_null;
 
-      // m_hasSnapshot
-      //
-      long long m_hasSnapshot_value;
-      bool m_hasSnapshot_null;
-
-      // m_region
-      //
-      details::buffer m_region_value;
-      std::size_t m_region_size;
-      bool m_region_null;
-
-      // m_box
-      //
-      details::buffer m_box_value;
-      std::size_t m_box_size;
-      bool m_box_null;
-
-      // m_area
-      //
-      long long m_area_value;
-      bool m_area_null;
-
-      // m_retainIndefinitely
-      //
-      long long m_retainIndefinitely_value;
-      bool m_retainIndefinitely_null;
-
-      // m_ratio
-      //
-      double m_ratio_value;
-      bool m_ratio_null;
-
-      // m_plusId
-      //
-      details::buffer m_plusId_value;
-      std::size_t m_plusId_size;
-      bool m_plusId_null;
-
-      // m_modelHash
-      //
-      details::buffer m_modelHash_value;
-      std::size_t m_modelHash_size;
-      bool m_modelHash_null;
-
-      // m_detectorType
-      //
-      details::buffer m_detectorType_value;
-      std::size_t m_detectorType_size;
-      bool m_detectorType_null;
-
-      // m_modelType
-      //
-      details::buffer m_modelType_value;
-      std::size_t m_modelType_size;
-      bool m_modelType_null;
-
       // m_data
       //
       details::buffer m_data_value;
@@ -723,7 +497,7 @@ namespace odb
 
     typedef sqlite::query_base query_base_type;
 
-    static const std::size_t column_count = 24UL;
+    static const std::size_t column_count = 14UL;
     static const std::size_t id_column_count = 1UL;
     static const std::size_t inverse_column_count = 0UL;
     static const std::size_t readonly_column_count = 0UL;

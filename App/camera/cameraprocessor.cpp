@@ -105,15 +105,6 @@ void CameraProcessor::run()
 
         recognizeLicensePlates(frame, lp_classes);
 
-        // draw results
-        PredictionList predictions = frame->predictions();
-        cv::Mat frame_mat = frame->data();
-
-        Utils::drawBoundingBox(frame_mat, predictions, class_names, class_colors);
-        Utils::drawPoseEstimation(frame_mat, predictions, lp_classes, lp_skeleton, true);
-        frame->setData(frame_mat);
-        // -- draw results
-
         process_eps.update();
         m_cameraMetrics->setProcessFPS(process_eps.eps());
 
@@ -337,6 +328,22 @@ void CameraProcessor::recognizeLicensePlates(SharedFrame frame, std::vector<std:
     }
 
     std::vector<PaddleOCR::OCRPredictResultList> results_list = m_ocrEngine.predict(crop_batch);
+
+    // OCR
+    // Filter main plate number
+    for (auto results : results_list) {
+        std::sort(results.begin(), results.end(), [] (const PaddleOCR::OCRPredictResult &a, const PaddleOCR::OCRPredictResult &b) {
+            return PaddleOCR::computeArea(a.box) > PaddleOCR::computeArea(b.box)
+                && a.score > b.score;
+        });
+
+        std::vector<std::string> res;
+        for (const auto &result : results) {
+            res.push_back(result.text);
+        }
+
+        qDebug() << res;
+    }
 
     frame->setOcrResults(std::move(results_list));
 }

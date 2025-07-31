@@ -42,7 +42,9 @@ void APSSEngine::start()
 {
     qCInfo(logger) << "Starting APSSEngine";
 
-    // ensureDirs();
+    m_intraZMQProxy = new ZMQProxyThread(this);
+
+    ensureDirs();
     initCameraMetrics();
     initQueues();
     initDatabase();
@@ -154,6 +156,8 @@ void APSSEngine::stop()
             thread->terminate();
             thread->wait();
         }
+
+        m_intraZMQProxy->stop();
     }
     catch (const std::exception &e) {
         qCInfo(logger) << "Uncaught exception" << e.what();
@@ -188,27 +192,28 @@ void APSSEngine::onFrameChanged(SharedFrame frame)
     output_sink->setVideoFrame(videoframe);
 }
 
-// void APSSEngine::ensureDirs()
-// {
-//     QList<QDir> dirs = { CONFIG_DIR
-//         , RECORD_DIR
-//         , THUMB_DIR
-//         , CLIPS_CACHE_DIR
-//         , CACHE_DIR
-//         , MODEL_CACHE_DIR
-//         , EXPORT_DIR
-//     };
+void APSSEngine::ensureDirs()
+{
+    QList<QDir> dirs = { APSS_DIR,
+                        CONFIG_DIR,
+                        RECORD_DIR,
+                        THUMB_DIR,
+                        CLIPS_CACHE_DIR,
+                        CACHE_DIR,
+                        MODEL_CACHE_DIR,
+                        EXPORT_DIR
+    };
 
-//     for (const auto &dir : dirs) {
-//         if (!dir.exists()) {
-//             qCInfo(logger) << "Creating directory" << dir.path();
-//             // Seems like a very poor way to create the current dir, but we'll see.
-//             dir.mkdir(dir.dirName());
-//         } else {
-//             qCInfo(logger) << "Skipping directory" << dir.path();
-//         }
-//     }
-// }
+    for (const auto &dir : dirs) {
+        if (!dir.exists()) {
+            qCInfo(logger) << "Creating directory" << dir.path();
+            // Seems like a very poor way to create the current dir, but we'll see.
+            dir.mkpath(dir.path());
+        } else {
+            qCInfo(logger) << "Skipping directory" << dir.path();
+        }
+    }
+}
 
 void APSSEngine::initCameraMetrics()
 {
@@ -234,13 +239,15 @@ void APSSEngine::initDatabase()
 
     m_db = std::make_shared<odb::sqlite::database>(path, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
 
-    odb::transaction t(m_db->begin());
-    try {
-        odb::schema_catalog::create_schema(*m_db);
-        t.commit();
-    } catch (const odb::exception& e) {
-        t.rollback();
-        qCFatal(logger) << "Failed to create database schema" << e.what();
+    if (!odb::schema_catalog::exists(*m_db)) {
+        odb::transaction t(m_db->begin());
+        try {
+            odb::schema_catalog::create_schema(*m_db);
+            t.commit();
+        } catch (const odb::exception& e) {
+            t.rollback();
+            qCFatal(logger) << "Failed to create database schema" << e.what();
+        }
     }
 }
 
@@ -250,8 +257,6 @@ void APSSEngine::initRecordingManager()
     auto *worker = new RecordingsManager(*m_config, m_db);
 
     connect(thread, &QThread::started, worker, &RecordingsManager::init);
-    connect(this, &APSSEngine::frameChanged, worker, &RecordingsManager::onRecordFrame);
-
     connect(worker, &RecordingsManager::destroyed, thread, &QThread::quit);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 
@@ -297,7 +302,7 @@ void APSSEngine::startDetectedFramesProcessor()
     m_trackedObjectsProcessor = processor;
 
     connect(m_trackedObjectsProcessor.get(), &TrackedObjectProcessor::frameChanged, this, &APSSEngine::onFrameChanged);
-    connect(m_trackedObjectsProcessor.get(), &TrackedObjectProcessor::frameChanged, m_recordingsManager.first, &RecordingsManager::onRecordFrame);
+    connect(m_trackedObjectsProcessor.get(), &TrackedObjectProcessor::frameChangedWithEvents, m_recordingsManager.first, &RecordingsManager::onRecordFrame);
 
     m_trackedObjectsProcessor->start();
 }

@@ -16,10 +16,14 @@ public:
 
 signals:
     void frameChanged(SharedFrame frame);
+    void frameChangedWithEvents(SharedFrame frame, const QList<int> &activeEvents);
 
     // QThread interface
 protected:
     void run() override;
+
+private:
+    QString cropAndSaveThumbnail(const QString &name, const SharedFrame frame, const Prediction &pred);
 
 private:
     SharedFrameBoundedQueue &m_frameQueue;

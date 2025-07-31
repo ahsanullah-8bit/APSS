@@ -11,6 +11,16 @@ function(apss_init_dependencies)
 	# Only works for windows, as of now.
 	if (WIN32)
 
+		######################################
+		##		Models
+		######################################
+
+		FetchContent_Declare(models
+			URL "https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/paddleocr-models.zip"
+			SOURCE_DIR "${CMAKE_SOURCE_DIR}/scripts/models"
+		)
+	    FetchContent_MakeAvailable(models)
+
 		######################
 		# Prebuilt
 		######################
@@ -196,7 +206,7 @@ function(apss_copy_runtime_files)
 	# Copy the .onnx models over from the scripts directory to the <bin_dir>/models.
 	set(SCRIPTS_DIR "${CMAKE_SOURCE_DIR}/scripts")
 	file(GLOB MODEL_FILES LIST_DIRECTORIES FALSE "${SCRIPTS_DIR}/*.onnx")
-	file(GLOB MODEL_DIRS RELATIVE ${SCRIPTS_DIR} "${SCRIPTS_DIR}/*_onnx")
+	file(GLOB MODEL_DIRS RELATIVE "${SCRIPTS_DIR}/models" "models/*_onnx")
 	# message(STATUS "Model dirs: ${MODEL_DIRS}")
 	set(MODELS_BIN_DST "${CMAKE_BINARY_DIR}/models")
 
@@ -224,6 +234,20 @@ function(apss_copy_runtime_files)
 	    endforeach()
 	endif()
 endfunction() # apss_copy_runtime_files
+
+function(apss_copy_config_file src dst)
+	message(STATUS "${src} ${dst}")
+
+	add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${dst}
+
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		    ${src}
+			${dst}
+
+		VERBATIM
+	)
+endfunction()
 
 # Scans all the header files of persistent class targets and generates the persistent code
 function(apss_generate_odb_models db_type dst_dir)

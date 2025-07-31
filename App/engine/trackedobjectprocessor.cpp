@@ -1,9 +1,11 @@
 #include <QLoggingCategory>
 
+#include <opencv2/imgcodecs.hpp>
 #include <rfl/json.hpp>
 
 #include "db/sqlite/event-odb.hxx"
 #include "db/sqlite/frameprediction-odb.hxx"
+#include "detectors/image.h"
 #include "events/detectionsubpub.h"
 #include "trackedobjectprocessor.h"
 #include "utils/framemanager.h"
@@ -87,18 +89,14 @@ void TrackedObjectProcessor::run()
                             Event& event = active_events[tracker_id];
 
                             const auto &prediction_history = object_history[tracker_id];
+                            const std::string predictions = rfl::json::write(prediction_history);
                             const std::string label = prediction_history.empty() ? "Uknown"     // I hope this first condition is not true
                                                                              : prediction_history.at(0).className;
                             event.setLabel(QString::fromStdString(label));
                             event.setCamera(frame->camera());
                             event.setEndTime(last_seen_timestamps[tracker_id]); // last seen time
                             event.setTrackerId(tracker_id);
-
-                            const std::string predictions = rfl::json::write(prediction_history);
                             event.setData(QString::fromStdString(predictions));
-
-                            // persist event with prediction history
-                            // event.setPredictionHistory(objectHistory[tracker_id]);
 
                             odb::transaction t(m_db->begin());
                             try {
@@ -107,6 +105,9 @@ void TrackedObjectProcessor::run()
                             } catch (const odb::exception& e) {
                                 t.rollback();
                                 qCCritical(logger) << "DB Error:" << e.what();
+                            } catch(...) {
+                                t.rollback();
+                                qCCritical(logger) << "DB Error: Uknown/Uncaught exception occurred.";
                             }
                         }
 
@@ -129,11 +130,16 @@ void TrackedObjectProcessor::run()
                 if (!object_history.contains(tracker_id)) {
                     // initialize new event
                     Event newEvent;
+                    // TODO: See if we really need to create a QUuid and use timestamp
                     newEvent.setId(QString("%1-%2")
                                        .arg(frame_time.toString(Qt::ISODateWithMs),
                                             QUuid::createUuid().toString(QUuid::WithoutBraces)));
                     newEvent.setStartTime(frame_time);
                     newEvent.setTopScore(pred.conf);
+
+                    const QString thumb_name = QString("%1_%2.jpg").arg(frame->camera()).arg(pred.trackerId);
+                    const QString thumb_path = cropAndSaveThumbnail(thumb_name, frame, pred);
+                    newEvent.setThumbnail(thumb_path);
 
                     // store first prediction
                     object_history[tracker_id] = {pred};
@@ -152,7 +158,17 @@ void TrackedObjectProcessor::run()
                 }
             }
 
+            // // draw results
+            // PredictionList predictions = frame->predictions();
+            // cv::Mat frame_mat = frame->data();
+
+            // Utils::drawBoundingBox(frame_mat, predictions, class_names, class_colors);
+            // Utils::drawPoseEstimation(frame_mat, predictions, lp_classes, lp_skeleton, true);
+            // frame->setData(frame_mat);
+            // // -- draw results
+
             emit frameChanged(frame);
+            emit frameChangedWithEvents(frame, active_events.keys());
         }
     }
     catch(const tbb::user_abort &) {}
@@ -164,4 +180,25 @@ void TrackedObjectProcessor::run()
     }
 
     qCInfo(logger) << "Stopping" << objectName() << "thread";
+}
+
+QString TrackedObjectProcessor::cropAndSaveThumbnail(const QString &name,
+                                                     const SharedFrame frame,
+                                                     const Prediction &pred)
+{
+    const QString thumb_path = THUMB_DIR.filePath(name);
+    cv::Rect box = pred.box;
+    cv::Mat img = frame->data();
+
+    // increase the box size a little bit
+    constexpr int max_increase = 20;
+    box.x = Utils::clamp(box.x - max_increase, 0, box.x);
+    box.y = Utils::clamp(box.y - max_increase, 0, box.y);
+    box.height = Utils::clamp(box.height + max_increase, box.height, img.rows);
+    box.width = Utils::clamp(box.width + max_increase, box.width, img.cols);
+
+    cv::Mat crop;
+    Utils::crop(img, crop, box);
+    cv::imwrite(thumb_path.toStdString(), crop);
+    return thumb_path;
 }

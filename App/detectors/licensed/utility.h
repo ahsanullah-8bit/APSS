@@ -28,6 +28,23 @@ struct OCRPredictResult {
 
 using OCRPredictResultList = std::vector<OCRPredictResult>;
 
+inline float computeArea(const std::vector<std::vector<int>>& box) {
+    if (box.size() != 4) return 0.0f;
+
+    float area = 0.0f;
+    for (size_t i = 0; i < 4; ++i) {
+        const auto& p1 = box[i];
+        const auto& p2 = box[(i + 1) % 4];
+
+        if (p1.size() != 2 || p2.size() != 2)
+            return 0.0f;
+
+        area += (p1[0] * p2[1]) - (p2[0] * p1[1]);
+    }
+
+    return std::abs(area) * 0.5f;
+};
+
 struct StructurePredictResult {
     std::vector<float> box;
     std::vector<std::vector<int>> cell_box;
