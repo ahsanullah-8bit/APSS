@@ -2,11 +2,11 @@
 
 #include <onnxruntime_cxx_api.h>
 
-#include "apss.h"
-#include "predictorconfig.h"
-#include "onnxinference.h"
-#include "licensed/preprocess_op.h"
-#include "licensed/postprocess_op.h"
+#include <apss.h>
+#include <config/predictorconfig.h>
+#include <detectors/onnxinference.h>
+#include <detectors/licensed/preprocess_op.h>
+#include <detectors/licensed/postprocess_op.h>
 
 class PaddleCls
 {

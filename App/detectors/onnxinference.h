@@ -2,10 +2,10 @@
 
 #include <mutex>
 
-#include "wrappers/customallocator.h"
+#include <detectors/wrappers/customallocator.h>
 #include <onnxruntime_cxx_api.h>
 
-#include "predictorconfig.h"
+#include <config/predictorconfig.h>
 
 class ONNXInference
 {

@@ -3,8 +3,8 @@
 #include <QThread>
 
 #include <tbb_patched.h>
-#include "config/cameraconfig.h"
-#include "utils/frame.h"
+#include <config/cameraconfig.h>
+#include <utils/frame.h>
 
 /*
         self.logger = logging.getLogger(f"watchdog.{camera_name}")

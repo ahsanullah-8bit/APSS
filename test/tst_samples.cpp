@@ -52,6 +52,25 @@ TEST_F(TestSamples, MatWithoutConversion)
     QVideoFrame videoframe(img);
 }
 
+TEST_F(TestSamples, QImageToVideoFrame)
+{
+    cv::Mat rgb = cv::imread("test/assets/vehicles.jpg");
+
+    QImage img(rgb.data, rgb.cols, rgb.rows, static_cast<int>(rgb.step), QImage::Format_BGR888);
+
+    // QImage to QVideoFrame
+    auto start_time = std::chrono::high_resolution_clock::now();
+    QVideoFrame videoframe(img);
+    auto img2vf_time = std::chrono::high_resolution_clock::now() - start_time;
+
+    start_time = std::chrono::high_resolution_clock::now();
+    QImage qimg_again = videoframe.toImage();
+    auto vf2qimg_time = std::chrono::high_resolution_clock::now() - start_time;
+
+    qDebug() << "QImage to QVideoFrame: " << std::chrono::duration<double, std::milli>(img2vf_time);
+    qDebug() << "QVideoFrame to QImage: " << std::chrono::duration<double, std::milli>(vf2qimg_time);
+}
+
 TEST_F(TestSamples, PerspectiveCropCentered)
 {
     /*

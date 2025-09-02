@@ -1,22 +1,22 @@
+#include <fstream>
+
 #include <QObject>
 #include <QFile>
 #include <QTextStream>
-
-#include <fstream>
 
 #include <rfl.hpp>
 #include <rfl/yaml.hpp>
 
 #include <gtest/gtest.h>
 
-#include "apssconfig.h"
-#include "cameraconfig.h"
-#include "databaseconfig.h"
-#include "detectconfig.h"
-#include "modelconfig.h"
-#include "objectconfig.h"
-#include "predictorconfig.h"
-#include "recordconfig.h"
+#include <config/apssconfig.h>
+#include <config/cameraconfig.h>
+#include <config/databaseconfig.h>
+#include <config/detectconfig.h>
+#include <config/modelconfig.h>
+#include <config/objectconfig.h>
+#include <config/predictorconfig.h>
+#include <config/recordconfig.h>
 
 class TestConfig : public ::testing::Test {
 protected:

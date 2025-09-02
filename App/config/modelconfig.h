@@ -1,5 +1,10 @@
 #pragma once
 
+#include <string>
+#include <map>
+#include <vector>
+#include <optional>
+
 enum class PixelFormatEnum { RGB, BGR, YUV };
 enum class InputTensorEnum { NCHW, NHWC };
 enum class InputDTypeEnum { FLOAT, INT };

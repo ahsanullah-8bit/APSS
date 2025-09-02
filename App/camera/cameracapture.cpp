@@ -5,9 +5,7 @@
 #include <QLoggingCategory>
 
 #include <opencv2/opencv.hpp>
-
 #include <tbb_patched.h>
-#include "utils/frame.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -17,7 +15,31 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
+#include <utils/eventspersecond.h>
+#include <utils/frame.h>
+#include <output/ffmpegrecorder.h>
+
 Q_STATIC_LOGGING_CATEGORY(logger, "apss.camera.capture")
+
+// Just an RAII for AVPacket unref
+struct AVPacketUnrefRAII {
+    AVPacket *packet = nullptr;
+
+    ~AVPacketUnrefRAII() {
+        if (packet)
+            av_packet_unref(packet);
+    }
+};
+
+// Just an RAII for AVFrame unref
+struct AVFrameUnrefRAII {
+    AVFrame *frame = nullptr;
+
+    ~AVFrameUnrefRAII() {
+        if (frame)
+            av_frame_unref(frame);
+    }
+};
 
 CameraCapture::CameraCapture(const QString &name,
                              SharedCameraMetrics metrics,
@@ -49,7 +71,7 @@ void CameraCapture::run()
     AVStream *video_stream = nullptr;
     int video_stream_index = -1;
     AVFrame *frame = nullptr;
-    AVFrame *rgb_frame = nullptr;
+    AVFrame *bgr_frame = nullptr;
     AVPacket *packet = nullptr;
     SwsContext *sws_ctx = nullptr;
     uint8_t *buffer = nullptr;
@@ -62,14 +84,14 @@ void CameraCapture::run()
         av_log_set_level(AV_LOG_WARNING);
         avformat_network_init();
 
-        // Allocate format context and set interrupt callback
-        // fmt_ctx = avformat_alloc_context();
-        // fmt_ctx->interrupt_callback.callback = [] (void *ctx) -> int { return QThread::currentThread()->isInterruptionRequested(); };
-
         // 2. Open input file
         if ((err_res = avformat_open_input(&fmt_ctx, filename, nullptr, nullptr)) < 0) {
             throw std::runtime_error(std::format("Failed to open input stream, {}, url {}", av_make_error_string(errbuf, sizeof(errbuf), err_res), filename));
         }
+
+        // Allocate format context and set interrupt callback
+        // fmt_ctx = avformat_alloc_context();
+        fmt_ctx->interrupt_callback.callback = [] (void *) -> int { return QThread::currentThread()->isInterruptionRequested(); };
 
         if ((err_res = avformat_find_stream_info(fmt_ctx, nullptr)) < 0) {
             throw std::runtime_error(std::format("Failed to find stream info, {}", av_make_error_string(errbuf, sizeof(errbuf), err_res)));
@@ -119,8 +141,8 @@ void CameraCapture::run()
             throw std::runtime_error("Failed to allocate frame");
         }
 
-        rgb_frame = av_frame_alloc();
-        if (!rgb_frame) {
+        bgr_frame = av_frame_alloc();
+        if (!bgr_frame) {
             throw std::runtime_error("Failed to allocate RGB frame");
         }
 
@@ -136,140 +158,122 @@ void CameraCapture::run()
         if (!buffer) {
             throw std::runtime_error("Failed to allocate buffer for RGB frame");
         }
-        av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, buffer, AV_PIX_FMT_BGR24, video_codec_ctx->width, video_codec_ctx->height, 1);
+        av_image_fill_arrays(bgr_frame->data, bgr_frame->linesize, buffer, AV_PIX_FMT_BGR24, video_codec_ctx->width, video_codec_ctx->height, 1);
 
         // FPS syncronization
-        // AVRational time_base = video_stream->time_base;
-        // int64_t last_pts = AV_NOPTS_VALUE;  // presentation time
-        // qint64 last_frame_time = 0;
-        double avg_frame_duration = 0.0;
+        AVRational time_base = video_stream->time_base;
+        int64_t start_pts = AV_NOPTS_VALUE;  // presentation time
+        auto start_wall = std::chrono::steady_clock::now();
 
-        // Calculate average FPS (fallback for missing PTS)
-        double fps = av_q2d(av_guess_frame_rate(fmt_ctx, video_stream, nullptr));
-        if (fps > 0.01)
-            avg_frame_duration = 1000.0 / fps; // ms per frame
-
-        // 6. Read and Decode Frames
+        // 6. read and decode frames
         size_t frame_index = 0;
-        while (!QThread::currentThread()->isInterruptionRequested()) {
+        EventsPerSecond eps_avg;
+        eps_avg.start();
+        while (!isInterruptionRequested()) {
+            // while (!isInterruptionRequested()) {
             int read_result = av_read_frame(fmt_ctx, packet);
-            // Check if interrupted by callback, break cleanly
+            AVPacketUnrefRAII pkt_unref { .packet = packet };
             if (read_result == AVERROR_EXIT) {
+                // interrupted by callback, break cleanly
                 break;
             }
 
-            // Check for normal EOF or error
+            if (read_result == AVERROR_EOF) {
+                // normal end of file (EOF)
+                break;
+            }
+
             if (read_result < 0) {
-                if (read_result != AVERROR_EOF) {
-                    av_strerror(read_result, errbuf, sizeof(errbuf));
-                    qCWarning(logger) << "Read error:" << errbuf;
-                }
+                // an error
+                av_strerror(read_result, errbuf, sizeof(errbuf));
+                qCFatal(logger) << "Read error:" << errbuf;
                 break;
             }
 
-            // Skip if stream index isn't the same
-            if (packet->stream_index != video_stream_index)
+            if (packet->stream_index != video_stream_index) {
+                // stream index isn't the same
                 continue;
+            }
 
-            // Send packet to the decoder
+            // send packet to the decoder
             int send_result = avcodec_send_packet(video_codec_ctx, packet);
             if (send_result < 0 && send_result != AVERROR(EAGAIN)) {
                 av_strerror(send_result, errbuf, sizeof(errbuf));
                 qCWarning(logger) << "Decoder error:" << errbuf;
-                av_packet_unref(packet);
                 continue;
             }
 
-            // qInfo() << "Sent frame to decoder";
-
-            // Receive frames from the decoder
-            while (true) {
-                qint64 ms_at_start = QDateTime::currentMSecsSinceEpoch();
-
+            while (!isInterruptionRequested()) {
+                // receive frames from the decoder
                 int recv_result = avcodec_receive_frame(video_codec_ctx, frame);
-                if (recv_result == AVERROR(EAGAIN) || recv_result == AVERROR(EOF)) {
+                AVFrameUnrefRAII frame_ref { .frame = frame };
+
+                if (recv_result == AVERROR_EOF) {
                     break;
+                }
+
+                if (recv_result == AVERROR(EAGAIN)) {
+                    // decoding buffer just emptied
+                    if (send_result == AVERROR(EAGAIN)) {
+                        // and a packet is still waiting, to be pushed
+                        avcodec_send_packet(video_codec_ctx, packet);
+                        continue;
+                    } else {
+                        // break to acquire another packet
+                        break;
+                    }
                 }
 
                 if (recv_result < 0) {
                     av_strerror(recv_result, errbuf, sizeof(errbuf));
-                    qCWarning(logger) << "Frame error:" << errbuf;
+                    qCWarning(logger) << "Frame decoding error:" << errbuf;
                     break;
                 }
 
-                // 7. Convert Frame to OpenCV Format
-                sws_scale(sws_ctx, frame->data, frame->linesize, 0, video_codec_ctx->height,
-                          rgb_frame->data, rgb_frame->linesize);
+                // synchronization
+                int64_t pts = (frame->best_effort_timestamp != AV_NOPTS_VALUE)
+                                  ? frame->best_effort_timestamp
+                                  : frame->pts; // fallback if no pts
+                if (start_pts == AV_NOPTS_VALUE) {
+                    start_pts = pts;
+                    start_wall = std::chrono::steady_clock::now();
+                }
 
-                cv::Mat cv_frame(video_codec_ctx->height, video_codec_ctx->width, CV_8UC3, rgb_frame->data[0], rgb_frame->linesize[0]);
+                double pts_ms = (pts - start_pts) * av_q2d(time_base) * 1000.0;
+                // expected wall clock time for this frame
+                auto target_time = start_wall + std::chrono::milliseconds((int64_t)pts_ms);
+                // wait if we’re early
+                auto now = std::chrono::steady_clock::now();
+                if (target_time > now) {
+                    std::this_thread::sleep_until(target_time);
+                }
+                // -- synchronization
+
+                // 7. convert Frame to OpenCV Format
+                sws_scale(sws_ctx, frame->data, frame->linesize, 0, video_codec_ctx->height,
+                          bgr_frame->data, bgr_frame->linesize);
+
+                cv::Mat cv_frame(video_codec_ctx->height, video_codec_ctx->width, CV_8UC3, bgr_frame->data[0], bgr_frame->linesize[0]);
                 SharedFrame final_frame(new Frame(m_name, frame_index, cv_frame.clone()));
 
-                // Non-blocking queue insertion with abort detection
                 try {
                     if (!m_metrics->isPullBased()) {
                         frame_queue->emplace(final_frame);
                     } else if (!frame_queue->try_emplace(final_frame)) {
-                        // Queue full but not aborted - wait with timeout
-                        if (QThread::currentThread()->isInterruptionRequested())
-                            break;
-
-                        qCWarning(logger) << m_config.name.value_or("") << "queues overloaded, Skipping frame" << frame_index << "pts" << frame->pts;
-                        // if (!m_frameQueue.wait_for(std::chrono::milliseconds(100))) {}   // error: no member named tbb::concurrent_bounded_queue::wait_for(..._
+                        qCWarning(logger) << m_config.name.value_or("") << "queues overloaded, Skipping frame" << frame_index << "fps" << eps_avg.eps();
                     }
                 } catch (const tbb::user_abort&) {
-                    // Queue was aborted, exit immediately
+                    // queue was aborted, exit immediately
                     break;
                 }
-                av_frame_unref(frame);
-
-                // qInfo() << "Received frame from decoder";
                 frame_index++;
-
-                qint64 ms_frame_took = QDateTime::currentMSecsSinceEpoch() - ms_at_start;
-                qint64 ms_pts_diff = avg_frame_duration - ms_frame_took;
-
-                // qInfo() << "Avg frame duration" << avg_frame_duration << "time frame took" << ms_frame_took << "diff" << ms_to_sleep;
-                if (ms_pts_diff > 10) // Because around 10ms are taken by the calculations and sleep/wake of the thread in such conditions
-                    QThread::currentThread()->msleep(ms_pts_diff);
+                eps_avg.update();
             }
-            av_packet_unref(packet);
-
-            // ms_frame_took = QDateTime::currentMSecsSinceEpoch() - ms_at_start;
-            // ms_to_sleep = avg_frame_duration - ms_frame_took;
-            // qInfo() << "Aft: Avg frame duration" << avg_frame_duration << "time frame took" << ms_frame_took << "diff" << ms_to_sleep;
-            // Calculate PTS
-            // double pts_ms = 0.0;
-            // if (frame->best_effort_timestamp != AV_NOPTS_VALUE) {
-            //     pts_ms = static_cast<qint64>(frame->best_effort_timestamp * av_q2d(time_base) * 1000);
-            // } else if (last_pts != AV_NOPTS_VALUE) {
-            //     pts_ms = last_pts + static_cast<qint64>(avg_frame_duration);
-            // }
-
-            // Frame syncronization
-            // if (last_frame_time > 0) {
-            //     const qint64 now = QDateTime::currentMSecsSinceEpoch();
-            //     const qint64 elapsed = now - last_frame_time;
-            //     const qint64 frame_duration = pts_ms - last_pts;
-
-            //     if (frame_duration > elapsed) {
-            //         // Sleep only if we're ahead of schedule
-            //         const qint64 remaining = frame_duration - elapsed;
-            //         QElapsedTimer timer;
-            //         timer.start();
-            //         while (!timer.hasExpired(remaining)) {
-            //             if (QThread::currentThread()->isInterruptionRequested()) break;
-            //             QThread::msleep(qMin(remaining - timer.elapsed(), 10LL));
-            //         }
-            //     }
-            // }
-            // last_pts = pts_ms;
-            // last_frame_time = QDateTime::currentMSecsSinceEpoch();
         }
 
-        // Flush the decoder for remaining frames
+        // flush the decoder for remaining frames, by throwing them away
         avcodec_send_packet(video_codec_ctx, nullptr);
         while (avcodec_receive_frame(video_codec_ctx, frame) >= 0) {
-            // Throw those frames away
             av_frame_unref(frame);
         }
 
@@ -278,14 +282,14 @@ void CameraCapture::run()
     } catch (const std::exception &e) {
         qCCritical(logger) << e.what();
     } catch (...) {
-        qCCritical(logger) << "Uknown exception thrown at" << QThread().currentThread()->objectName() << "thread";
+        qCCritical(logger) << "Uknown exception thrown at" << objectName() << "thread";
     }
 
     // Free the resources
     av_packet_free(&packet);
     av_frame_free(&frame);
     av_free(buffer);
-    av_frame_free(&rgb_frame);
+    av_frame_free(&bgr_frame);
     sws_freeContext(sws_ctx);
     if (video_codec_ctx) {
         avcodec_free_context(&video_codec_ctx);
@@ -295,7 +299,7 @@ void CameraCapture::run()
     }
     avformat_network_deinit();
 
-    qCInfo(logger) << "Aborting on thread" << QThread::currentThread()->objectName();
+    qCInfo(logger) << "Aborting on thread" << objectName();
 }
 
 #include "moc_cameracapture.cpp"

@@ -4,10 +4,10 @@
 
 #include <tbb_patched.h>
 
-#include "config/predictorconfig.h"
-#include "config/licenseplateconfig.h"
-#include "utils/eventspersecond.h"
-#include "utils/frame.h"
+#include <config/predictorconfig.h>
+#include <config/licenseplateconfig.h>
+#include <utils/eventspersecond.h>
+#include <utils/frame.h>
 #include "poseestimator.h"
 
 class LPDetectorSession : public QThread

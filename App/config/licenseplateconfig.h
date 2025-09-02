@@ -1,5 +1,11 @@
 #pragma once
 
+#include <string>
+#include <set>
+#include <vector>
+#include <map>
+#include <optional>
+
 struct LicensePlateConfig {
     bool enabled = false;
     float detection_threshold = 0.7;

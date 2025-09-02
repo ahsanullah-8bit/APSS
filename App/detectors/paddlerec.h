@@ -2,10 +2,10 @@
 
 #include <onnxruntime_cxx_api.h>
 
-#include "apss.h"
-#include "predictorconfig.h"
-#include "onnxinference.h"
-#include "licensed/preprocess_op.h"
+#include <apss.h>
+#include <config/predictorconfig.h>
+#include <detectors/onnxinference.h>
+#include <detectors/licensed/preprocess_op.h>
 
 class PaddleRec
 {

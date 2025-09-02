@@ -13,6 +13,7 @@
 #include <opencv2/videoio/videoio.hpp>
 
 #include "recordingsmanager.h"
+#include "db/sqlite/recording-odb.hxx"
 
 using namespace std::chrono;
 using namespace std::chrono_literals;
@@ -57,6 +58,11 @@ void VideoRecorder::recordFrame(const QVideoFrame &frame)
     m_readyToSendAFrame = false;
 }
 
+QString VideoRecorder::path() const
+{
+    return m_path;
+}
+
 void VideoRecorder::start(const QString &path)
 {
     if (m_recorder->recorderState() == QMediaRecorder::RecordingState) {
@@ -97,7 +103,7 @@ void RecordingsManager::init()
         connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 
         m_recorderPool[QString::fromStdString(camera)] = Recorder { .recorder = worker,
-                                                                    .thread = thread };
+                                                                  .thread = thread };
         thread->start();
     }
 }
@@ -139,27 +145,57 @@ void RecordingsManager::onRecordFrame(SharedFrame frame, const QList<int> &activ
 
     const auto &[camera, _] = id_parts.value();
     Recorder &recorder = m_recorderPool[camera];
-    const QFileInfo file_info = makeRecordingPath(frame->timestamp(), camera);
 
+    const int max_limit = 2;
+    const QDateTime &start_time = m_recorderPool[camera].startTime;
+    const qint64 recording_diff = qAbs(start_time.secsTo(frame->timestamp())) / 60; // in minutes
+
+    bool should_start = false; // start or restart
     if (!recorder.isRecording) {
         // start the recorder
+        should_start = true;
+        recorder.isRecording = true;
+    } else if (activeEvents.empty()
+               && start_time.isValid()
+               && max_limit > 5
+               && recording_diff > max_limit - 5) {     // that is 8.3% of max_limit (i.e. ~5mins of an hour)
+
+        // TODO: This needs to be thoroughly tested
+        // we reached the max video length
+        // we should restart recording
+        should_start = true;
+        QMetaObject::invokeMethod(recorder.recorder, "stop");
+
+        Recording recording;
+        recording.setId(QString("%1_%2").arg(frame->camera(), recorder.startTime.toString(Qt::ISODateWithMs)));
+        recording.setCamera(frame->camera());
+        recording.setPath(recorder.recorder->path());
+        recording.setStartTime(recorder.startTime);
+        recording.setEndTime(frame->timestamp());
+        recording.setDuration(static_cast<float>(start_time.msecsTo(frame->timestamp())));
+
+        qDebug(output_recorder) << "Recording saved";
+        // persist the recording to the database
+        odb::transaction t(m_db->begin());
+        try {
+            m_db->persist(recording);
+            t.commit();
+        }
+        catch (const odb::exception& e) {
+            try { if (!t.finalized()) t.rollback(); } catch (...) {}
+            qCCritical(output_recorder) << "DB Error:" << e.what();
+        }
+        catch (...) {
+            try { if (!t.finalized()) t.rollback(); } catch (...) {}
+            qCCritical(output_recorder) << "DB Error: Unknown/Uncaught exception occurred.";
+        }
+    }
+
+    if (should_start) {
+        const QFileInfo file_info = makeRecordingPath(frame->timestamp(), camera);
         file_info.dir().mkpath(".");
         QMetaObject::invokeMethod(recorder.recorder, "start", Qt::AutoConnection, Q_ARG(QString, file_info.filePath()));
-        recorder.isRecording = true;
         recorder.startTime = frame->timestamp();
-    } else {
-        // check if we reached the max video length
-        QDateTime &start_time = m_recorderPool[camera].startTime;
-        qint64 recording_diff = qAbs(start_time.secsTo(frame->timestamp())) / 60; // in minutes
-        int max_limit = 60;
-        if (activeEvents.empty()
-            && start_time.isValid()
-            && recording_diff > max_limit - 5) {
-
-            // we should restart recording
-            QMetaObject::invokeMethod(recorder.recorder, "stop");
-            QMetaObject::invokeMethod(recorder.recorder, "start", Qt::AutoConnection, Q_ARG(QString, file_info.filePath()));
-        }
     }
 
     // a backup, to initialize startTime.

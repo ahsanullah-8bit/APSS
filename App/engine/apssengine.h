@@ -15,27 +15,23 @@
 #include <odb/sqlite/database.hxx>
 #include <tbb_patched.h>
 
-#include "camera/camerametrics.h"
-#include "config/apssconfig.h"
-#include "events/zmqproxy.h"
-#include "models/camerametricsmodel.h"
-#include "output/recordingsmanager.h"
-#include "utils/frame.h"
-#include "trackedobjectprocessor.h"
-
+#include <camera/camerametrics.h>
+#include <config/apssconfig.h>
+#include <events/zmqproxy.h>
+#include <models/camerametricsmodel.h>
+#include <output/recordingsmanager.h>
+#include <output/trackedobjectprocessor.h>
+#include <utils/frame.h>
 // This class will handle most of the stuff
 class APSSEngine : public QObject
 {
     Q_OBJECT
-    // QML_SINGLETON
-    // Q_PROPERTY(QSharedPointer<QSettings> apssSettings READ apssSettings FINAL)
     Q_PROPERTY(SharedCameraMetricsModel cameraMetricsModel READ cameraMetricsModel FINAL)
 
 public:
     explicit APSSEngine(APSSConfig *config, QObject *parent = nullptr);
     ~APSSEngine();
     SharedCameraMetricsModel cameraMetricsModel() const;
-    // QSharedPointer<QSettings> apssSettings();
 
 public slots:
     void start();
@@ -72,7 +68,6 @@ private:
 
     // New interface
     APSSConfig *m_config;
-    // QSharedPointer<QSettings> m_apssSettings;
     std::atomic_bool m_stopEvent;
     // SharedFrameBoundedQueue m_detectionQueue;
     QHash<QString, QSharedPointer<QThread>> m_detectors;

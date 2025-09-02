@@ -14,10 +14,10 @@
 #include <opencv2/core/mat.hpp>
 
 #include <tbb_patched.h>
-#include "apss.h"
-#include "prediction.h"
-#include "detectors/licensed/utility.h"
-#include "config/platerecognizerconfig.h"
+#include <apss.h>
+#include <detectors/licensed/utility.h>
+#include <config/platerecognizerconfig.h>
+#include <utils/prediction.h>
 
 
 /**

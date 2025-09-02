@@ -34,7 +34,7 @@ TEST_F(TestPredictors,  ObjectDetector) {
 
     PredictorConfig config;
     config.model = ModelConfig();
-    config.model->path = "models/yolo11n.onnx";
+    config.model->path = "models/yolo11n-320.onnx";
     config.batch_size = 1;
 
     auto start_time = std::chrono::high_resolution_clock::now();

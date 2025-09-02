@@ -13,8 +13,8 @@
 #include <QtCore/QDateTime>
 #include <QtCore/QDebug>
 
-#include "db/db.h"
-#include "sqlite/event-odb.hxx"
+#include <db/db.h>
+#include <db/sqlite/event-odb.hxx>
 
 // Helper for Google Test to print QStrings in readable format
 inline std::ostream& operator<<(std::ostream& os, const QString& str)

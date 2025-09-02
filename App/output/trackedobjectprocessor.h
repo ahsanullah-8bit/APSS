@@ -3,7 +3,7 @@
 #include <QThread>
 #include <odb/sqlite/database.hxx>
 
-#include "frame.h"
+#include <utils/frame.h>
 
 class TrackedObjectProcessor : public QThread
 {

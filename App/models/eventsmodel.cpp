@@ -1,5 +1,6 @@
 #include "eventsmodel.h"
 
+#include <QtCore/QDateTime>
 #include <QtSql/QSqlTableModel>
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlError>
@@ -36,8 +37,11 @@ QVariant EventsModel::data(const QModelIndex &index, int role) const
         return QSqlTableModel::data(createIndex(index.row(), 1));
     case Camera:    // 3
         return QSqlTableModel::data(createIndex(index.row(), 3));
-    case StartTime: // 4
-        return QSqlTableModel::data(createIndex(index.row(), 4));
+    case StartTime: { // 4
+        QDateTime datetime = QSqlTableModel::data(createIndex(index.row(), 4)).toDateTime();
+        datetime.setTimeSpec(Qt::UTC);
+        return datetime;
+    }
     case EndTime:   // 5
         return QSqlTableModel::data(createIndex(index.row(), 5));
     case TrackerId: // 6

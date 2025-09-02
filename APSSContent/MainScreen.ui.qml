@@ -16,8 +16,7 @@ Rectangle {
     implicitWidth: Constants.width
     implicitHeight: Constants.height
 
-    color: Constants.backgroundColor
-
+    // color: Constants.backgroundColor
     RowLayout {
         anchors.fill: parent
 
@@ -72,14 +71,14 @@ Rectangle {
                     }
                 }
 
-                RoundButton {
-                    text: "Recordings"
-                    checkable: true
+                // RoundButton {
+                //     text: "Recordings"
+                //     checkable: true
 
-                    height: 50
-                    width: 50
-                    radius: 10
-                }
+                //     height: 50
+                //     width: 50
+                //     radius: 10
+                // }
             }
         }
 
@@ -95,11 +94,11 @@ Rectangle {
             ReviewPage {}
         }
 
-        PageIndicator {
-            id: indicator
+        // PageIndicator {
+        //     id: indicator
 
-            count: mainSwipeView.count
-            currentIndex: mainSwipeView.currentIndex
-        }
+        //     count: mainSwipeView.count
+        //     currentIndex: mainSwipeView.currentIndex
+        // }
     }
 }

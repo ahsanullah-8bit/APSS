@@ -185,8 +185,8 @@ def process_yolo_polygon_dataset(
 if __name__ == "__main__":
     # --- Configuration ---
     DATASET_BASE_DIR = 'License_Plates'
-    IMAGES_SUBDIR = 'images'
-    LABELS_SUBDIR = 'labels'
+    IMAGES_SUBDIR = 'train/images'
+    LABELS_SUBDIR = 'train/labels'
     OUTPUT_CROPS_DIR = 'cropped_objects_from_dataset'
 
     TARGET_OBJECT_CLASS_ID = 0

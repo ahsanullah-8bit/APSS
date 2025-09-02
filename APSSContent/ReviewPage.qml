@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtMultimedia
+import QtQml
 import APSS
 
 Page {
@@ -10,10 +11,13 @@ Page {
 	GridView {
 		id: eventsView
 
-		cellWidth: 600
-		cellHeight: 400
+		//  3 cells horizontally
+		cellWidth: parent.width / 3
+		cellHeight: cellWidth * 0.667
 
 		anchors.fill: parent
+
+		ScrollBar.vertical: ScrollBar {}
 
 		model: Constants.isPreviewMode ? 10 : eventsModel
 		delegate: Item {
@@ -46,12 +50,26 @@ Page {
 					anchors.fill: parent
 				}
 
+				Text {
+					id: startTime
+					text: Qt.formatDateTime(model.starttime,
+											"ddd d, hh:mm:ss AP")
+					color: "white"
+					font.pixelSize: 20
+
+					anchors {
+						bottom: parent.bottom
+						right: parent.right
+						margins: 5
+					}
+				}
+
 				MouseArea {
 					hoverEnabled: true
 					anchors.fill: parent
 
 					onEntered: function () {
-						if (containsMouse) {
+						if (containsMouse && model.reviewpath) {
 							unifiedPlayer.videoOutput = videoOutput
 							unifiedPlayer.source = model.reviewpath
 							unifiedPlayer.play()

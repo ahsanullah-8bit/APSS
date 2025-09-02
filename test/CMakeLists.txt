@@ -5,16 +5,10 @@ add_executable(${CMAKE_PROJECT_NAME}Test
 	tst_config.cpp
 
 	${CMAKE_SOURCE_DIR}/App/db/sqlite/event-schema.cxx
-	# ${CMAKE_SOURCE_DIR}/App/db/sqlite/exports-schema.cxx
 	${CMAKE_SOURCE_DIR}/App/db/sqlite/recording-schema.cxx
-	# ${CMAKE_SOURCE_DIR}/App/db/sqlite/region-schema.cxx
-	# ${CMAKE_SOURCE_DIR}/App/db/sqlite/timeline-schema.cxx
 
 	tst_db_event.cpp
-	# tst_db_exports.cpp
 	tst_db_recording.cpp
-	# tst_db_region.cpp
-	# tst_db_timeline.cpp
 
 	tst_predictors.cpp
 	tst_predictors_paddleocr.cpp
@@ -23,20 +17,16 @@ add_executable(${CMAKE_PROJECT_NAME}Test
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME}Test PRIVATE
-	${CMAKE_SOURCE_DIR}/App	# Config and Database already has this as public, but anyway...
 	${ODB_INCLUDE_DIRS}
 )
-target_link_directories(${CMAKE_PROJECT_NAME}Test PRIVATE ${ODB_LIBRARY_DIRS})
+target_link_directories(${CMAKE_PROJECT_NAME}Test PRIVATE
+	${FFMPEG_LIBRARY_DIRS}
+	${ODB_LIBRARY_DIRS}
+)
+
 target_link_libraries(${CMAKE_PROJECT_NAME}Test PRIVATE
-	Qt6::Core
 	GTest::gtest
 	GTest::gtest_main
-	reflectcpp::reflectcpp
-	TBB::tbb
-	onnxruntime::onnxruntime
-	ByteTrackEigen::ByteTrack
-	${ODB_LIBRARIES}
-	${OpenCV_LIBS}
 
 	APSS::Config
 	APSS::Database

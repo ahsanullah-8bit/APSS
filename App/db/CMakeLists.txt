@@ -25,20 +25,6 @@ add_library(APSS::Database ALIAS APSSDatabase)
 
 target_precompile_headers(APSSDatabase PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/pch.h>")
 target_include_directories(APSSDatabase PUBLIC
-	${CMAKE_CURRENT_SOURCE_DIR}
 	odbmodels
 	sqlite
 )
-target_include_directories(APSSDatabase PRIVATE ${ODB_INCLUDE_DIRS})
-target_link_directories(APSSDatabase PUBLIC ${ODB_LIBRARY_DIRS})
-target_link_libraries(APSSDatabase PUBLIC
-	Qt6::Core
-	${ODB_LIBRARIES}
-)
-
-# Debug
-# message(STATUS "CFlags ${ODB_CFLAGS}")
-# message(STATUS "LDFlags ${ODB_LDFLAGS}")
-# message(STATUS "Link directories ${ODB_LIBRARY_DIRS}")
-# message(STATUS "Link libs ${ODB_LIBRARIES}")
-# message(STATUS "Include Dirs ${ODB_INCLUDE_DIRS}")

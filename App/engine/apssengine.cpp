@@ -12,10 +12,6 @@
 #include <odb/schema-catalog.hxx>
 #include <odb/sqlite/database.hxx>
 
-#include "db/sqlite/event-odb.hxx"
-#include "db/sqlite/frameprediction-odb.hxx"
-#include "db/sqlite/recording-odb.hxx"
-
 #include "apss.h"
 #include "camera/cameraprocessor.h"
 #include "camera/cameracapture.h"

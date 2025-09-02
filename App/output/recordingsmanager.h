@@ -10,14 +10,15 @@
 
 #include <odb/sqlite/database.hxx>
 
-#include "config/apssconfig.h"
-#include "frame.h"
-#include "tbb_patched.h"
+#include <tbb_patched.h>
+#include <config/apssconfig.h>
+#include <utils/frame.h>
 
 class VideoRecorder : public QObject {
     Q_OBJECT
 public:
     explicit VideoRecorder(QObject *parent = nullptr);
+    QString path() const;
 
 public slots:
     void init();

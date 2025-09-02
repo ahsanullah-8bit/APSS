@@ -1,5 +1,12 @@
 #pragma once
 
+#include <string>
+#include <set>
+#include <map>
+#include <vector>
+#include <optional>
+#include <variant>
+
 inline const std::set<std::string> DEFAULT_TRACKED_OBJECTS = {"person", "car", "truck", "motorcycle", "bicycle", "bus"};
 
 struct FilterConfig {

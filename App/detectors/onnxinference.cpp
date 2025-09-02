@@ -32,7 +32,7 @@ ONNXInference::ONNXInference(const PredictorConfig &config,
         Ort::SessionOptions sessionOptions;
         int intraop_threads = std::min(4, static_cast<int>(std::thread::hardware_concurrency()));
         sessionOptions.SetIntraOpNumThreads(intraop_threads);
-        sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
+        sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_BASIC);
 
         m_availableEPProviders = Ort::GetAvailableProviders();
 
