@@ -144,10 +144,10 @@ void TrackedObjectProcessor::run()
                                     t.commit();
                             } catch (const odb::exception& e) {
                                 try { if (!t.finalized()) t.rollback(); } catch (...) {}
-                                qCCritical(logger) << "DB Error:" << e.what();
+                                qCCritical(logger) << e.what();
                             } catch(...) {
                                 try { if (!t.finalized()) t.rollback(); } catch (...) {}
-                                qCCritical(logger) << "DB Error: Uknown/Uncaught exception occurred.";
+                                qCCritical(logger) << "Uknown/Uncaught exception occurred.";
                             }
                         }
 

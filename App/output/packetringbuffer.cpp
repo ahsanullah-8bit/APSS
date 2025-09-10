@@ -25,6 +25,7 @@ void PacketRingBuffer::push(AVPacket *pkt, AVRational timeBase) {
     }
     m_lastPts = pclone->pts;
 
+    std::unique_lock<std::shared_mutex> lock(m_mtx);
     m_buffer.emplace_back(pclone);
     m_totalSeconds += dur;
     // shrink until total_seconds <= duration_limit
@@ -43,6 +44,7 @@ void PacketRingBuffer::push(AVPacket *pkt, AVRational timeBase) {
 
 std::vector<AVPacket *> PacketRingBuffer::extractAll() {
     std::vector<AVPacket*> out;
+    std::shared_lock<std::shared_mutex> lock(m_mtx);
     out.reserve(m_buffer.size());
     for (AVPacket *p : m_buffer) {
         AVPacket *c = av_packet_clone(p);

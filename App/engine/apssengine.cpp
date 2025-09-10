@@ -1,9 +1,14 @@
+#include <filesystem>
+
 #include "apssengine.h"
 #include <opencv2/opencv.hpp>
 
 #include <QDir>
 #include <QVideoSink>
 #include <QLoggingCategory>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
 
 #include <odb/core.hxx>
 #include <odb/database.hxx>
@@ -126,7 +131,7 @@ void APSSEngine::stop()
         m_inUnifiedLPDetectorQ.abort();
         if (m_lpdetector->wait(500)) {
             qCWarning(logger) << "Gracefull termination timed-out for detector thread"
-                       << m_lpdetector->objectName() << ", forcing termination";
+                              << m_lpdetector->objectName() << ", forcing termination";
             m_lpdetector->terminate();
             m_lpdetector->wait();
         }
@@ -135,7 +140,7 @@ void APSSEngine::stop()
         m_trackedFramesQueue.abort();
         if (m_trackedObjectsProcessor->wait(500)) {
             qCWarning(logger) << "Gracefull termination timed-out for tracked object processor thread"
-                       << m_trackedObjectsProcessor->objectName() << ", forcing termination";
+                              << m_trackedObjectsProcessor->objectName() << ", forcing termination";
             m_trackedObjectsProcessor->terminate();
             m_trackedObjectsProcessor->wait();
         }
@@ -148,7 +153,7 @@ void APSSEngine::stop()
         thread->quit();
         if (thread->wait(1000)) {
             qCWarning(logger) << "Gracefull termination timed-out for recording manager thread"
-                                   << thread->objectName() << ", forcing termination";
+                              << thread->objectName() << ", forcing termination";
             thread->terminate();
             thread->wait();
         }
@@ -159,7 +164,7 @@ void APSSEngine::stop()
         qCInfo(logger) << "Uncaught exception" << e.what();
     }
     catch (...) {
-       qCFatal(logger) << "Uncaught/Uknown exception";
+        qCFatal(logger) << "Uncaught/Uknown exception";
     }
 }
 
@@ -191,13 +196,13 @@ void APSSEngine::onFrameChanged(SharedFrame frame)
 void APSSEngine::ensureDirs()
 {
     QList<QDir> dirs = { APSS_DIR,
-                        CONFIG_DIR,
-                        RECORD_DIR,
-                        THUMB_DIR,
-                        CLIPS_CACHE_DIR,
-                        CACHE_DIR,
-                        MODEL_CACHE_DIR,
-                        EXPORT_DIR
+        CONFIG_DIR,
+        RECORD_DIR,
+        THUMB_DIR,
+        CLIPS_CACHE_DIR,
+        CACHE_DIR,
+        MODEL_CACHE_DIR,
+        EXPORT_DIR
     };
 
     for (const auto &dir : dirs) {
@@ -230,35 +235,61 @@ void APSSEngine::initQueues()
 void APSSEngine::initDatabase()
 {
     const std::string path = "apss.db";
-    std::string sqlite_uri = "sqlite://" + std::string(path) +
-                             "?auto_vacuum=FULL&cache_size=-512000&synchronous=NORMAL";
-
     m_db = std::make_shared<odb::sqlite::database>(path, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
 
-    if (!odb::schema_catalog::exists(*m_db)) {
-        odb::transaction t(m_db->begin());
-        try {
+    QSqlDatabase q_db = QSqlDatabase::addDatabase("QSQLITE", "pragma_connection");
+    q_db.setDatabaseName("apss.db");
+    if (q_db.open()) {
+        QSqlQuery query(q_db);
+        writeDbPragmas(query, "journal_mode", "wal", "WAL");
+        writeDbPragmas(query, "synchronous", "2", "NORMAL");
+    } else {
+        qCCritical(logger) << "Failed executing pragma queries:" << q_db.lastError().text();
+    }
+
+    odb::transaction t(m_db->begin());
+    try {
+        // creating tables
+        if (!odb::schema_catalog::exists(*m_db)) {
             odb::schema_catalog::create_schema(*m_db);
-            t.commit();
-        } catch (const odb::exception& e) {
-            t.rollback();
-            qCFatal(logger) << "Failed to create database schema" << e.what();
         }
+
+        if (!t.finalized())
+            t.commit();
+    } catch (const odb::exception& e) {
+        try { if (!t.finalized()) t.rollback(); } catch (...) {}
+        qCCritical(logger) << e.what();
+    } catch(...) {
+        try { if (!t.finalized()) t.rollback(); } catch (...) {}
+        qCCritical(logger) << "Uknown/Uncaught exception occurred.";
+    }
+}
+
+void APSSEngine::writeDbPragmas(QSqlQuery &query, const std::string &pragmaName, const QString &expectedValue, const QString newValue)
+{
+    query.exec("PRAGMA journal_mode;");
+    query.next();
+    auto pragma_result = query.value(0).toString();
+    if (pragma_result != expectedValue.toLower()) {
+        query.exec(QString("PRAGMA %1=%2;").arg(pragmaName, newValue));
     }
 }
 
 void APSSEngine::initRecordingManager()
 {
     auto *thread = new QThread(this);
-    auto *worker = new RecordingsManager(*m_config, m_db);
+    auto *worker = new RecordingsManager(*m_config, m_db, m_cameraMetrics);
 
     connect(thread, &QThread::started, worker, &RecordingsManager::init);
     connect(worker, &RecordingsManager::destroyed, thread, &QThread::quit);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 
     m_recordingsManager = { worker, thread };
-    thread->start();
+    // thread->start();
 }
+
+// void APSSEngine::bindDatabase()
+// {}
 
 void APSSEngine::startDetectors()
 {
@@ -289,16 +320,13 @@ void APSSEngine::startDetectors()
     m_lpdetector->start();
 }
 
-// void APSSEngine::bindDatabase()
-// {}
-
 void APSSEngine::startDetectedFramesProcessor()
 {
     QSharedPointer<TrackedObjectProcessor> processor(new TrackedObjectProcessor(m_trackedFramesQueue, m_db));
     m_trackedObjectsProcessor = processor;
 
     connect(m_trackedObjectsProcessor.get(), &TrackedObjectProcessor::frameChanged, this, &APSSEngine::onFrameChanged);
-    connect(m_trackedObjectsProcessor.get(), &TrackedObjectProcessor::frameChangedWithEvents, m_recordingsManager.first, &RecordingsManager::onRecordFrame);
+    // connect(m_trackedObjectsProcessor.get(), &TrackedObjectProcessor::frameChangedWithEvents, m_recordingsManager.first, &RecordingsManager::onRecordFrame);
 
     m_trackedObjectsProcessor->start();
 }

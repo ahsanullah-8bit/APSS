@@ -2,9 +2,12 @@
 
 #include <QThread>
 
+extern "C" {
+#include <libavformat/avformat.h>
+}
+
 #include <config/cameraconfig.h>
 #include <camera/camerametrics.h>
-#include <output/ffmpegrecorder.h>
 
 class CameraCapture : public QThread
 {
@@ -15,9 +18,10 @@ public:
                            CameraConfig config,
                            QObject *parent = nullptr);
     QString name() const;
+    AVStream *inStream();
 
 signals:
-    void packet(AVPacket *packet);
+    void packetChanged(QSharedPointer<AVPacket> pkt, AVRational inTimeBase);
 
     // QThread interface
 protected:
@@ -26,6 +30,7 @@ protected:
 private:
     QString m_name;
     CameraConfig m_config;
-    PacketRingBuffer m_ringBuffer;
     QSharedPointer<CameraMetrics> m_metrics;
+
+    AVStream *m_videoStream;
 };

@@ -28,6 +28,8 @@ Frame::Frame(const QString &camera,
     m_anprSnapshot(std::move(anprSnapshot))
 {}
 
+Frame::~Frame() {}
+
 Frame Frame::clone() const
 {
     std::shared_lock<std::shared_mutex> lock(m_mtx);
@@ -62,17 +64,17 @@ QDateTime Frame::timestamp() const {
     return m_timestamp;
 }
 
-PredictionList Frame::predictions() const
-{
-    std::shared_lock<std::shared_mutex> lock(m_mtx);
-    return m_predictions;
-}
-
 // PredictionList Frame::predictions(const Prediction::Type target) const
 // {
 //     std::shared_lock<std::shared_mutex> lock(m_mtx);
 //     return m_predictions.value(target, {});
 // }
+
+PredictionList Frame::predictions() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mtx);
+    return m_predictions;
+}
 
 bool Frame::hasExpired() const
 {
@@ -120,18 +122,6 @@ void Frame::setPredictions(PredictionList &&newPredictions)
     m_predictions = std::move(newPredictions);
 }
 
-void Frame::addPredictions(const PredictionList &newPredictions)
-{
-    m_predictions.reserve(m_predictions.size() + newPredictions.size());
-    std::copy(newPredictions.begin(), newPredictions.end(), std::back_inserter(m_predictions));
-}
-
-void Frame::addPredictions(PredictionList &&newPredictions)
-{
-    m_predictions.reserve(m_predictions.size() + newPredictions.size());
-    std::move(newPredictions.begin(), newPredictions.end(), std::back_inserter(m_predictions));
-}
-
 // void Frame::setPredictions(const Prediction::Type target, const PredictionList &newPredictions)
 // {
 //     std::unique_lock<std::shared_mutex> lock(m_mtx);
@@ -143,6 +133,18 @@ void Frame::addPredictions(PredictionList &&newPredictions)
 //     std::unique_lock<std::shared_mutex> lock(m_mtx);
 //     m_predictions.insertOrAssign(target, std::move(newPredictions));
 // }
+
+void Frame::addPredictions(const PredictionList &newPredictions)
+{
+    m_predictions.reserve(m_predictions.size() + newPredictions.size());
+    std::copy(newPredictions.begin(), newPredictions.end(), std::back_inserter(m_predictions));
+}
+
+void Frame::addPredictions(PredictionList &&newPredictions)
+{
+    m_predictions.reserve(m_predictions.size() + newPredictions.size());
+    std::move(newPredictions.begin(), newPredictions.end(), std::back_inserter(m_predictions));
+}
 
 void Frame::setHasExpired(bool newHasExpired)
 {

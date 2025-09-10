@@ -5,8 +5,9 @@
 
 #include <atomic>
 
-#include "utils/frame.h"
 #include <tbb_patched.h>
+#include <utils/frame.h>
+#include <output/packetringbuffer.h>
 
 class CameraMetrics : QObject
 {
@@ -37,6 +38,7 @@ public:
     int detectionFrame() const;
     int readStart() const;
     QVideoSink *videoSink() const;
+    QSharedPointer<PacketRingBuffer> packetRingBuffer() const;
     QSharedPointer<SharedFrameBoundedQueue> frameQueue() const;
     QSharedPointer<QThread> thread() const;
     QSharedPointer<QThread> captureThread() const;
@@ -50,6 +52,7 @@ public slots:
     void setDetectionFrame(int newDetectionFrame);
     void setReadStart(int newReadStart);
     void setVideoSink(QVideoSink *newVideoSink);
+    void setPacketRingBuffer(QSharedPointer<PacketRingBuffer> newPacketRingBuffer);
     void setFrameQueue(QSharedPointer<SharedFrameBoundedQueue> newFrameQueue);
     void setThread(QSharedPointer<QThread> newThread);
     void setCaptureThread(QSharedPointer<QThread> newCaptureThread);
@@ -75,6 +78,7 @@ private:
     std::atomic_int m_detectionFrame;
     std::atomic_int m_readStart;
     std::atomic<QVideoSink *> m_videoSink = nullptr;
+    QSharedPointer<PacketRingBuffer> m_packetRingBuffer = nullptr;
     QSharedPointer<SharedFrameBoundedQueue> m_frameQueue;
     QSharedPointer<QThread> m_thread;
     QSharedPointer<QThread> m_captureThread;

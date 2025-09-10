@@ -17,7 +17,6 @@ extern "C" {
 
 #include <utils/eventspersecond.h>
 #include <utils/frame.h>
-#include <output/ffmpegrecorder.h>
 
 Q_STATIC_LOGGING_CATEGORY(logger, "apss.camera.capture")
 
@@ -56,6 +55,11 @@ CameraCapture::CameraCapture(const QString &name,
 QString CameraCapture::name() const
 {
     return m_name;
+}
+
+AVStream *CameraCapture::inStream()
+{
+    return m_videoStream;
 }
 
 void CameraCapture::run()
@@ -102,6 +106,7 @@ void CameraCapture::run()
             if (fmt_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
                 video_stream_index = i;
                 video_stream = fmt_ctx->streams[i];
+                m_videoStream = video_stream;
                 break;
             }
         }
@@ -170,9 +175,7 @@ void CameraCapture::run()
         EventsPerSecond eps_avg;
         eps_avg.start();
         while (!isInterruptionRequested()) {
-            // while (!isInterruptionRequested()) {
             int read_result = av_read_frame(fmt_ctx, packet);
-            AVPacketUnrefRAII pkt_unref { .packet = packet };
             if (read_result == AVERROR_EXIT) {
                 // interrupted by callback, break cleanly
                 break;
@@ -206,7 +209,6 @@ void CameraCapture::run()
             while (!isInterruptionRequested()) {
                 // receive frames from the decoder
                 int recv_result = avcodec_receive_frame(video_codec_ctx, frame);
-                AVFrameUnrefRAII frame_ref { .frame = frame };
 
                 if (recv_result == AVERROR_EOF) {
                     break;
@@ -256,6 +258,9 @@ void CameraCapture::run()
                 cv::Mat cv_frame(video_codec_ctx->height, video_codec_ctx->width, CV_8UC3, bgr_frame->data[0], bgr_frame->linesize[0]);
                 SharedFrame final_frame(new Frame(m_name, frame_index, cv_frame.clone()));
 
+                QSharedPointer<AVPacket> pkt(av_packet_clone(packet), [](AVPacket *p) { av_packet_free(&p); });
+                emit packetChanged(pkt, video_stream->time_base);
+
                 try {
                     if (!m_metrics->isPullBased()) {
                         frame_queue->emplace(final_frame);
@@ -268,6 +273,7 @@ void CameraCapture::run()
                 }
                 frame_index++;
                 eps_avg.update();
+                av_frame_unref(frame);
             }
         }
 

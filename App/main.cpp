@@ -25,6 +25,9 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
 
     // APSSEngine Setup -------------
+    qRegisterMetaType<SharedPacket>();
+    qRegisterMetaType<AVRational>();
+    qRegisterMetaType<AVStream>();
 
     APSSConfig config = loadConfig("config.yml");
     APSSEngine *apssEngine = new APSSEngine(&config, &engine);

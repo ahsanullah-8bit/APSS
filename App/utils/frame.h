@@ -9,7 +9,12 @@
 #include <QHash>
 #include <QMutex>
 #include <QWaitCondition>
+#include <QSharedPointer>
 #include <qdatetime.h>
+
+extern "C" {
+#include <libavcodec/packet.h>
+}
 
 #include <opencv2/core/mat.hpp>
 
@@ -19,6 +24,8 @@
 #include <config/platerecognizerconfig.h>
 #include <utils/prediction.h>
 
+
+using SharedPacket = QSharedPointer<AVPacket>;
 
 /**
  * @brief A rich Frame class designed for a video processing pipeline.
@@ -47,6 +54,7 @@ public:
     Frame(Frame &&other)                 = delete;
     Frame& operator=(const Frame &other) = delete;
     Frame& operator=(Frame &&other)      = delete;
+    ~Frame();
     Frame clone() const;
 
     // Accessors and Mutators
@@ -78,6 +86,7 @@ public:
     // static helpers
     static QString makeFrameId(const QString &camera, size_t frameIndx);
     static std::optional<std::tuple<QString, size_t>> splitFrameId(const QString &frameIndx);
+
 
 private:
     QString m_camera;

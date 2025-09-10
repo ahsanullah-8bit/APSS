@@ -11,36 +11,20 @@
 #include <odb/sqlite/database.hxx>
 
 #include <tbb_patched.h>
+#include <camera/camerametrics.h>
 #include <config/apssconfig.h>
+#include <output/packetringbuffer.h>
+#include <output/perobjectremuxer.h>
 #include <utils/frame.h>
-
-class VideoRecorder : public QObject {
-    Q_OBJECT
-public:
-    explicit VideoRecorder(QObject *parent = nullptr);
-    QString path() const;
-
-public slots:
-    void init();
-    void start(const QString &path);
-    void stop();
-    void recordFrame(const QVideoFrame &frame);
-
-private:
-    bool m_readyToSendAFrame = false;
-
-    QString m_path;
-    QMediaCaptureSession *m_captureSession;
-    QMediaRecorder *m_recorder;
-    QVideoFrameInput *m_videoFrameInput;
-};
 
 // manager
 class RecordingsManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit RecordingsManager(const APSSConfig &config, std::shared_ptr<odb::database> db);
+    explicit RecordingsManager(const APSSConfig &config,
+                               std::shared_ptr<odb::database> db,
+                               const QHash<QString, SharedCameraMetrics> &cameraMetrics);
 
 public slots:
     void init();
@@ -48,17 +32,19 @@ public slots:
     void onRecordFrame(SharedFrame frame, const QList<int> &activeEvents);
 
 private:
-    struct Recorder {
-        VideoRecorder *recorder = nullptr;
+    struct Remuxer {
+        PerObjectRemuxer *remuxer = nullptr;
         QThread *thread = nullptr;
         QDateTime startTime;
-        bool isRecording = false;
+        bool isFree = true;
+        int assignedTo = -1;
     };
 
     const APSSConfig &m_apssConfig;
     std::shared_ptr<odb::database> m_db;
 
-    // camera, recorder
-    QHash<QString, Recorder> m_recorderPool;
+    // recorder/remuxers
+    const QHash<QString, SharedCameraMetrics> &m_cameraMetrics;
+    QList<Remuxer> m_remuxerPool;
 };
 

@@ -49,6 +49,11 @@ QVideoSink *CameraMetrics::videoSink() const
     return m_videoSink.load(std::memory_order_acquire);
 }
 
+QSharedPointer<PacketRingBuffer> CameraMetrics::packetRingBuffer() const
+{
+    return m_packetRingBuffer;
+}
+
 QSharedPointer<SharedFrameBoundedQueue> CameraMetrics::frameQueue() const
 {
     return m_frameQueue;
@@ -62,6 +67,11 @@ QSharedPointer<QThread> CameraMetrics::thread() const
 QSharedPointer<QThread> CameraMetrics::captureThread() const
 {
     return m_captureThread;
+}
+
+bool CameraMetrics::isPullBased() const
+{
+    return m_isPullBased;
 }
 
 void CameraMetrics::setCameraFPS(double newCameraFPS)
@@ -204,10 +214,15 @@ void CameraMetrics::setVideoSink(QVideoSink *newVideoSink)
     emit videoSinkChanged(newVideoSink);
 }
 
+void CameraMetrics::setPacketRingBuffer(QSharedPointer<PacketRingBuffer> newPacketRingBuffer)
+{
+    m_packetRingBuffer = newPacketRingBuffer;
+}
+
 void CameraMetrics::setFrameQueue(QSharedPointer<SharedFrameBoundedQueue> newFrameQueue)
 {
     // TODO: Make these thread-safe.
-    // I don't they need it though, as they are set only once, by the main thread.
+    // I don't think they need it, as they are set only once, by the main thread.
     if (m_frameQueue == newFrameQueue)
         return;
     m_frameQueue = newFrameQueue;
@@ -228,11 +243,6 @@ void CameraMetrics::setCaptureThread(QSharedPointer<QThread> newCaptureThread)
         return;
     m_captureThread = newCaptureThread;
     Q_EMIT captureThreadChanged(m_captureThread);
-}
-
-bool CameraMetrics::isPullBased() const
-{
-    return m_isPullBased;
 }
 
 #include "moc_camerametrics.cpp"

@@ -1,5 +1,6 @@
 add_library(APSSOutput STATIC
-
+	packetringbuffer.cpp
+	perobjectremuxer.cpp
 	recordingsmanager.cpp
 	trackedobjectprocessor.cpp
 )

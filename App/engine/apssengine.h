@@ -11,6 +11,7 @@
 #include <QMediaDevices>
 #include <QMediaCaptureSession>
 #include <QMediaRecorder>
+#include <QSqlQuery>
 
 #include <odb/sqlite/database.hxx>
 #include <tbb_patched.h>
@@ -43,6 +44,7 @@ private:
     void initCameraMetrics();
     void initQueues();
     void initDatabase();
+    void writeDbPragmas(QSqlQuery &query, const std::string &pragmaName, const QString &expectedValue, const QString newValue);
     void initRecordingManager();
     // ...
     void startDetectors();
@@ -77,6 +79,7 @@ private:
 
     ZMQProxyThread *m_intraZMQProxy;
     std::shared_ptr<odb::database> m_db;
+    std::shared_ptr<odb::connection_factory> m_dbFactory;
     SharedFrameBoundedQueue m_trackedFramesQueue;
     QSharedPointer<TrackedObjectProcessor> m_trackedObjectsProcessor;
     // QSharedPointer<VideoRecorder> m_recorder;
