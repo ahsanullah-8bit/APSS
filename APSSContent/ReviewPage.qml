@@ -50,6 +50,32 @@ Page {
 					anchors.fill: parent
 				}
 
+				function getTypeIcon(type) {
+					if (type === "person")
+						return "icons/person.svg"
+					else if (type === "car" || type === "truck"
+							 || type === "bus" || type === "boat")
+						return "icons/vehicle.svg"
+					else if (type === "bicycle" || type === "motorcycle")
+						return "icons/bike.svg"
+				}
+
+				// top layer
+				Button {
+					id: typeIcon
+
+					anchors {
+						top: parent.top
+						left: parent.left
+						margins: 5
+					}
+
+					width: 40
+					height: 40
+					icon.source: parent.getTypeIcon(model.label)
+					display: Button.IconOnly
+				}
+
 				Text {
 					id: startTime
 					text: Qt.formatDateTime(model.starttime,
@@ -87,6 +113,18 @@ Page {
 							unifiedPlayer.stop()
 						}
 					}
+
+					onClicked: function () {
+						detailedEvent.thumbnail = model.thumbnail
+						detailedEvent.label = model.label
+						detailedEvent.camera = model.camera
+						detailedEvent.time = model.timeinterval
+						detailedEvent.topScore = model.topscore
+						var lppath = model.lppath
+						if (lppath)
+							detailedEvent.licensePlateImageSource = lppath
+						detailedEvent.open()
+					}
 				}
 			}
 		}
@@ -96,5 +134,16 @@ Page {
 		id: unifiedPlayer
 
 		autoPlay: true
+	}
+
+	DetailedEvent {
+		id: detailedEvent
+
+		width: parent.width / 2
+		height: parent.height / 2
+		anchors.centerIn: parent
+		onAccepted: function () {
+			detailedEvent.close()
+		}
 	}
 }

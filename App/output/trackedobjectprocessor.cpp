@@ -52,6 +52,8 @@ void TrackedObjectProcessor::run()
     QHash<int, PredictionList> object_history;  // trackerId -> Prediction history
     QHash<int, int> lost_counts;                // trackerId -> Consecutive lost frames
     QHash<int, QDateTime> last_seen_timestamps; // trackerId -> Last seen timestamp
+    QHash<int, float> prev_object_distance; // from center of the frame
+    QHash<int, Prediction> prev_licenseplate_size;
 
     // COCO class names and their colors
     const std::vector<std::string> class_names = {
@@ -129,7 +131,7 @@ void TrackedObjectProcessor::run()
                             const auto &prediction_history = object_history[tracker_id];
                             const std::string predictions = rfl::json::write(prediction_history);
                             const std::string label = prediction_history.empty() ? "Uknown"     // I hope this first condition is not true
-                                                                             : prediction_history.at(0).className;
+                                                                                 : prediction_history.at(0).className;
                             event.setLabel(QString::fromStdString(label));
                             event.setCamera(frame->camera());
                             event.setEndTime(last_seen_timestamps[tracker_id]); // last seen time
@@ -158,6 +160,7 @@ void TrackedObjectProcessor::run()
                         active_events.remove(tracker_id);
                         lost_counts.remove(tracker_id);
                         last_seen_timestamps.remove(tracker_id);
+                        prev_object_distance.remove(tracker_id);
                     }
                 }
             }
@@ -177,6 +180,7 @@ void TrackedObjectProcessor::run()
                     newEvent.setStartTime(frame_time);
                     newEvent.setTopScore(pred.conf);
 
+                    // save the first thumbnail
                     const QString thumb_name = QString("%1_%2.jpg").arg(frame->camera()).arg(pred.trackerId);
                     const QString thumb_path = cropAndSaveThumbnail(thumb_name, frame, pred);
                     newEvent.setThumbnail(thumb_path);
@@ -195,6 +199,35 @@ void TrackedObjectProcessor::run()
                         event.setTopScore(pred.conf);
 
                     event.setScore(pred.conf);
+                }
+
+                // determine and save the best thumbnail
+                if (!prev_object_distance.contains(tracker_id)) {
+                    prev_object_distance[tracker_id] = 0.0f;
+                } else {
+                    // we determine, how far the object is to the camera or how near it got to the center
+                    cv::Mat frame_img = frame->data();
+                    cv::Rect bbox = pred.box;
+                    cv::Point2f center(frame_img.cols / 2.0f, frame_img.rows / 2.0f);
+                    cv::Point2f obj_center(bbox.x + bbox.width / 2.0f,
+                                           bbox.y + bbox.height / 2.0f);
+
+                    const float curr_dist = cv::norm(obj_center - center);
+                    const float prev_dist = prev_object_distance[tracker_id];
+
+                    // compute percentage change
+                    float change = 0.0f;
+                    if (prev_dist > 1e-6f && curr_dist < prev_dist) {
+                        change = (prev_dist - curr_dist) / prev_dist * 100.0f;
+                    }
+
+                    if (change >= 15.0) { // 40% improvement
+                        // the object is closer to the center, than before
+                        const QString thumb_name = QString("%1_%2.jpg").arg(frame->camera()).arg(pred.trackerId);
+                        cropAndSaveThumbnail(thumb_name, frame, pred);
+                    }
+
+                    prev_object_distance[tracker_id] = curr_dist;
                 }
             }
 

@@ -256,6 +256,14 @@ void CameraCapture::run()
                           bgr_frame->data, bgr_frame->linesize);
 
                 cv::Mat cv_frame(video_codec_ctx->height, video_codec_ctx->width, CV_8UC3, bgr_frame->data[0], bgr_frame->linesize[0]);
+
+                AVDictionaryEntry *rotate_tag = av_dict_get(video_stream->metadata, "displaymatrix", nullptr, 0);
+                if (rotate_tag) {
+                    int rotation = std::atoi(rotate_tag->value);
+                    qDebug() << "Rotation metadata:" << rotation;
+                    // Apply rotation logic based on value
+                }
+
                 SharedFrame final_frame(new Frame(m_name, frame_index, cv_frame.clone()));
 
                 QSharedPointer<AVPacket> pkt(av_packet_clone(packet), [](AVPacket *p) { av_packet_free(&p); });

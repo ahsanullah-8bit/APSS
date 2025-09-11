@@ -9,13 +9,17 @@ qt6_add_qml_module(APSSContent
     VERSION 1.0
     RESOURCE_PREFIX "/qt/qml"
     QML_FILES
-        "App.qml"
-        "MainScreen.ui.qml"
-        "VideoPlaybackPage.qml"
+        App.qml
+        MainScreen.ui.qml
+        VideoPlaybackPage.qml
+        DetailedEvent.qml
+        HomePage.qml
+        ReviewPage.qml
     RESOURCES
         icons/camera-solid.svg
         icons/home-solid.svg
         icons/video-solid.svg
-        QML_FILES HomePage.qml
-        QML_FILES ReviewPage.qml
+        icons/person.svg
+        icons/vehicle.svg
+        icons/bike.svg
 )

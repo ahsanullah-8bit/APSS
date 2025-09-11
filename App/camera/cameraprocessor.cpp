@@ -34,11 +34,8 @@ CameraProcessor::CameraProcessor(const QString &cameraName,
 void CameraProcessor::run()
 {
     QSharedPointer<SharedFrameBoundedQueue> frame_queue = m_cameraMetrics->frameQueue();
-
     const ObjectConfig &objects_config = m_config.objects ? m_config.objects.value() : ObjectConfig();
-
     Tracker tracker(objects_config.track);
-
     const std::vector<std::string> lp_classes = { "license_plate" };
 
     EventsPerSecond process_eps;
@@ -46,6 +43,9 @@ void CameraProcessor::run()
 
     EventsPerSecond detectors_eps;
     detectors_eps.start();
+
+    QHash<int, Prediction> prev_licenseplate_size;
+    QHash<int, double> prev_lp_sharpnes;
 
     while(!isInterruptionRequested()) {
         SharedFrame frame;
@@ -68,7 +68,7 @@ void CameraProcessor::run()
         detectors_eps.update();
         m_cameraMetrics->setDetectionFPS(detectors_eps.eps());
 
-        recognizeLicensePlates(frame, lp_classes);
+        recognizeLicensePlates(frame, lp_classes, prev_licenseplate_size, prev_lp_sharpnes);
 
         process_eps.update();
         m_cameraMetrics->setProcessFPS(process_eps.eps());
@@ -275,10 +275,12 @@ PredictionList CameraProcessor::filterObjectPredictions(const PredictionList &re
     return filtered_results;
 }
 
-void CameraProcessor::recognizeLicensePlates(SharedFrame frame, std::vector<std::string> lp_classes)
+void CameraProcessor::recognizeLicensePlates(SharedFrame frame, std::vector<std::string> lp_classes,
+                                             QHash<int, Prediction> &prev_licenseplate,
+                                             QHash<int, double> &prev_lp_sharpness)
 {
     // crop images
-    PredictionList predictions = frame->predictions();
+    const PredictionList predictions = frame->predictions();
     if (predictions.empty())
         return;
 
@@ -290,6 +292,34 @@ void CameraProcessor::recognizeLicensePlates(SharedFrame frame, std::vector<std:
         cv::Mat crop;
         Utils::perspectiveCrop(frame->data(), crop, prediction.points);
         crop_batch.emplace_back(crop);
+
+        // TODO: Remove the prev_licenseplate, if object is lost
+
+        // // determine the best plate
+        for (const auto &p : predictions) {
+            if (p.trackerId == -1)
+                continue;
+
+            if (prediction.box.x >= p.box.x &&
+                prediction.box.y >= p.box.y &&
+                prediction.box.x + prediction.box.width  <= p.box.x + p.box.width &&
+                prediction.box.y + prediction.box.height <= p.box.y + p.box.height) {
+                // is inside a vehicle
+
+                const QString license_plate = THUMB_DIR.filePath(QString("%1_%2_lp.jpg").arg(frame->camera()).arg(p.trackerId));
+                if (!QFileInfo::exists(license_plate))
+                    cv::imwrite(license_plate.toStdString(), crop);
+
+                if ((!prev_licenseplate.contains(prediction.trackerId)
+                     && !QFileInfo::exists(license_plate))
+                        || prediction.box.area() > prev_licenseplate[prediction.trackerId].box.area()) {
+                    // save the crop
+                    prev_licenseplate[prediction.trackerId] = prediction;
+
+                    cv::imwrite(license_plate.toStdString(), crop);
+                }
+            }
+        }
     }
 
     std::vector<PaddleOCR::OCRPredictResultList> results_list = m_ocrEngine.predict(crop_batch);
@@ -299,18 +329,59 @@ void CameraProcessor::recognizeLicensePlates(SharedFrame frame, std::vector<std:
     for (auto results : results_list) {
         std::sort(results.begin(), results.end(), [] (const PaddleOCR::OCRPredictResult &a, const PaddleOCR::OCRPredictResult &b) {
             return PaddleOCR::computeArea(a.box) > PaddleOCR::computeArea(b.box)
-                && a.score > b.score;
+            && a.score > b.score;
         });
-
-        std::vector<std::string> res;
-        for (const auto &result : results) {
-            res.push_back(result.text);
-        }
-
-        qDebug() << res;
     }
 
     frame->setOcrResults(std::move(results_list));
 }
 
+double CameraProcessor::computeSharpness(const cv::Mat &img)
+{
+    cv::Mat gray;
+    if (img.channels() == 3)
+        cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+    else
+        gray = img;
+
+    cv::Mat lap;
+    cv::Laplacian(gray, lap, CV_64F);
+    cv::Scalar mu, sigma;
+    cv::meanStdDev(lap, mu, sigma);
+    return (sigma.val[0] * sigma.val[0]) / (img.rows * img.cols);
+}
+
+double CameraProcessor::computeCannySharpness(const cv::Mat &img)
+{
+    cv::Mat gray;
+    if (img.channels() == 3)
+        cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+    else
+        gray = img;
+
+    cv::Mat edges;
+    cv::Canny(gray, edges, 50, 250);
+
+    return cv::countNonZero(edges) / static_cast<double>(img.rows * img.cols);
+}
+
 #include "moc_cameraprocessor.cpp"
+
+// Alternative best plate method
+// for (const auto& p : predictions) {
+//     if (p.trackerId == -1) continue;
+
+//     if ((prediction.box & p.box) == prediction.box) { // plate inside vehicle
+//         const QString path = THUMB_DIR.filePath(
+//             QString("%1_%2_lp.jpg").arg(frame->camera()).arg(p.trackerId));
+
+//         double sharpness = computeSharpness(crop);
+
+//         if (!prev_lp_sharpness.contains(p.trackerId)
+//             || sharpness > prev_lp_sharpness[p.trackerId]) {
+//             prev_lp_sharpness[p.trackerId] = sharpness;
+//             prev_licenseplate[p.trackerId] = prediction;
+//             cv::imwrite(path.toStdString(), crop);
+//         }
+//     }
+// }

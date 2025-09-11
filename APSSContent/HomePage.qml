@@ -26,15 +26,23 @@ Page {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                metricsList: Constants.isPreviewMode ? [] : [["Process FPS", model.processfps], ["Detection FPS", model.detectionfps]]
+                metricsList: Constants.isPreviewMode
+                             || !showMetrics ? [] : [["Process FPS", model.processfps], ["Detection FPS", model.detectionfps]]
                 name: Constants.isPreviewMode ? "uknown" : model.name
                 visible: true
 
-                Component.onCompleted: {
+                Component.onCompleted: function () {
                     // VideoSink must be set, so the engine can forward frames
                     if (!Constants.isPreviewMode) {
                         model.videosink = videoOutput.videoSink
                     }
+                }
+
+                onShowMetricsChanged: function () {
+                    if (liveplaycard.showMetrics)
+                        fpsTimer.start()
+                    else
+                        fpsTimer.stop()
                 }
 
                 Connections {
@@ -61,9 +69,5 @@ Page {
 
         interval: 1000 // 1sec
         repeat: true
-
-        Component.onCompleted: function () {
-            fpsTimer.start()
-        }
     }
 }

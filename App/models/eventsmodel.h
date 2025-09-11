@@ -13,6 +13,7 @@ public:
         Camera,
         StartTime,
         EndTime,
+        TimeInterval,
         TrackerId,
         TopScore,
         Score,
@@ -21,7 +22,9 @@ public:
         Thumbnail,
         HasClip,
         Data,
-        ReviewClip
+        ReviewClip,
+        LicensePlatePath,
+        LicensePlateText
     };
 
     explicit EventsModel(const QSqlDatabase &db, QObject *parent = nullptr);
@@ -29,4 +32,6 @@ public:
     // QAbstractItemModel interface
     QVariant data(const QModelIndex &index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
+
+    Q_INVOKABLE QString formatRange(const QDateTime &startTime, const QDateTime &endTime) const;
 };

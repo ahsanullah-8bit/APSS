@@ -37,7 +37,9 @@ protected:
                                 Tracker &tracker);
     PredictionList filterObjectPredictions(const PredictionList &results,
                                            const std::map<std::string, FilterConfig> &objectsToFilter);
-    void recognizeLicensePlates(SharedFrame frame, std::vector<std::string> lp_classes);
+    void recognizeLicensePlates(SharedFrame frame, std::vector<std::string> lp_classes, QHash<int, Prediction> &prev_licenseplate, QHash<int, double> &prev_object_sharpness);
+    double computeSharpness(const cv::Mat& img);
+    double computeCannySharpness(const cv::Mat &img);
 
 private:
     QString m_cameraName;

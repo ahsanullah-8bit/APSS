@@ -16,6 +16,7 @@ Pane {
     property int cameraState: LivePlaybackCard.Disabled
     property alias videoOutput: videoOutput
     property alias metricsList: metricsPane.metrics
+    property bool showMetrics: false
 
     width: 400
     height: 300
@@ -26,6 +27,13 @@ Pane {
         color: "black" // A slightly lighter grey for the video area background
         radius: 10 // Rounded corners for the video area
         clip: true // Ensure content inside doesn't overflow rounded corners
+
+        VideoOutput {
+            id: videoOutput
+            // source: camera // Link the video output to the camera object
+            anchors.fill: parent
+            fillMode: VideoOutput.PreserveAspectFit // Adjust to fit, preserving aspect ratio
+        }
 
         ColumnLayout {
             anchors {
@@ -57,15 +65,30 @@ Pane {
             MetricsPane {
                 id: metricsPane
 
-                // Layout.fillHeight: true
+                visible: cameraCard.showMetrics
             }
         }
 
-        VideoOutput {
-            id: videoOutput
-            // source: camera // Link the video output to the camera object
-            anchors.fill: parent
-            fillMode: VideoOutput.PreserveAspectFit // Adjust to fit, preserving aspect ratio
+        Row {
+            anchors {
+                right: parent.right
+                top: parent.top
+                margins: 15
+            }
+
+            RoundButton {
+                width: 36
+                height: 36
+                radius: 10
+                checkable: true
+
+                icon.source: "icons/wave.png"
+                display: RoundButton.IconOnly
+
+                onCheckedChanged: function () {
+                    cameraCard.showMetrics = checked
+                }
+            }
         }
     }
 }
