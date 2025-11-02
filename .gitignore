@@ -13,7 +13,7 @@ scripts/**
 !scripts/*.py
 
 # Ignore odb models
-App/db/sqlite
+App/db/sqlite/*
 
 # CMake files
 CMakeCache.txt

@@ -16,8 +16,8 @@ function(apss_init_dependencies)
 		######################################
 
 		FetchContent_Declare(models
-			URL "https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/paddleocr-models.zip"
-			SOURCE_DIR "${CMAKE_SOURCE_DIR}/scripts/models"
+			URL "https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/models.zip"
+			SOURCE_DIR "${CMAKE_BINARY_DIR}/models"
 		)
 	    FetchContent_MakeAvailable(models)
 
