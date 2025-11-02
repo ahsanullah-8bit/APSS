@@ -115,8 +115,8 @@ function(apss_init_dependencies)
 			set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE) # Propagate the variable
 		endif()
 
-		# Change the \\ in every .pc files to /, because pkgconf is reading \\..\\.. as .... from the .pc files..
-		apss_rewrite_odb_pc_files(${libodb_ROOT})
+		# Change the \\ in every .pc files to /, as pkgconf is reading \\..\\.. as .... from the .pc files..
+		apss_patch_odb_pc_files(${libodb_ROOT})
 
 		######################################
 
@@ -249,176 +249,18 @@ function(apss_copy_config_file src dst)
 	)
 endfunction()
 
-# Scans all the header files of persistent class targets and generates the persistent code
+# Scans all the header files of persistent class targets and generates the persistent code.
+# A more advanced version of the first. Only operates if the results don't exist or any changes were made to the sources.
 function(apss_generate_odb_models db_type dst_dir)
-	message(STATUS "\n\t --- Converting persistent classes --- ")
-	# Get the odb.exe version
+	# Justification: The add_custom_command way of doing this somehow didn't work for me and I couldn't waste more time.
+
+	message(STATUS "\n\n\t --- Converting persistent classes --- ")
 	execute_process(COMMAND ${odb_EXECUTABLE} --version)
+
 	message(STATUS "Creating directory: ${dst_dir}")
 	file(MAKE_DIRECTORY ${dst_dir})
 
 	# Locate the Qt headers for odb.exe
-	execute_process(
-	  COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_HEADERS
-	  OUTPUT_VARIABLE QT_HEADERS
-	  OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-    # Run odb.exe for each header
-	foreach(file IN LISTS ARGN)  # ARGN contains all extra arguments beyond the expected ones
-		execute_process(
-			COMMAND
-			    ${odb_EXECUTABLE} -d ${db_type} -q -s -o ${dst_dir} --profile qt --std c++17
-				-I${libodb_ROOT}/include ${file} -I${QT_HEADERS}
-			RESULT_VARIABLE ODB_CONV_RESULT
-		)
-
-	    if (ODB_CONV_RESULT EQUAL 0)
-			message(STATUS "Converted file ${file}")
-		else()
-			message(WARNING "Error: ${ODB_CONV_RESULT}")
-		endif()
-	endforeach()
-
-	message(STATUS " --- Conversion finished --- ")
-endfunction() # apss_generate_odb_models
-
-
-# Scans all the header files of persistent class targets and generates the persistent code
-# A more advanced version of the first. Only operates while if the results don't exist or any changes to the sources.
-function(apss_generate_odb_models3 db_type dst_dir)
-	message(STATUS "\n\t --- Converting persistent classes (Configure Time Check & Cache) --- ")
-
-	# Get the odb.exe version - run once during configure time
-	execute_process(COMMAND ${odb_EXECUTABLE} --version)
-
-	# Ensure the destination directory exists - create once during configure time
-	message(STATUS "Creating directory: ${dst_dir}")
-	file(MAKE_DIRECTORY ${dst_dir})
-
-	# Locate the Qt headers for odb.exe - run once during configure time
-	execute_process(
-		COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_HEADERS
-		OUTPUT_VARIABLE QT_HEADERS
-		OUTPUT_STRIP_TRAILING_WHITESPACE
-	)
-
-    set(_odb_generated_srcs "")
-	set(_odb_generated_headers "")
-
-	# --- Cache variable to track the last successful generation timestamp ---
-	# This variable acts as a sentinel. If the source file is newer than this timestamp,
-	# we know we need to re-run ODB.
-	# We will update this timestamp *after* successful ODB generation.
-	set(ODB_LAST_GEN_TIMESTAMP "" CACHE STRING "Timestamp of last ODB model generation.")
-
-	set(overall_rebuild_needed FALSE) # Track if *any* ODB file needed regeneration
-
-	# Run odb.exe for each header conditionally
-	foreach(src_file IN LISTS ARGN) # ARGN contains all extra arguments (.h files)
-		get_filename_component(base_name "${src_file}" NAME_WE) # e.g., "event" from "event.h"
-
-		set(gen_cxx_file "${dst_dir}/${base_name}-odb.cxx")
-		set(gen_hxx_file "${dst_dir}/${base_name}-odb.hxx")
-		set(gen_ixx_file "${dst_dir}/${base_name}-odb.ixx")
-
-		# Collect generated file paths for parent scope regardless of whether they are re-generated
-		list(APPEND _odb_generated_srcs "${gen_cxx_file}")
-		list(APPEND _odb_generated_headers "${gen_hxx_file}" "${gen_ixx_file}")
-
-		set(rebuild_this_file_required FALSE)
-
-		# 1. Check if output files exist
-		if (NOT EXISTS "${gen_cxx_file}" OR NOT EXISTS "${gen_hxx_file}" OR NOT EXISTS "${gen_ixx_file}")
-			message(STATUS "\t-> Output files for '${src_file}' are missing. Rebuilding.")
-			set(rebuild_this_file_required TRUE)
-		else()
-			# 2. If output files exist, check modification times
-			file(TIMESTAMP "${src_file}" SRC_TIMESTAMP UTC)
-			if (NOT SRC_TIMESTAMP)
-				message(WARNING "  -> Could not get timestamp for source file: ${src_file}. Forcing rebuild.")
-				set(rebuild_this_file_required TRUE)
-			else()
-				# Compare source timestamp with the stored ODB_LAST_GEN_TIMESTAMP
-				# This is the key change: we check against the global generation timestamp
-				if (ODB_LAST_GEN_TIMESTAMP AND SRC_TIMESTAMP VERSION_GREATER ODB_LAST_GEN_TIMESTAMP)
-					message(STATUS "  -> Source '${src_file}' was modified. Rebuilding.")
-					set(rebuild_this_file_required TRUE)
-				else()
-					# Also check if actual generated files are missing or older, as a fallback
-					# This handles scenarios where ODB_LAST_GEN_TIMESTAMP might be out of sync
-					# due to manual file deletion, etc.
-					file(TIMESTAMP "${gen_cxx_file}" CXX_TIMESTAMP UTC)
-					file(TIMESTAMP "${gen_hxx_file}" HXX_TIMESTAMP UTC)
-					file(TIMESTAMP "${gen_ixx_file}" IXX_TIMESTAMP UTC)
-
-					set(OLDEST_GEN_TIMESTAMP "${CXX_TIMESTAMP}")
-					if (IXX_TIMESTAMP AND IXX_TIMESTAMP VERSION_LESS OLDEST_GEN_TIMESTAMP)
-						set(OLDEST_GEN_TIMESTAMP "${IXX_TIMESTAMP}")
-					endif()
-					if (HXX_TIMESTAMP AND HXX_TIMESTAMP VERSION_LESS OLDEST_GEN_TIMESTAMP)
-						set(OLDEST_GEN_TIMESTAMP "${HXX_TIMESTAMP}")
-					endif()
-
-					if (SRC_TIMESTAMP VERSION_GREATER OLDEST_GEN_TIMESTAMP)
-						 message(STATUS "  -> Source '${src_file}' is newer than existing generated files. Rebuilding.")
-						 set(rebuild_this_file_required TRUE)
-					else()
-						message(STATUS "  -> Files for '${src_file}' are up-to-date. Skipping.")
-					endif()
-				endif()
-			endif()
-		endif()
-
-		# Execute ODB compiler only if rebuild is required
-		if (rebuild_this_file_required)
-			message(STATUS "\t-- Converting: ${src_file}")
-			execute_process(
-				COMMAND
-				    ${odb_EXECUTABLE} -d ${db_type} -q -s -o ${dst_dir} --profile qt --std c++17
-					-I${libodb_ROOT}/include "${src_file}" -I${QT_HEADERS}
-					RESULT_VARIABLE ODB_CONV_RESULT
-			)
-
-		    if (ODB_CONV_RESULT EQUAL 0)
-				message(STATUS "\tConverted file ${src_file}")
-				set(overall_rebuild_needed TRUE) # Mark that at least one file was rebuilt
-			else()
-				message(FATAL_ERROR "\tFailed to convert file: ${src_file} (Error code: ${ODB_CONV_RESULT}). Check ODB output above for details.")
-			endif()
-		endif()
-	endforeach()
-
-	# Update the cache timestamp if any file was rebuilt
-	if (overall_rebuild_needed)
-		file(TIMESTAMP "${CMAKE_SOURCE_DIR}/CMakeLists.txt" CURRENT_TIME_STAMP UTC) # Get a fresh timestamp
-		set(ODB_LAST_GEN_TIMESTAMP "${CURRENT_TIME_STAMP}" CACHE STRING "Timestamp of last ODB model generation." FORCE)
-		message(STATUS "\tUpdated ODB_LAST_GEN_TIMESTAMP to ${ODB_LAST_GEN_TIMESTAMP}")
-		# Force CMake to reconfigure on next run if this happens (this is the key to breaking the cycle)
-		# This will make CMake re-evaluate the entire build graph.
-		configure_file("${CMAKE_SOURCE_DIR}/CMakeLists.txt" "${CMAKE_CURRENT_BINARY_DIR}/.force_reconfigure_odb" @ONLY)
-	endif()
-
-
-	message(STATUS " --- Conversion finished --- ")
-
-	# Pass the generated source and header files back to the parent scope
-	set(ODB_GENERATED_SRCS "${_odb_generated_srcs}" PARENT_SCOPE)
-	set(ODB_GENERATED_HEADERS "${_odb_generated_headers}" PARENT_SCOPE)
-
-endfunction() # apss_generate_odb_models3
-
-# Scans all the header files of persistent class targets and generates the persistent code
-# A more advanced version of the first. Only operates while if the results don't exist or any changes to the sources.
-function(apss_generate_odb_models4 db_type dst_dir)
-	message(STATUS "\n\t --- Converting persistent classes --- ")
-	execute_process(COMMAND ${odb_EXECUTABLE} --version)
-
-	# Ensure the destination directory exists - create once during configure time
-	message(STATUS "Creating directory: ${dst_dir}")
-	file(MAKE_DIRECTORY ${dst_dir})
-
-	# Locate the Qt headers for odb.exe - run once during configure time
 	execute_process(
 		COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_HEADERS
 		OUTPUT_VARIABLE QT_HEADERS
@@ -444,21 +286,18 @@ function(apss_generate_odb_models4 db_type dst_dir)
 		set(rebuild_this_file_required FALSE)
 
 		# Create a unique cache variable name for this specific source file's last generation timestamp
-		# We'll use the SHA1 hash of the full source file path to ensure uniqueness and validity for cache naming.
-		string(SHA1 SRC_FILE_HASH "${src_file}")
 		set(CACHE_VAR_NAME "ODB_${base_name}h_LAST_GEN_TIMESTAMP")
 
 		# Load the previous timestamp from cache for this file
 		# If it's not defined, it means this is the first time or cache was cleared.
 		get_property(PREVIOUS_GEN_TIMESTAMP CACHE ${CACHE_VAR_NAME} PROPERTY VALUE)
 
-
-		# 1. Check if output files exist
 		if (NOT EXISTS "${gen_cxx_file}" OR NOT EXISTS "${gen_hxx_file}" OR NOT EXISTS "${gen_ixx_file}")
+			# Output files (.hxx, .ixx & .cxx) doesn't exist
 			message(STATUS "\t-> Output files for '${src_file}' are missing. Rebuilding.")
 			set(rebuild_this_file_required TRUE)
 		else()
-			# 2. If output files exist, check modification times
+			# Output files exist, check modification times
 			file(TIMESTAMP "${src_file}" SRC_TIMESTAMP UTC)
 			# message(NOTICE "${src_file}: ${SRC_TIMESTAMP}, ${CACHE_VAR_NAME}: ${PREVIOUS_GEN_TIMESTAMP}")
 
@@ -466,7 +305,7 @@ function(apss_generate_odb_models4 db_type dst_dir)
 				message(WARNING "\t-> Could not get timestamp for source file: ${src_file}. Forcing rebuild.")
 				set(rebuild_this_file_required TRUE)
 			else()
-				# Compare source timestamp with the *cached timestamp for this specific file*
+				# Compare source timestamp with the cached timestamp for this specific file
 				if (NOT PREVIOUS_GEN_TIMESTAMP OR SRC_TIMESTAMP STRGREATER PREVIOUS_GEN_TIMESTAMP)
 					message(STATUS "\t-> Source '${src_file}' was modified since last generation. Rebuilding.")
 					set(rebuild_this_file_required TRUE)
@@ -501,7 +340,7 @@ function(apss_generate_odb_models4 db_type dst_dir)
 			execute_process(
 				COMMAND
 				    ${odb_EXECUTABLE} -d ${db_type} -q -s -o ${dst_dir} --profile qt --std c++17 --schema-format separate
-					-I${libodb_ROOT}/include "${src_file}" -I${QT_HEADERS} # Double-quote QT_HEADERS in case of spaces
+					-I${libodb_ROOT}/include "${src_file}" -I${QT_HEADERS}
 					RESULT_VARIABLE ODB_CONV_RESULT
 			)
 
@@ -516,17 +355,17 @@ function(apss_generate_odb_models4 db_type dst_dir)
 		endif()
 	endforeach()
 
-	message(STATUS " --- Conversion finished --- ")
+	message(STATUS "--- Conversion finished ---\n\n")
 
 	# Pass the generated source and header files back to the parent scope
 	set(ODB_GENERATED_SRCS "${_odb_generated_srcs}" PARENT_SCOPE)
 	set(ODB_GENERATED_HEADERS "${_odb_generated_headers}" PARENT_SCOPE)
 
-endfunction() # apss_generate_odb_models3
+endfunction() # apss_generate_odb_models
 
 
 set(THIS_FILE ${CMAKE_CURRENT_LIST_FILE})
-function(apss_rewrite_odb_pc_files libodb_ROOT)
+function(apss_patch_odb_pc_files libodb_ROOT)
 	# Changes any \\ in paths to /. Because for some reason, pkgconf is not able to see \\ or something else
 	# is going on and we get ba...., when reading b\\a\\..\\..
 

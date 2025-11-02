@@ -9,7 +9,7 @@ set(ODB_HEADERS
 	# ${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/region.h
 	# ${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/timeline.h
 )
-apss_generate_odb_models4("sqlite"
+apss_generate_odb_models("sqlite"
 	${CMAKE_CURRENT_SOURCE_DIR}/sqlite
 	${ODB_HEADERS})
 
