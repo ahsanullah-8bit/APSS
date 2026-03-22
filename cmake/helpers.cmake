@@ -91,34 +91,34 @@ function(apss_init_dependencies)
 			set(odb_EXECUTABLE "${odbexe_SOURCE_DIR}/bin/odb.exe" CACHE STRING "Path to the odb.exe")
 		endif()
 
-		# libodb
-		if (libodb_ROOT AND NOT libodb_ROOT STREQUAL "")
-			list(APPEND CMAKE_PREFIX_PATH ${libodb_ROOT})
-			set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE) # Propagate the variable
-		else()
-			set(ODB_ARCHIVE "https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/libodb-2.5.0-release.zip")
-			set(ODB_URL_HASH "SHA256=cf2f1ce16ac68d146dc211e1fed3d2ad830f6daa677f664407e70c318a3741d4")
-			if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-				set(ODB_ARCHIVE "https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/libodb-2.5.0-debug.zip")
-				set(ODB_URL_HASH "SHA256=e55421cf7f2b9e817187f22af7574eeced72866d7b2e863e8b99153c6a883f3b")
-			endif()
+		# # libodb
+		# if (libodb_ROOT AND NOT libodb_ROOT STREQUAL "")
+		# 	list(APPEND CMAKE_PREFIX_PATH ${libodb_ROOT})
+		# 	set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE) # Propagate the variable
+		# else()
+		# 	set(ODB_ARCHIVE "https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/libodb-2.5.0-release.zip")
+		# 	set(ODB_URL_HASH "SHA256=cf2f1ce16ac68d146dc211e1fed3d2ad830f6daa677f664407e70c318a3741d4")
+		# 	if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+		# 		set(ODB_ARCHIVE "https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/libodb-2.5.0-debug.zip")
+		# 		set(ODB_URL_HASH "SHA256=e55421cf7f2b9e817187f22af7574eeced72866d7b2e863e8b99153c6a883f3b")
+		# 	endif()
 
-			# libodb
-			FetchContent_Declare(libodb
-				URL ${ODB_ARCHIVE}
-				URL_HASH ${ODB_URL_HASH}
-			)
-		    FetchContent_MakeAvailable(libodb)
-			FetchContent_GetProperties(libodb)
+		# 	# libodb
+		# 	FetchContent_Declare(libodb
+		# 		URL ${ODB_ARCHIVE}
+		# 		URL_HASH ${ODB_URL_HASH}
+		# 	)
+		#     FetchContent_MakeAvailable(libodb)
+		# 	FetchContent_GetProperties(libodb)
 
-			set(libodb_ROOT ${libodb_SOURCE_DIR} CACHE STRING "Path to libodb root directory")
+		# 	set(libodb_ROOT ${libodb_SOURCE_DIR} CACHE STRING "Path to libodb root directory")
 
-			list(APPEND CMAKE_PREFIX_PATH ${libodb_SOURCE_DIR})
-			set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE) # Propagate the variable
-		endif()
+		# 	list(APPEND CMAKE_PREFIX_PATH ${libodb_SOURCE_DIR})
+		# 	set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE) # Propagate the variable
+		# endif()
 
-		# Change the \\ in every .pc files to /, as pkgconf is reading \\..\\.. as .... from the .pc files..
-		apss_patch_odb_pc_files(${libodb_ROOT})
+		# # Change the \\ in every .pc files to /, as pkgconf is reading \\..\\.. as .... from the .pc files..
+		# apss_patch_odb_pc_files(${libodb_ROOT})
 
 		######################################
 

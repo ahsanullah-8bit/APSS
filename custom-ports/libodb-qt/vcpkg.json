@@ -1,0 +1,17 @@
+{
+  "name": "libodb-qt",
+  "version": "2.5.0",
+  "description": "ODB library, base runtime for the ODB ORM solution",
+  "homepage": "https://www.codesynthesis.com/products/odb/",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    },
+    {
+      "name": "libodb",
+      "version>=": "2.5.0"
+    }
+  ],
+  "supports": "(x64 & windows)"
+}

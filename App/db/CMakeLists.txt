@@ -9,9 +9,9 @@ set(ODB_HEADERS
 	# ${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/region.h
 	# ${CMAKE_CURRENT_SOURCE_DIR}/odbmodels/timeline.h
 )
-apss_generate_odb_models("sqlite"
-	${CMAKE_CURRENT_SOURCE_DIR}/sqlite
-	${ODB_HEADERS})
+# apss_generate_odb_models("sqlite"
+# 	${CMAKE_CURRENT_SOURCE_DIR}/sqlite
+# 	${ODB_HEADERS})
 
 add_library(APSSDatabase STATIC
 	sqlite/event-odb.cxx

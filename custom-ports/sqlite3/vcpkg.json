@@ -1,0 +1,13 @@
+{
+  "name": "sqlite3",
+  "version": "3.45.3",
+  "description": "SQLite3 library, provided with the libodb",
+  "homepage": "https://www.codesynthesis.com/products/odb/",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ],
+  "supports": "(x64 & windows)"
+}

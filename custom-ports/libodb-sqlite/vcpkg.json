@@ -1,0 +1,21 @@
+{
+  "name": "libodb-sqlite",
+  "version": "2.5.0",
+  "description": "ODB library, base runtime for the ODB ORM solution",
+  "homepage": "https://www.codesynthesis.com/products/odb/",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    },
+    {
+      "name": "libodb",
+      "version>=": "2.5.0"
+    },
+    {
+      "name": "sqlite3",
+      "version>=": "3.45.3"
+    }
+  ],
+  "supports": "(x64 & windows)"
+}

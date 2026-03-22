@@ -47,6 +47,18 @@
         {
             "name": "gtest",
             "version>=": "1.16.0"
+        },
+        {
+            "name": "libodb",
+            "version>=": "2.5.0"
+        },
+        {
+            "name": "libodb-qt",
+            "version>=": "2.5.0"
+        },
+        {
+            "name": "libodb-sqlite",
+            "version>=": "2.5.0"
         }
     ]
 }
