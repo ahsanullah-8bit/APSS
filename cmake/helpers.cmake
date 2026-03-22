@@ -14,12 +14,14 @@ function(apss_init_dependencies)
 		######################################
 		##		Models
 		######################################
-
-		FetchContent_Declare(models
-			URL "https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/models.zip"
-			SOURCE_DIR "${CMAKE_BINARY_DIR}/models"
-		)
-	    FetchContent_MakeAvailable(models)
+		
+		if (DOWNLOAD_ASSETS)
+			FetchContent_Declare(models
+				URL "https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/models.zip"
+				SOURCE_DIR "${CMAKE_BINARY_DIR}/models"
+			)
+			FetchContent_MakeAvailable(models)
+		endif(DOWNLOAD_ASSETS)
 
 		######################
 		# Prebuilt
@@ -77,7 +79,7 @@ function(apss_init_dependencies)
 		######################################
 
 		# odb.exe
-		if (NOT odb_EXECUTABLE OR odb_EXECUTABLE STREQUAL "")
+		if (DOWNLOAD_ASSETS AND (NOT odb_EXECUTABLE OR odb_EXECUTABLE STREQUAL ""))
 			set(ODB_EXE_ARCHIVE "https://www.codesynthesis.com/download/odb/2.5.0/windows/windows10/x86_64/odb-2.5.0-x86_64-windows10.zip")
 
 			FetchContent_Declare(odbexe

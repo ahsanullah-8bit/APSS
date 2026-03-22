@@ -4,6 +4,7 @@ cmake_policy(SET CMP0135 NEW)
 
 option(LINK_INSIGHT "Link Qt Insight Tracker library" ON)
 option(BUILD_QDS_COMPONENTS "Build design studio components" ON)
+option(DOWNLOAD_ASSETS "Downloads assets" OFF)
 option(APSS_SUPPORT_CUDA_EP "Use CUDA EP for ONNXRuntime inference" OFF)
 option(APSS_SUPPORT_OPENVINO_EP "Use OpenVINO EP for ONNXRuntime inference" ON)
 
