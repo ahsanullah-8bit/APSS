@@ -2,8 +2,6 @@
 cmake_minimum_required(VERSION 3.21.1)
 cmake_policy(SET CMP0135 NEW)
 
-option(LINK_INSIGHT "Link Qt Insight Tracker library" ON)
-option(BUILD_QDS_COMPONENTS "Build design studio components" ON)
 option(DOWNLOAD_ASSETS "Downloads assets" OFF)
 option(BUILD_TESTS "Build GTest tests" OFF)
 option(APSS_SUPPORT_CUDA_EP "Use CUDA EP for ONNXRuntime inference" OFF)
@@ -60,14 +58,6 @@ apss_copy_config_file("${CMAKE_SOURCE_DIR}/config.yml" ${CMAKE_BINARY_DIR})
 
 add_subdirectory(ext)
 include(qds)
-
-if (BUILD_QDS_COMPONENTS)
-    include(qmlcomponents OPTIONAL)
-endif()
-
-if (LINK_INSIGHT)
-    include(insight OPTIONAL)
-endif ()
 
 include(GNUInstallDirs)
 install(TARGETS ${CMAKE_PROJECT_NAME}
