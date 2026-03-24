@@ -1,6 +1,8 @@
 # Custom
 *.qmlproject.qtds
 .mind_map.md
+.cache
+compile_commands.json
 
 # Ignore build directories
 build
