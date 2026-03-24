@@ -54,10 +54,16 @@ qt_add_resources(${CMAKE_PROJECT_NAME} "configuration"
     qtquickcontrols2.conf)
 
 apss_copy_runtime_files()
-apss_copy_config_file("${CMAKE_SOURCE_DIR}/config.yml" ${CMAKE_BINARY_DIR})
+configure_file(${CMAKE_SOURCE_DIR}/config.yml ${CMAKE_BINARY_DIR}/config.yml COPYONLY)
 
 add_subdirectory(ext)
-include(qds)
+add_subdirectory(APSS)
+add_subdirectory(App)
+
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
+    APSSplugin
+    APSS_Componentsplugin
+)
 
 include(GNUInstallDirs)
 install(TARGETS ${CMAKE_PROJECT_NAME}
