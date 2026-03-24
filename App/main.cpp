@@ -25,10 +25,6 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
 
     // APSSEngine Setup -------------
-    qRegisterMetaType<SharedPacket>();
-    qRegisterMetaType<AVRational>();
-    qRegisterMetaType<AVStream>();
-
     APSSConfig config = loadConfig("config.yml");
     APSSEngine *apssEngine = new APSSEngine(&config, &engine);
     apssEngine->start();
@@ -73,17 +69,6 @@ APSSConfig loadConfig(const QString &filepath)
         qFatal() << "No config.yml found, please create one!";
 
     try {
-        // CameraConfig cam_config;
-        // cam_config.enabled = true;
-        // cam_config.ffmpeg.inputs.emplace_back(CameraInput( "C:/Users/MadGuy/Videos/ny_street2.mp4", {CameraRoleEnum::Detect}));
-        // cam_config.objects = ObjectConfig();
-        // cam_config.objects->track = DEFAULT_TRACKED_OBJECTS;
-        // cam_config.pull_based_order = true;
-
-        // PredictorConfig pred_config;
-        // pred_config.model = ModelConfig();
-        // pred_config.model->path = "models/yolo11n.onnx";
-
         QFile file(filepath);
         if (file.open(QIODeviceBase::ReadOnly | QIODeviceBase::Text)) {
             std::string conf_str = file.readAll().toStdString();
