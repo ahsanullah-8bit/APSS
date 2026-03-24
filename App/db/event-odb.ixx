@@ -36,6 +36,8 @@ namespace odb
   }
 }
 
+#include <odb/schema-version.hxx>
+
 namespace odb
 {
   // Event

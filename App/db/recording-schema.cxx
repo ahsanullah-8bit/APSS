@@ -31,6 +31,12 @@ namespace odb
         case 2:
         {
           db.execute ("DROP TABLE IF EXISTS \"Recording\"");
+          db.execute ("CREATE TABLE IF NOT EXISTS \"schema_version\" (\n"
+                      "  \"name\" TEXT NOT NULL PRIMARY KEY,\n"
+                      "  \"version\" INTEGER NOT NULL,\n"
+                      "  \"migration\" INTEGER NOT NULL)");
+          db.execute ("DELETE FROM \"schema_version\"\n"
+                      "  WHERE \"name\" = ''");
           return false;
         }
       }
@@ -53,6 +59,17 @@ namespace odb
                       "  \"dBFS\" INTEGER NOT NULL,\n"
                       "  \"segmentSize\" REAL NULL,\n"
                       "  \"regions\" INTEGER NOT NULL)");
+          return true;
+        }
+        case 2:
+        {
+          db.execute ("CREATE TABLE IF NOT EXISTS \"schema_version\" (\n"
+                      "  \"name\" TEXT NOT NULL PRIMARY KEY,\n"
+                      "  \"version\" INTEGER NOT NULL,\n"
+                      "  \"migration\" INTEGER NOT NULL)");
+          db.execute ("INSERT OR IGNORE INTO \"schema_version\" (\n"
+                      "  \"name\", \"version\", \"migration\")\n"
+                      "  VALUES ('', 1, 0)");
           return false;
         }
       }
@@ -66,6 +83,13 @@ namespace odb
     id_sqlite,
     "",
     &create_schema);
+
+  static const schema_catalog_migrate_entry
+  migrate_schema_entry_1_ (
+    id_sqlite,
+    "",
+    1ULL,
+    0);
 }
 
 #include <odb/post.hxx>
