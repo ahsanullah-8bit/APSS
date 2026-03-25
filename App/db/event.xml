@@ -1,0 +1,23 @@
+<changelog xmlns="http://www.codesynthesis.com/xmlns/odb/changelog" database="sqlite" version="1">
+  <model version="1">
+    <table name="Event" kind="object">
+      <column name="id" type="TEXT" null="false"/>
+      <column name="label" type="TEXT" null="true"/>
+      <column name="subLabel" type="TEXT" null="true"/>
+      <column name="camera" type="TEXT" null="true"/>
+      <column name="startTime" type="TEXT" null="true"/>
+      <column name="endTime" type="TEXT" null="true"/>
+      <column name="trackerId" type="INTEGER" null="false"/>
+      <column name="topScore" type="REAL" null="true"/>
+      <column name="score" type="REAL" null="true"/>
+      <column name="falsePositive" type="INTEGER" null="false"/>
+      <column name="zones" type="TEXT" null="true"/>
+      <column name="thumbnail" type="TEXT" null="true"/>
+      <column name="hasClip" type="INTEGER" null="false"/>
+      <column name="data" type="TEXT" null="true"/>
+      <primary-key>
+        <column name="id"/>
+      </primary-key>
+    </table>
+  </model>
+</changelog>

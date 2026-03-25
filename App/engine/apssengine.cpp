@@ -16,6 +16,8 @@
 #include <odb/session.hxx>
 #include <odb/schema-catalog.hxx>
 #include <odb/sqlite/database.hxx>
+#include <qcontainerfwd.h>
+#include <qloggingcategory.h>
 
 #include "apss.h"
 #include "camera/cameraprocessor.h"
@@ -247,27 +249,33 @@ void APSSEngine::initDatabase()
         qCCritical(logger) << "Failed executing pragma queries:" << q_db.lastError().text();
     }
 
-    odb::transaction t(m_db->begin());
     try {
-        // creating tables
-        if (!odb::schema_catalog::exists(*m_db)) {
+        auto schema_v = odb::schema_catalog::current_version(*m_db);
+        auto db_v = m_db->schema_version();
+        
+        if (db_v == 0) {
+            qCDebug(logger) << "Database empty. Creating schema version " << schema_v;
+            
+            odb::transaction t(m_db->begin());
             odb::schema_catalog::create_schema(*m_db);
+            t.commit();
+        } else if (db_v < schema_v) {
+            qCDebug(logger) << "Migrating database from version " << db_v << " to " << schema_v;
+            odb::transaction t(m_db->begin());
+            odb::schema_catalog::migrate_schema(*m_db, schema_v);
+            t.commit();
         }
 
-        if (!t.finalized())
-            t.commit();
     } catch (const odb::exception& e) {
-        try { if (!t.finalized()) t.rollback(); } catch (...) {}
         qCCritical(logger) << e.what();
     } catch(...) {
-        try { if (!t.finalized()) t.rollback(); } catch (...) {}
         qCCritical(logger) << "Uknown/Uncaught exception occurred.";
     }
 }
 
 void APSSEngine::writeDbPragmas(QSqlQuery &query, const std::string &pragmaName, const QString &expectedValue, const QString newValue)
 {
-    query.exec("PRAGMA journal_mode;");
+    query.exec(QString("PRAGMA %1;").arg(pragmaName));
     query.next();
     auto pragma_result = query.value(0).toString();
     if (pragma_result != expectedValue.toLower()) {

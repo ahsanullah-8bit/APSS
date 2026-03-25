@@ -13,7 +13,7 @@
 #include <opencv2/videoio/videoio.hpp>
 
 #include <camera/cameracapture.h>
-#include <db/sqlite/recording-odb.hxx>
+#include <db/recording-odb.hxx>
 #include <output/recordingsmanager.h>
 
 using namespace std::chrono;

@@ -1,25 +1,65 @@
-# Most of the dependencies are common to the sub targets. So, to avoid the pain, why not just include_directories as the whole application was
-# including headers and linking libraries in a single place anyway.
-# Note: This includes tests as they're part of the same project.
-include_directories(AFTER
+add_library(APSSLib STATIC
+    camera/cameracapture.cpp
+    camera/camerametrics.cpp
+    camera/cameraprocessor.cpp
+    camera/camerawatchdog.cpp
+
+    db/event-odb.cxx
+	db/frameprediction-odb.cxx
+	db/recording-odb.cxx
+
+    detectors/image.cpp
+	detectors/lpdetectorsession.cpp
+	detectors/objectdetector.cpp
+	detectors/objectdetectorsession.cpp
+	detectors/onnxinference.cpp
+	detectors/paddlecls.cpp
+	detectors/paddledet.cpp
+	detectors/paddleocr.cpp
+	detectors/paddlerec.cpp
+	detectors/poseestimator.cpp
+	detectors/predictor.cpp
+
+	# Licensed
+	detectors/licensed/clipper.cpp
+	detectors/licensed/postprocess_op.cpp
+	detectors/licensed/preprocess_op.cpp
+	detectors/licensed/utility.cpp
+
+    engine/apssengine.cpp
+
+    models/camerametricsmodel.cpp
+	models/eventsmodel.cpp
+
+    output/packetringbuffer.h
+    output/packetringbuffer.cpp
+	output/perobjectremuxer.cpp
+	output/recordingsmanager.cpp
+	output/trackedobjectprocessor.cpp
+
+    track/tracker.cpp
+
+    utils/frame.cpp
+	utils/framemanager.cpp
+)
+
+target_include_directories(APSSLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${FFMPEG_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
     ${ODB_INCLUDE_DIRS}
 )
 
-link_directories(AFTER
-    ${FFMPEG_LIBRARY_DIRS}
-    ${ODB_LIBRARY_DIRS}
-)
-
-link_libraries(
+target_link_libraries(APSSLib PUBLIC
     Qt6::Core
-    Qt6::Multimedia
+    Qt${QT_VERSION_MAJOR}::Qml
+    Qt${QT_VERSION_MAJOR}::Multimedia
+    Qt${QT_VERSION_MAJOR}::Sql
 
+    cppzmq
     TBB::tbb
     Eigen3::Eigen
-    ByteTrackEigen::ByteTrack
+    bytetrackeigen
     onnxruntime::onnxruntime
     reflectcpp::reflectcpp
     ${OpenCV_LIBS}
@@ -27,39 +67,15 @@ link_libraries(
     ${ODB_LIBRARIES}
 )
 
-# Every sub-folder has its own configuration. Because of some weird modifications QDS do to this file sometimes...
-add_subdirectory(camera)
-add_subdirectory(config)
-add_subdirectory(db)
-add_subdirectory(detectors)
-add_subdirectory(events)
-add_subdirectory(models)
-add_subdirectory(output)
-add_subdirectory(track)
-add_subdirectory(utils)
-
-# link_libraries(
-#     APSS::Camera
-#     APSS::Config
-#     APSS::Database
-#     APSS::Predictors
-#     APSS::Events
-#     APSS::Models
-#     APSS::Output
-#     APSS::Track
-#     APSS::Utils
-# )
-
-# APSS::Database itself is a STATIC library. For an obvious reason, the compiler optimizes out the schema code
+# APSSLib itself is a STATIC library. For an obvious reason, the compiler optimizes out the schema code
 # of STATIC library builds, resulting in errors during runtime. So, we have to compile the schema code explicitly
 # into the executable. But since the application executable is defined before this file (is included),
 # include_directories won't reveal the includes to this main target and we have to do it explicitly.
 target_sources(${CMAKE_PROJECT_NAME} PUBLIC
-    db/sqlite/event-schema.cxx
-    db/sqlite/frameprediction-schema.cxx
-    db/sqlite/recording-schema.cxx
+    db/event-schema.cxx
+    db/frameprediction-schema.cxx
+    db/recording-schema.cxx
 
-    engine/apssengine.cpp
     main.cpp
 )
 
@@ -80,15 +96,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Multimedia
     Qt${QT_VERSION_MAJOR}::Sql
 
-    APSS::Camera
-    APSS::Config
-    APSS::Database
-    APSS::Predictors
-    APSS::Events
-    APSS::Models
-    APSS::Output
-    APSS::Track
-    APSS::Utils
+    APSSLib
 
     TBB::tbb
     Eigen3::Eigen

@@ -3,8 +3,8 @@
 #include <opencv2/imgcodecs.hpp>
 #include <rfl/json.hpp>
 
-#include "db/sqlite/event-odb.hxx"
-#include "db/sqlite/frameprediction-odb.hxx"
+#include "db/event-odb.hxx"
+#include "db/frameprediction-odb.hxx"
 #include "detectors/image.h"
 #include "events/detectionsubpub.h"
 #include "trackedobjectprocessor.h"

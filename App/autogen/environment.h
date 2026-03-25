@@ -8,24 +8,11 @@
 #include <QGuiApplication>
 #include "qqmlextensionplugin.h"
 
-Q_IMPORT_QML_PLUGIN(APSSContentPlugin)
 Q_IMPORT_QML_PLUGIN(APSSPlugin)
 Q_IMPORT_QML_PLUGIN(APSS_ComponentsPlugin)
 
-const char mainQmlFile[] = "qrc:/qt/qml/APSSContent/App.qml";
+const char mainQmlFile[] = "qrc:/qt/qml/APSS/App.qml";
 
-#ifdef BUILD_QDS_COMPONENTS
-
-Q_IMPORT_QML_PLUGIN(QtQuick_Studio_ComponentsPlugin)
-Q_IMPORT_QML_PLUGIN(QtQuick_Studio_EffectsPlugin)
-Q_IMPORT_QML_PLUGIN(QtQuick_Studio_ApplicationPlugin)
-Q_IMPORT_QML_PLUGIN(FlowViewPlugin)
-Q_IMPORT_QML_PLUGIN(QtQuick_Studio_LogicHelperPlugin)
-Q_IMPORT_QML_PLUGIN(QtQuick_Studio_MultiTextPlugin)
-Q_IMPORT_QML_PLUGIN(QtQuick_Studio_EventSimulatorPlugin)
-Q_IMPORT_QML_PLUGIN(QtQuick_Studio_EventSystemPlugin)
-
-#endif
 
 inline void set_qt_environment() {
     qputenv("QML_COMPAT_RESOLVE_URLS_ON_ASSIGNMENT", "1");
