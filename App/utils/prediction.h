@@ -1,5 +1,7 @@
 #pragma once
 
+#include "detectors/licensed/utility.h"
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -20,6 +22,9 @@ struct Prediction {
     int classId = -1;
     long long trackerId = -1;
     bool hasDeltas = false;
+
+    std::optional<PaddleOCR::OCRPredictResultList> ocrResults;
+    std::optional<std::vector<Prediction>> subPredictions;
 };
 
 using PredictionList = std::vector<Prediction>;

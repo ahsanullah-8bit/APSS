@@ -44,12 +44,6 @@ public:
           const PredictionList &predictions = {},
           QDateTime timestamp = QDateTime::currentDateTimeUtc());
 
-    Frame(const QString &camera, size_t frameIndx, const cv::Mat &data,
-          const PredictionList &predictions,
-          QDateTime timestamp,
-          const std::vector<PaddleOCR::OCRPredictResultList> &ocrResults,
-          std::optional<ANPRSnapshot> anprSnapshot);
-
     Frame(const Frame &other)            = delete;
     Frame(Frame &&other)                 = delete;
     Frame& operator=(const Frame &other) = delete;
@@ -68,8 +62,8 @@ public:
     // PredictionList predictions(const Prediction::Type target) const;
     bool hasExpired() const;
     bool hasBeenProcessed() const;
-    std::vector<PaddleOCR::OCRPredictResultList> ocrResults() const;
-    std::optional<ANPRSnapshot> anprSnapshot() const;
+    // std::vector<PaddleOCR::OCRPredictResultList> ocrResults() const;
+    // std::optional<ANPRSnapshot> anprSnapshot() const;
 
     void setData(cv::Mat newData);
     void setTimestamp(const QDateTime &newTimestamp);
@@ -79,9 +73,9 @@ public:
     void addPredictions(PredictionList &&newPredictions);
     void setHasExpired(bool newHasExpired);
     void setHasBeenProcessed(bool newHasBeenProcessed);
-    void setOcrResults(const std::vector<PaddleOCR::OCRPredictResultList> &newOcrResults);
-    void setOcrResults(std::vector<PaddleOCR::OCRPredictResultList> &&newOcrResults);
-    void setAnprSnapshot(std::optional<ANPRSnapshot> newAnprSnapshot);
+    // void setOcrResults(const std::vector<PaddleOCR::OCRPredictResultList> &newOcrResults);
+    // void setOcrResults(std::vector<PaddleOCR::OCRPredictResultList> &&newOcrResults);
+    // void setAnprSnapshot(std::optional<ANPRSnapshot> newAnprSnapshot);
 
     // static helpers
     static QString makeFrameId(const QString &camera, size_t frameIndx);
@@ -97,8 +91,8 @@ private:
     std::atomic_bool m_hasBeenProcessed = false;
     // QHash<Prediction::Type, PredictionList> m_predictions;
     PredictionList m_predictions;
-    std::vector<PaddleOCR::OCRPredictResultList> m_ocrResults;
-    std::optional<ANPRSnapshot> m_anprSnapshot; // Comprehensive ANPR data
+    // std::vector<PaddleOCR::OCRPredictResultList> m_ocrResults;
+    // std::optional<ANPRSnapshot> m_anprSnapshot; // Comprehensive ANPR data
 
     mutable std::shared_mutex m_mtx;
 };
