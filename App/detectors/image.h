@@ -185,12 +185,9 @@ public:
      */
     static void drawDetections(cv::Mat &image,
                                const std::vector<Prediction> &predictions,
-                               const std::vector<std::string> &classNames,
-                               const std::vector<cv::Scalar> &classColors,
-                               bool drawMask = false,
-                               float maskAlpha = 0.4f,
-                               bool drawBoxes = true,
-                               bool drawLabels = true);
+                               const std::vector<std::string> &classNames = {},
+                               const std::vector<cv::Scalar> &classColors = {},
+                               float maskAlpha = 0.4f);
 
     static void drawOCR(cv::Mat &image,
                                const std::vector<PaddleOCR::OCRPredictResult> &predictions,

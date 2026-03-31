@@ -167,7 +167,7 @@ void TrackedObjectProcessor::run()
 
             // process current predictions
             for (const Prediction& pred : predictions) {
-                if (pred.trackerId == -1) continue;
+                if (pred.trackerId < 0) continue;
                 const int tracker_id = pred.trackerId;
 
                 if (!object_history.contains(tracker_id)) {
@@ -235,8 +235,14 @@ void TrackedObjectProcessor::run()
             PredictionList predictions_ = frame->predictions();
             cv::Mat frame_mat = frame->data();
 
-            Utils::drawBoundingBox(frame_mat, predictions_, class_names, class_colors);
-            Utils::drawPoseEstimation(frame_mat, predictions_, lp_classes, lp_skeleton, true);
+            Utils::drawDetections(frame_mat, predictions_, {}, {}, 0.0f);
+            for (const auto &prediction: predictions_) {
+                if (prediction.subPredictions) {
+                    Utils::drawDetections(frame_mat, prediction.subPredictions.value(), {}, {}, 0.0f);
+                }
+            }
+            // Utils::drawBoundingBox(frame_mat, predictions_, class_names, class_colors);
+            // Utils::drawPoseEstimation(frame_mat, predictions_, lp_classes, lp_skeleton, true);
             frame->setData(frame_mat);
             // -- draw results
 
