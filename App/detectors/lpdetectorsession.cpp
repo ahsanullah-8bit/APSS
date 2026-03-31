@@ -66,7 +66,7 @@ void LPDetectorSession::run() {
             std::vector<int> vehicle_indxs;
             for (size_t p = 0; p < object_predictions.size(); ++p) {
                 const auto &prediction = object_predictions.at(p);
-                if (!voi.contains(prediction.className) && prediction.hasDeltas)
+                if (!(voi.contains(prediction.className) && prediction.hasDeltas))
                     continue;
                 
                 // Is vehicle
