@@ -20,7 +20,7 @@ struct Prediction {
     std::string className;
     float conf = 0;
     int classId = -1;
-    long long trackerId = -1;
+    long long trackerId = -2;   // -2 means not being tracked. -1 means lost (as per ByteTrackEigen).
     bool hasDeltas = false;
 
     std::optional<PaddleOCR::OCRPredictResultList> ocrResults;
