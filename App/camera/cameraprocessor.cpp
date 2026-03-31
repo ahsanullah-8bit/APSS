@@ -1,14 +1,17 @@
-#include <qloggingcategory.h>
 #include <ranges>
+#include <unordered_map>
 
+#include <opencv2/imgcodecs.hpp>
+
+#include <QDateTime>
 #include <QLoggingCategory>
 
 #include "cameraprocessor.h"
-
 #include "config/objectconfig.h"
 #include "detectors/image.h"
 #include "utils/eventspersecond.h"
 #include "track/tracker.h"
+#include "utils/prediction.h"
 
 Q_STATIC_LOGGING_CATEGORY(apss_camera_processor, "apss.camera.processor")
 
@@ -45,8 +48,8 @@ void CameraProcessor::run()
     EventsPerSecond detectors_eps;
     detectors_eps.start();
 
-    QHash<int, Prediction> prev_licenseplate_size;
-    QHash<int, double> prev_lp_sharpnes;
+    std::unordered_map<int, TrackedObject> objectsHistory;
+    std::unordered_map<int, TrackedLicensePlate> licenseplatesHistory;
 
     while(!isInterruptionRequested()) {
         SharedFrame frame;
@@ -58,18 +61,22 @@ void CameraProcessor::run()
             continue;
 
         // Track and Filter predictions
+        PredictionList predictions = frame->predictions();
         if (objects_config.filters)
-            frame->setPredictions(filterObjectPredictions(frame->predictions(), objects_config.filters.value()));
+            predictions = filterObjectPredictions(predictions, objects_config.filters.value());
 
-        trackAndEstimateDeltas2(frame, tracker);
+        tracker.track(predictions);
+        estimateChangesInArea(predictions, objectsHistory);
+        frame->setPredictions(predictions);
 
+        // Detect license plate
         if (!predict(frame, m_inLPDetectorFrameQueue))
             continue;
 
         detectors_eps.update();
         m_cameraMetrics->setDetectionFPS(detectors_eps.eps());
 
-        // recognizeLicensePlates(frame, lp_classes, prev_licenseplate_size, prev_lp_sharpnes);
+        recognizeLicensePlates(frame, lp_classes, licenseplatesHistory);
 
         process_eps.update();
         m_cameraMetrics->setProcessFPS(process_eps.eps());
@@ -78,7 +85,8 @@ void CameraProcessor::run()
         m_trackedFrameQueue.try_emplace(frame);
     }
 
-    // Empty the frame Queue
+    // TODO: Empty the frame Queue
+    // TODO: Submit waiting plates
 }
 
 bool CameraProcessor::predict(SharedFrame frame,
@@ -128,95 +136,35 @@ bool CameraProcessor::predict(SharedFrame frame,
     return true;
 }
 
-void CameraProcessor::trackAndEstimateDeltas(SharedFrame frame, Tracker &tracker)
+void CameraProcessor::estimateChangesInArea(PredictionList &predictions, std::unordered_map<int, TrackedObject> &objectsHistory)
 {
-    // TODO: Find a proper way to hold seen ids.
-    // Don't mistaken this for the tracker remembering objects. This one is for us to avoid going to another
-    // stage for the same object in multiple frames. It focuses on whether it's a new
-    // object or an old with increased quality/size/area. This usually helps in cases
-    // of camera being mounted on the ground.
-    static QList<std::pair<size_t, int>> delta_objects(tracker.trackBuffer(), {}); // <id, area>
-    bool has_deltas = false;
-
-    // Filter predictions
-    // TODO: This may have a bug, as we filter track_objects inside the tracker
-    // and only return track ids for this selected objects
-    PredictionList obj_predictions = frame->predictions();
-    const auto track_ids = tracker.track(obj_predictions);
-
-    for (int i = 0; i < track_ids.size(); ++i) {
-        int id = track_ids.at(i);
-        if (id == -1)
-            continue;
-
-        obj_predictions[i].trackerId = id;
-
-        int delta_indx = id % (delta_objects.size());  // Resets when limit is reached
-        int box_area = obj_predictions.at(i).box.area();
-
-        // We proceed if the id is not seen before or old area is less than the current (box is much bigger). Then
-        // we reconsider the other stages to re-process these predictions if they want to. i.e. LP was not visible, now is.
-        int area_increase = (delta_objects.at(delta_indx).second * DET_RECONSIDER_AREA_INCREASE);
-        if (delta_objects.at(delta_indx).first != id
-            || delta_objects.at(delta_indx).second + area_increase < box_area) {
-
-            delta_objects[delta_indx] = std::pair(id, box_area);
-            obj_predictions[i].hasDeltas = true;
-        }
-    }
-
-    frame->setPredictions(std::move(obj_predictions));
-}
-
-struct TrackedObjectHistory {
-    int last_seen_frame;
-    int last_triggered_area = -1;  // -1 = never triggered
-    int max_observed_area = 0;
-};
-
-void CameraProcessor::trackAndEstimateDeltas2(SharedFrame frame, Tracker &tracker)
-{
-    const int MIN_AREA = 15'625;            // (125 x 125) minimum area to consider
-    const float MAX_ASPECT_RATIO = 2.5f;    // max w/h for valid view
-    const float APPROACH_THRESHOLD = 1.1f;  // 10% area increase
-    const float DEPART_THRESHOLD = 0.8f;    // 20% area decrease
-
-    static int frame_counter = 0;
-    static std::unordered_map<int, TrackedObjectHistory> object_histories;
-    frame_counter++;
-
-    // remove old histories
-    const int track_buffer = tracker.trackBuffer();
-    for (auto it = object_histories.begin(); it != object_histories.end(); ) {
-        if (frame_counter - it->second.last_seen_frame > track_buffer) {
-            it = object_histories.erase(it);
+    // Remove lost histories
+    for (auto it = objectsHistory.begin(); it != objectsHistory.end(); ) {
+        if (it->second.last_seen_at.secsTo(QTime::currentTime()) > TRACK_MAX_LOST_WAIT) {
+            // The tracker won't re-track it, if it's lost for a second
+            // but we shouldn't be greedy. Got lots of free RAM.
+            it = objectsHistory.erase(it);
         } else {
             ++it;
         }    
-    }    
+    }
 
-    PredictionList obj_predictions = frame->predictions();
-    const auto track_ids = tracker.track(obj_predictions);
-
-    for (int i = 0; i < track_ids.size(); ++i) {
-        const int id = track_ids[i];
-        if (id == -1) continue;
-
-        auto& pred = obj_predictions[i];
-        pred.trackerId = id;
+    for (int i = 0; i < predictions.size(); ++i) {
+        auto& prediction = predictions.at(i);
+        if (prediction.trackerId < 0) // Leave the untracked and lost alone.
+            continue;
 
         // get or create history
-        TrackedObjectHistory& history = object_histories[id];
-        history.last_seen_frame = frame_counter;
+        TrackedObject& history = objectsHistory[prediction.trackerId];
+        history.last_seen_at = QTime::currentTime();
 
-        const int box_area = pred.box.area();
-        // qDebug() << id << box_area;
-        const float aspect_ratio = static_cast<float>(pred.box.width) / pred.box.height;
+        const int box_area = prediction.box.area();
         history.max_observed_area = std::max(history.max_observed_area, box_area);
-
-        // skip if too small or side view
-        if (box_area < MIN_AREA || aspect_ratio > MAX_ASPECT_RATIO) {
-            pred.hasDeltas = false;
+        
+        // Skip if too small or side view
+        const float aspect_ratio = static_cast<float>(prediction.box.width) / prediction.box.height;
+        if (box_area < TRACK_MIN_AREA || aspect_ratio > TRACK_MAX_ASPECT_RATIO) {
+            prediction.hasDeltas = false;
             continue;
         }
 
@@ -225,8 +173,8 @@ void CameraProcessor::trackAndEstimateDeltas2(SharedFrame frame, Tracker &tracke
 
         if (history.last_triggered_area != -1) {
             const int ref_area = history.last_triggered_area;
-            is_approaching = (box_area >= ref_area * APPROACH_THRESHOLD);
-            is_departing = (box_area <= ref_area * DEPART_THRESHOLD);
+            is_approaching = (box_area >= ref_area * TRACK_APPROACH_THRESHOLD);
+            is_departing = (box_area <= ref_area * TRACK_DEPART_THRESHOLD);
         }
 
         // trigger license plate detection when:
@@ -234,20 +182,18 @@ void CameraProcessor::trackAndEstimateDeltas2(SharedFrame frame, Tracker &tracke
         // - vehicle is approaching significantly
         // - new maximum area observed (even if stationary)
         if (history.last_triggered_area == -1 || is_approaching || box_area > history.max_observed_area) {
-            pred.hasDeltas = true;
+            prediction.hasDeltas = true;
             history.last_triggered_area = box_area;
             history.max_observed_area = box_area;  // Reset max for new approach
         }
         // Reset trigger if vehicle is departing
         else if (is_departing) {
-            pred.hasDeltas = false;
+            prediction.hasDeltas = false;
             history.last_triggered_area = -1;  // Reset to force re-trigger
         } else {
-            pred.hasDeltas = false;
+            prediction.hasDeltas = false;
         }
     }
-
-    frame->setPredictions(std::move(obj_predictions));
 }
 
 PredictionList CameraProcessor::filterObjectPredictions(const PredictionList &results, const std::map<std::string, FilterConfig> &objectsToFilter)
@@ -276,72 +222,78 @@ PredictionList CameraProcessor::filterObjectPredictions(const PredictionList &re
     return filtered_results;
 }
 
-void CameraProcessor::recognizeLicensePlates(SharedFrame frame, std::vector<std::string> lp_classes,
-                                             QHash<int, Prediction> &prev_licenseplate,
-                                             QHash<int, double> &prev_lp_sharpness)
+void CameraProcessor::recognizeLicensePlates(SharedFrame frame, std::vector<std::string> lpClasses,
+                                             std::unordered_map<int, TrackedLicensePlate> &licenseplateHistory)
 {
-    // crop images
+    // Process new
     const PredictionList predictions = frame->predictions();
     if (predictions.empty())
         return;
 
     for (const auto &object : predictions) {
-        if (object.trackerId == -1)
+        if (object.trackerId == -2      // Non-trackable object
+            || !object.subPredictions)  // Has no license plate predictions
             continue;
 
-        if (!object.subPredictions)
-            continue;
-
-        MatList crop_batch;
+        // MatList crop_batch;
         const auto &sub_predictions = object.subPredictions;
         for (const auto &plate : sub_predictions.value()) {
-            if (std::find(lp_classes.begin(), lp_classes.end(), plate.className) == lp_classes.end())
+            if (std::find(lpClasses.begin(), lpClasses.end(), plate.className) == lpClasses.end())  // Is it a plate?
                 continue;
 
-            cv::Mat crop;
-            Utils::perspectiveCrop(frame->data(), crop, plate.points);
-            
-            // TODO: Remove the prev_licenseplate, if object is lost
-            
-            // determine the best plate
-            if (plate.box.x >= object.box.x &&
-                plate.box.y >= object.box.y &&
-                plate.box.x + plate.box.width  <= object.box.x + object.box.width &&
-                plate.box.y + plate.box.height <= object.box.y + object.box.height) {
-                // is inside a vehicle
-
-                const QString license_plate = THUMB_DIR.filePath(QString("%1_%2_lp.jpg").arg(frame->camera()).arg(object.trackerId));
-                if (!QFileInfo::exists(license_plate))
-                    cv::imwrite(license_plate.toStdString(), crop);
-
-                if ((!prev_licenseplate.contains(object.trackerId)
-                     && !QFileInfo::exists(license_plate))
-                        || plate.box.area() > prev_licenseplate[object.trackerId].box.area()) {
-                    // save the crop
-                    prev_licenseplate[object.trackerId] = plate;
-
-                    cv::imwrite(license_plate.toStdString(), crop);
-                    crop_batch.emplace_back(crop);
-                }
+            float intersection_area = (plate.box & object.box).area();
+            if (intersection_area / plate.box.area() < 0.95) {
+                // 95% of the plate is inside the vehicle.
+                // This step is necessary to avoid adding up plates 
+                // of other vehicles, although it sums plate still 
+                // may come inside the vehicle's bounding box.
+                continue;
             }
-        }
 
-        std::vector<PaddleOCR::OCRPredictResultList> results_list = m_ocrEngine.predict(crop_batch);
-    
-        // OCR
-        // Filter main plate number
-        for (auto results : results_list) {
-            std::sort(results.begin(), results.end(), [] (const PaddleOCR::OCRPredictResult &a, const PaddleOCR::OCRPredictResult &b) {
-                qCDebug(apss_camera_processor) << a.text;
+            TrackedLicensePlate &history = licenseplateHistory[object.trackerId];
+            history.lastSeenAt = QTime::currentTime();
 
-                return PaddleOCR::computeArea(a.box) > PaddleOCR::computeArea(b.box)
-                && a.score > b.score;
-            });
+            // We either don't have a copy or the new one is 20% larger/better.
+            if (history.lastPlate.empty() || plate.box.area() > history.lastPlate.total() * 1.2) {
+                // Plate
+                Utils::perspectiveCrop(frame->data(), history.lastPlate, plate.points);
 
+                if (history.platePath.isEmpty())
+                    history.platePath = THUMB_DIR.filePath(QString("%1_%2_lp.jpg").arg(frame->camera()).arg(object.trackerId));
+            }
         }
     }
 
+    // Remove lost objects history
+    for (auto it = licenseplateHistory.begin(); it != licenseplateHistory.end(); ) {
+        if (it->second.lastSeenAt.secsTo(QTime::currentTime()) > TRACK_MAX_LOST_WAIT) {
+            // Recognize
+            auto results_list = m_ocrEngine.predict({it->second.lastPlate});
+            std::sort(results_list.at(0).begin(), results_list.at(0).end(), 
+                [] (const auto &a, const auto &b) {
+                    return PaddleOCR::computeArea(a.box) > PaddleOCR::computeArea(b.box)
+                            && a.score > b.score;
+                }
+            );
 
+            // TODO: We can't really relate license plate recognition to the objects anymore
+            //          So, we've to move the recognition to a separate post process.
+            // TODO: Maybe we should move the "save lp image" to first loop, if we're moving recognition 
+            //          to post-processing anyway. That way, we won't have to save the remaining plates 
+            //          on a shutdown.
+            qCDebug(apss_camera_processor) << "OCR" << it->first << ": ";
+            for (const auto &result : results_list.at(0)) {
+                qCDebug(apss_camera_processor) << result.score << result.text;
+            }
+
+            cv::imwrite(it->second.platePath.toStdString(), it->second.lastPlate);
+
+            // Erase from cache
+            it = licenseplateHistory.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 double CameraProcessor::computeSharpness(const cv::Mat &img)
@@ -374,22 +326,3 @@ double CameraProcessor::computeCannySharpness(const cv::Mat &img)
 }
 
 #include "moc_cameraprocessor.cpp"
-
-// Alternative best plate method
-// for (const auto& p : predictions) {
-//     if (p.trackerId == -1) continue;
-
-//     if ((prediction.box & p.box) == prediction.box) { // plate inside vehicle
-//         const QString path = THUMB_DIR.filePath(
-//             QString("%1_%2_lp.jpg").arg(frame->camera()).arg(p.trackerId));
-
-//         double sharpness = computeSharpness(crop);
-
-//         if (!prev_lp_sharpness.contains(p.trackerId)
-//             || sharpness > prev_lp_sharpness[p.trackerId]) {
-//             prev_lp_sharpness[p.trackerId] = sharpness;
-//             prev_licenseplate[p.trackerId] = prediction;
-//             cv::imwrite(path.toStdString(), crop);
-//         }
-//     }
-// }
