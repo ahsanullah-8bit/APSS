@@ -100,6 +100,8 @@ std::vector<Vector3d<int>> PaddleDet::predict(const MatList &batch)
     if (batch.empty())
         return {};
 
+    std::vector<Vector3d<int>> boxes_results_list(batch.size(), {});
+
     const auto input_tensor_shapes = m_inferSession.inputTensorShapes();
     Q_ASSERT(!input_tensor_shapes.empty());
     std::vector<int64_t> input_tensor_shape(input_tensor_shapes[0]);    // BCHW
@@ -139,7 +141,7 @@ std::vector<Vector3d<int>> PaddleDet::predict(const MatList &batch)
     // Inference
     std::vector<Ort::Value> output_tensors = m_inferSession.predictRaw(img_data, input_tensor_shape);
     if (output_tensors.empty())
-        return {};
+        return boxes_results_list;
 
     // Post-Process Results
     const Ort::Value &tensor0 = output_tensors[0];
@@ -157,8 +159,6 @@ std::vector<Vector3d<int>> PaddleDet::predict(const MatList &batch)
     // out_batch_size can't be trusted, as the session might cache the previous batch
     // so it shouldn't be used for postprocessing
     Q_ASSERT(out_batch_size >= batch.size());
-
-    std::vector<Vector3d<int>> boxes_results_list;
 
     // Process each output of the batch
     for (size_t b = 0; b < batch.size(); ++b) {
@@ -195,7 +195,7 @@ std::vector<Vector3d<int>> PaddleDet::predict(const MatList &batch)
         m_postProcessor.FilterTagDetRes(boxes, ratio_h, ratio_w, batch[b]);
         // end NOTICE
 
-        boxes_results_list.emplace_back(std::move(boxes));
+        boxes_results_list[b] = std::move(boxes);
     }
 
     return boxes_results_list;
