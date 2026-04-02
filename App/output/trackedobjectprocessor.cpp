@@ -55,43 +55,7 @@ void TrackedObjectProcessor::run()
     QHash<int, float> prev_object_distance; // from center of the frame
     QHash<int, Prediction> prev_licenseplate_size;
 
-    // COCO class names and their colors
-    const std::vector<std::string> class_names = {
-        "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck",
-        "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench",
-        "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra",
-        "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee",
-        "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove",
-        "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup",
-        "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange",
-        "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch",
-        "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse",
-        "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink",
-        "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier",
-        "toothbrush"
-    };
-    const std::vector<cv::Scalar> class_colors = {
-        {255, 0, 0}, {255, 128, 0}, {255, 255, 0}, {128, 255, 0}, {0, 255, 0},
-        {0, 255, 128}, {0, 255, 255}, {0, 128, 255}, {0, 0, 255}, {128, 0, 255},
-        {255, 0, 255}, {255, 0, 128}, {128, 0, 0}, {128, 64, 0}, {128, 128, 0},
-        {64, 128, 0}, {0, 128, 0}, {0, 128, 64}, {0, 128, 128}, {0, 64, 128},
-        {0, 0, 128}, {64, 0, 128}, {128, 0, 128}, {128, 0, 64}, {64, 0, 0},
-        {192, 64, 0}, {192, 192, 0}, {64, 192, 0}, {0, 192, 0}, {0, 192, 64},
-        {0, 192, 192}, {0, 64, 192}, {0, 0, 192}, {64, 0, 192}, {192, 0, 192},
-        {192, 0, 64}, {64, 0, 64}, {255, 64, 64}, {255, 128, 64}, {255, 255, 64},
-        {128, 255, 64}, {64, 255, 64}, {64, 255, 128}, {64, 255, 255}, {64, 128, 255},
-        {64, 64, 255}, {128, 64, 255}, {255, 64, 255}, {255, 64, 128}, {128, 64, 64},
-        {128, 128, 64}, {64, 128, 64}, {64, 128, 128}, {64, 64, 128}, {128, 64, 128},
-        {128, 64, 192}, {255, 192, 0}, {192, 255, 0}, {0, 255, 192}, {0, 192, 255},
-        {0, 0, 255}, {255, 0, 192}, {192, 0, 255}, {255, 0, 255}, {255, 192, 192},
-        {255, 255, 192}, {192, 255, 255}, {192, 192, 255}, {192, 128, 255}, {255, 128, 255},
-        {255, 192, 128}, {192, 128, 128}, {128, 192, 128}, {128, 255, 128}, {128, 128, 255},
-        {128, 128, 128}, {0, 0, 0}
-    };
-
-    const std::vector<std::string> lp_classes = { "license_plate" };
-    const std::vector<std::pair<int, int>> lp_skeleton = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
-
+    QHash<QString, TrackedEvent> event_histroy;
 
     try {
         while(!isInterruptionRequested()) {
@@ -241,10 +205,8 @@ void TrackedObjectProcessor::run()
                     Utils::drawDetections(frame_mat, prediction.subPredictions.value(), {}, {}, 0.0f);
                 }
             }
-            // Utils::drawBoundingBox(frame_mat, predictions_, class_names, class_colors);
-            // Utils::drawPoseEstimation(frame_mat, predictions_, lp_classes, lp_skeleton, true);
+
             frame->setData(frame_mat);
-            // -- draw results
 
             emit frameChanged(frame);
             emit frameChangedWithEvents(frame, active_events.keys());
