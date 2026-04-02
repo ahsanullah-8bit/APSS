@@ -183,7 +183,17 @@ void CameraCapture::run()
 
             if (read_result == AVERROR_EOF) {
                 // normal end of file (EOF)
-                break;
+                // We loop through the video file
+                if (av_seek_frame(fmt_ctx, video_stream_index, 0, AVSEEK_FLAG_BACKWARD) >= 0) {
+                    avcodec_flush_buffers(video_codec_ctx);
+                    start_pts = AV_NOPTS_VALUE;
+
+                    qCInfo(logger) << "Looping file back to start.";
+                    continue;
+                } else {
+                    qCWarning(logger) << "Seek failed, ending playback.";
+                    break;
+                }
             }
 
             if (read_result < 0) {
@@ -256,14 +266,6 @@ void CameraCapture::run()
                           bgr_frame->data, bgr_frame->linesize);
 
                 cv::Mat cv_frame(video_codec_ctx->height, video_codec_ctx->width, CV_8UC3, bgr_frame->data[0], bgr_frame->linesize[0]);
-
-                AVDictionaryEntry *rotate_tag = av_dict_get(video_stream->metadata, "displaymatrix", nullptr, 0);
-                if (rotate_tag) {
-                    int rotation = std::atoi(rotate_tag->value);
-                    qDebug() << "Rotation metadata:" << rotation;
-                    // Apply rotation logic based on value
-                }
-
                 SharedFrame final_frame(new Frame(m_name, frame_index, cv_frame.clone()));
 
                 QSharedPointer<AVPacket> pkt(av_packet_clone(packet), [](AVPacket *p) { av_packet_free(&p); });
