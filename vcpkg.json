@@ -13,7 +13,7 @@
             "name": "opencv4",
             "default-features": false,
             "features": ["fs", "gstreamer", "eigen", "highgui", "jpeg", "png"],
-            "version>=": "4.10.0"
+            "version>=": "4.10.0#5"
         },
         {
             "name": "ffmpeg",
@@ -23,11 +23,11 @@
         },
         {
             "name": "tbb",
-            "version>=": "2022.0.0"
+            "version>=": "2022.0.0#2"
         },
         {
             "name": "eigen3",
-            "version>=": "3.4.0"
+            "version>=": "3.4.0#5"
         },
         {
             "name": "yaml-cpp",
