@@ -94,7 +94,8 @@ void LPDetectorSession::run() {
                             }
                         }
 
-                        object_predictions[vehicle_indxs.at(b)].subPredictions = filterLicensePlates(results_list.at(b));
+                        if (!results_list.at(b).empty())
+                            object_predictions[vehicle_indxs.at(b)].subPredictions = filterLicensePlates(results_list.at(b));
                     }
 
                     batch.clear();
