@@ -231,7 +231,7 @@ void CameraProcessor::recognizeLicensePlates(SharedFrame frame, std::vector<std:
         return;
 
     for (const auto &object : predictions) {
-        if (object.trackerId == -2      // Non-trackable object
+        if (object.trackerId < 0      // Non-trackable object
             || !object.subPredictions)  // Has no license plate predictions
             continue;
 
@@ -243,7 +243,7 @@ void CameraProcessor::recognizeLicensePlates(SharedFrame frame, std::vector<std:
 
             float intersection_area = (plate.box & object.box).area();
             if (intersection_area / plate.box.area() < 0.95) {
-                // 95% of the plate is inside the vehicle.
+                // Plate should be at least 95% inside the vehicle's box.
                 // This step is necessary to avoid adding up plates 
                 // of other vehicles, although it sums plate still 
                 // may come inside the vehicle's bounding box.
