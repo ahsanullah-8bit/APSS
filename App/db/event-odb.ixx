@@ -14,7 +14,7 @@ namespace odb
   access::object_traits< ::Event >::
   id (const object_type& o)
   {
-    return o.id ();
+    return o.m_id;
   }
 
   inline

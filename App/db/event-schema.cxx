@@ -48,7 +48,7 @@ namespace odb
         case 1:
         {
           db.execute ("CREATE TABLE \"Event\" (\n"
-                      "  \"id\" TEXT NOT NULL PRIMARY KEY,\n"
+                      "  \"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,\n"
                       "  \"label\" TEXT NULL,\n"
                       "  \"subLabel\" TEXT NULL,\n"
                       "  \"camera\" TEXT NULL,\n"
