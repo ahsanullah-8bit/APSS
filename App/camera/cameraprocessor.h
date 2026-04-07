@@ -19,18 +19,16 @@
 //      * Object Tracking: 2 types of tracking, one is tracking objects through out the frames
 //          and another is tracking vehicles' how-far-are-you from the camera, to shade unnecessary
 //          inference of license plate detection.
-//      * License Plate Tracking: To choose the best license plate for storage and recognition.
 //
-// Notice: It is worth noting that the tracking of object/events is happening in two major stages of this system,
+// Notice: It is worth noting that the tracking of objects/events is happening in two major stages of this system,
 //      the CameraProcessor (separate thread, per camera) and TrackedObjectProcessor (single thread, unified).
-//      The first is necessary to shade some resource usage and the second is a must for the system to be stable
-//      and work as intended. Combining them both through some common queue/messaging may reduce the RAM usage but
-//      is not worth it, I guess.
+//      The first is necessary to shade some resource usage and the second is the main tracking system. Combining 
+//      them both through some common queue/messaging may reduce the RAM usage but is not worth it, I guess.
 class CameraProcessor : public QThread
 {
     Q_OBJECT
 public:
-    const int TRACK_MAX_LOST_WAIT = 5;                    // Makes cache wait for seconds until lost object is removed.
+    const int TRACK_MAX_LOST_WAIT = 5;              // Makes cache wait for seconds until lost object is removed.
     const int TRACK_MIN_AREA = 15'625;              // (125 x 125) minimum area to consider for tracking
     const float TRACK_MAX_ASPECT_RATIO = 2.5f;      // max w/h for valid view
     const float TRACK_APPROACH_THRESHOLD = 1.1f;    // 10% area increase
@@ -43,16 +41,8 @@ public:
         int max_observed_area = 0;     // The biggest we've seen so far
     };
 
-    struct TrackedLicensePlate {
-        QTime lastSeenAt;
-        cv::Mat lastPlate;
-        QString platePath;
-    };
-
     explicit CameraProcessor(const QString &cameraName,
                              const CameraConfig &config,
-                             // const std::optional<ModelConfig> &modelConfig,
-                             // const std::optional<std::map<int, std::string>> &labelmap,
                              SharedFrameBoundedQueue &inDetectorFrameQueue,
                              SharedFrameBoundedQueue &inLPDetectorFrameQueue,
                              QSharedPointer<QWaitCondition> waitCondition,
@@ -63,16 +53,10 @@ public:
     // QThread interface
 protected:
     void run() override;
-    bool predict(SharedFrame frame,
-                 SharedFrameBoundedQueue &queue);
-    // returns true, if there were any deltas
-    // void trackAndEstimateDeltas(SharedFrame frame,Tracker &tracker);
+    bool predict(SharedFrame frame, SharedFrameBoundedQueue &queue);
     void estimateChangesInArea(PredictionList &predictions, std::unordered_map<int, TrackedObject> &objectsHistory);
     PredictionList filterObjectPredictions(const PredictionList &results,
                                            const std::map<std::string, FilterConfig> &objectsToFilter);
-    void recognizeLicensePlates(SharedFrame frame, std::vector<std::string> lpClasses, std::unordered_map<int, TrackedLicensePlate> &licenseplateHistory);
-    double computeSharpness(const cv::Mat& img);
-    double computeCannySharpness(const cv::Mat &img);
 
 private:
     QString m_cameraName;

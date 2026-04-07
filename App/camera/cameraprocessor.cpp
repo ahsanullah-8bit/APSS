@@ -40,16 +40,13 @@ void CameraProcessor::run()
     QSharedPointer<SharedFrameBoundedQueue> frame_queue = m_cameraMetrics->frameQueue();
     const ObjectConfig &objects_config = m_config.objects ? m_config.objects.value() : ObjectConfig();
     Tracker tracker(objects_config.track);
-    const std::vector<std::string> lp_classes = { "license_plate" };
+    std::unordered_map<int, TrackedObject> objectsHistory;
 
     EventsPerSecond process_eps;
     process_eps.start();
 
     EventsPerSecond detectors_eps;
     detectors_eps.start();
-
-    std::unordered_map<int, TrackedObject> objectsHistory;
-    std::unordered_map<int, TrackedLicensePlate> licenseplatesHistory;
 
     while(!isInterruptionRequested()) {
         SharedFrame frame;
@@ -76,8 +73,6 @@ void CameraProcessor::run()
         detectors_eps.update();
         m_cameraMetrics->setDetectionFPS(detectors_eps.eps());
 
-        recognizeLicensePlates(frame, lp_classes, licenseplatesHistory);
-
         process_eps.update();
         m_cameraMetrics->setProcessFPS(process_eps.eps());
 
@@ -86,7 +81,6 @@ void CameraProcessor::run()
     }
 
     // TODO: Empty the frame Queue
-    // TODO: Submit waiting plates
 }
 
 bool CameraProcessor::predict(SharedFrame frame,
@@ -220,109 +214,6 @@ PredictionList CameraProcessor::filterObjectPredictions(const PredictionList &re
     }
 
     return filtered_results;
-}
-
-void CameraProcessor::recognizeLicensePlates(SharedFrame frame, std::vector<std::string> lpClasses,
-                                             std::unordered_map<int, TrackedLicensePlate> &licenseplateHistory)
-{
-    // Process new
-    const PredictionList predictions = frame->predictions();
-    if (predictions.empty())
-        return;
-
-    for (const auto &object : predictions) {
-        if (object.trackerId < 0      // Non-trackable object
-            || !object.subPredictions)  // Has no license plate predictions
-            continue;
-
-        // MatList crop_batch;
-        const auto &sub_predictions = object.subPredictions;
-        for (const auto &plate : sub_predictions.value()) {
-            if (std::find(lpClasses.begin(), lpClasses.end(), plate.className) == lpClasses.end())  // Is it a plate?
-                continue;
-
-            float intersection_area = (plate.box & object.box).area();
-            if (intersection_area / plate.box.area() < 0.95) {
-                // Plate should be at least 95% inside the vehicle's box.
-                // This step is necessary to avoid adding up plates 
-                // of other vehicles, although it sums plate still 
-                // may come inside the vehicle's bounding box.
-                continue;
-            }
-
-            TrackedLicensePlate &history = licenseplateHistory[object.trackerId];
-            history.lastSeenAt = QTime::currentTime();
-
-            // We either don't have a copy or the new one is 20% larger/better.
-            if (history.lastPlate.empty() || plate.box.area() > history.lastPlate.total() * 1.2) {
-                // Plate
-                Utils::perspectiveCrop(frame->data(), history.lastPlate, plate.points);
-
-                if (history.platePath.isEmpty())
-                    history.platePath = THUMB_DIR.filePath(QString("%1_%2_lp.jpg").arg(frame->camera()).arg(object.trackerId));
-            }
-        }
-    }
-
-    // Remove lost objects history
-    for (auto it = licenseplateHistory.begin(); it != licenseplateHistory.end(); ) {
-        if (it->second.lastSeenAt.secsTo(QTime::currentTime()) > TRACK_MAX_LOST_WAIT) {
-            // Recognize
-            auto results_list = m_ocrEngine.predict({it->second.lastPlate});
-            std::sort(results_list.at(0).begin(), results_list.at(0).end(), 
-                [] (const auto &a, const auto &b) {
-                    return PaddleOCR::computeArea(a.box) > PaddleOCR::computeArea(b.box)
-                            && a.score > b.score;
-                }
-            );
-
-            // TODO: We can't really relate license plate recognition to the objects anymore
-            //          So, we've to move the recognition to a separate post process.
-            // TODO: Maybe we should move the "save lp image" to first loop, if we're moving recognition 
-            //          to post-processing anyway. That way, we won't have to save the remaining plates 
-            //          on a shutdown.
-            qCDebug(apss_camera_processor) << "OCR" << it->first << ": ";
-            for (const auto &result : results_list.at(0)) {
-                qCDebug(apss_camera_processor) << result.score << result.text;
-            }
-
-            cv::imwrite(it->second.platePath.toStdString(), it->second.lastPlate);
-
-            // Erase from cache
-            it = licenseplateHistory.erase(it);
-        } else {
-            ++it;
-        }
-    }
-}
-
-double CameraProcessor::computeSharpness(const cv::Mat &img)
-{
-    cv::Mat gray;
-    if (img.channels() == 3)
-        cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
-    else
-        gray = img;
-
-    cv::Mat lap;
-    cv::Laplacian(gray, lap, CV_64F);
-    cv::Scalar mu, sigma;
-    cv::meanStdDev(lap, mu, sigma);
-    return (sigma.val[0] * sigma.val[0]) / (img.rows * img.cols);
-}
-
-double CameraProcessor::computeCannySharpness(const cv::Mat &img)
-{
-    cv::Mat gray;
-    if (img.channels() == 3)
-        cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
-    else
-        gray = img;
-
-    cv::Mat edges;
-    cv::Canny(gray, edges, 50, 250);
-
-    return cv::countNonZero(edges) / static_cast<double>(img.rows * img.cols);
 }
 
 #include "moc_cameraprocessor.cpp"
