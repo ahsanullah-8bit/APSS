@@ -93,8 +93,9 @@ void TrackedObjectProcessor::run()
                         best_thumbnail.wasSmartCropped = is_smart_croppable;
                         event_history.lastObjectBoxArea = object.box.area();
                         
+                        if (is_first_ever)
+                            event_history.event.setThumbnail(THUMB_DIR.filePath(QString("%1_%2.jpg").arg(frame->camera()).arg(object.trackerId)));  // Dragons, I KNOW!
                         // TODO: This should be moved to a separate thread.
-                        event_history.event.setThumbnail(THUMB_DIR.filePath(QString("%1_%2.jpg").arg(frame->camera()).arg(object.trackerId)));  // Dragons, I KNOW!
                         cv::imwrite(event_history.event.thumbnail().toStdString(), event_history.bestThumbnail.img);
 
                         if (event_history.isPersisted)
