@@ -81,16 +81,18 @@ void LPDetectorSession::run() {
                     std::vector<PredictionList> results_list = m_keyPointDetector.predict(batch);
 
                     for (size_t b = 0; b < batch.size(); ++b) {
+                        const auto &vehicle_pred = object_predictions[vehicle_indxs.at(b)];
+
                         // Go through each plate result, displace coordinates to the vehicle's location.
                         for (auto &plate : results_list.at(b)) {
                             // Displace LP box coordinates
-                            plate.box.x += prediction.box.x;
-                            plate.box.y += prediction.box.y;
+                            plate.box.x += vehicle_pred.box.x;
+                            plate.box.y += vehicle_pred.box.y;
 
                             // Displace LP keypoint coordinates
                             for (auto& point : plate.points) {
-                                point.x += prediction.box.x;
-                                point.y += prediction.box.y;
+                                point.x += vehicle_pred.box.x;
+                                point.y += vehicle_pred.box.y;
                             }
                         }
 
