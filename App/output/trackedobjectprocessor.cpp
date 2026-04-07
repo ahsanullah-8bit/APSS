@@ -1,14 +1,19 @@
-#include <QLoggingCategory>
+#include <algorithm>
+#include <exception>
 
+#include <QLoggingCategory>
+#include <qcontainerfwd.h>
+
+#include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <odb/transaction.hxx>
+#include <rfl/json/write.hpp>
 #include <rfl/json.hpp>
 
-#include "db/event-odb.hxx"
-#include "db/frameprediction-odb.hxx"
-#include "detectors/image.h"
-#include "events/detectionsubpub.h"
+#include <detectors/image.h>
 #include "trackedobjectprocessor.h"
-#include "utils/framemanager.h"
+#include "apss.h"
+#include "db/event.h"
 
 Q_STATIC_LOGGING_CATEGORY(logger, "apss.engine.object_proc")
 
@@ -48,14 +53,7 @@ void TrackedObjectProcessor::run()
 {
     qCInfo(logger) << "Starting" << objectName() << "thread";
 
-    QHash<int, Event> active_events;            // trackerId -> Event
-    QHash<int, PredictionList> object_history;  // trackerId -> Prediction history
-    QHash<int, int> lost_counts;                // trackerId -> Consecutive lost frames
-    QHash<int, QDateTime> last_seen_timestamps; // trackerId -> Last seen timestamp
-    QHash<int, float> prev_object_distance; // from center of the frame
-    QHash<int, Prediction> prev_licenseplate_size;
-
-    QHash<QString, TrackedEvent> event_histroy;
+    QHash<QString, QHash<int, TrackedEvent>> cameras_history;
 
     try {
         while(!isInterruptionRequested()) {
@@ -64,134 +62,141 @@ void TrackedObjectProcessor::run()
             if (!frame)
                 continue;
 
+            auto &events_history = cameras_history[frame->camera()];
+            for (auto &event_history : events_history)
+                event_history.lostCount++;
+
             const PredictionList& predictions = frame->predictions();
             const QDateTime frame_time = frame->timestamp();
+            const cv::Mat frame_data = frame->data();
 
-            // process active objects first
-            const QList<int> active_ids = object_history.keys();
-            for (int tracker_id : active_ids) {
-                // check if object appears in current predictions
-                bool found = std::any_of(predictions.cbegin(), predictions.cend(),
-                                         [tracker_id](const Prediction& p) { return p.trackerId == tracker_id; });
+            // Process current predictions
+            for (const Prediction& object : predictions) {
+                if (object.trackerId < 0) 
+                    continue;
 
-                if (found) {
-                    // reset lost counter on reappearance
-                    lost_counts[tracker_id] = 0;
-                } else {
-                    // handle lost object
-                    if (!lost_counts.contains(tracker_id)) {
-                        lost_counts[tracker_id] = 1;
-                    } else {
-                        lost_counts[tracker_id]++;
+                auto &event_history = events_history[object.trackerId];
+                event_history.lostCount = 0;
+
+                // Thumbnail
+                if (event_history.bestThumbnail.counter < 2) {
+                    auto &best_thumbnail = event_history.bestThumbnail;
+                    const auto [crop_rect, is_smart_croppable] = getSmartCropRect(object.box, frame_data.size());
+
+                    bool is_first_ever = best_thumbnail.img.empty();
+                    bool improved_visibility = is_smart_croppable && !best_thumbnail.wasSmartCropped;
+                    bool significantly_larger = (object.box.area() > event_history.lastObjectBoxArea * 1.2f);
+
+                    if (is_first_ever || improved_visibility || (is_smart_croppable && significantly_larger)) {
+                        best_thumbnail.img = frame_data(crop_rect).clone();
+                        best_thumbnail.counter++;
+                        best_thumbnail.wasSmartCropped = is_smart_croppable;
+                        event_history.lastObjectBoxArea = object.box.area();
+                        
+                        // TODO: This should be moved to a separate thread.
+                        event_history.event.setThumbnail(THUMB_DIR.filePath(QString("%1_%2.jpg").arg(frame->camera()).arg(object.trackerId)));  // Dragons, I KNOW!
+                        cv::imwrite(event_history.event.thumbnail().toStdString(), event_history.bestThumbnail.img);
+
+                        if (event_history.isPersisted)
+                            emit eventUpdated(event_history.id, EventThumbnail);
                     }
+                }
 
-                    // remove if exceeded loss limit
-                    if (lost_counts[tracker_id] > TRACKER_OBJECT_LOSS_LIMIT) {
-                        if (!active_events.contains(tracker_id)) {
-                            qCWarning(logger) << "Missing event during cleanup for" << tracker_id;
-                        } else {
-                            Event& event = active_events[tracker_id];
+                // Plate
+                if (object.subPredictions) {
+                    auto &best_plate = event_history.bestPlate;
+                    for (const auto &plate : object.subPredictions.value()) {
+                        if (plate.className != "license_plate")
+                            continue;
 
-                            const auto &prediction_history = object_history[tracker_id];
-                            const std::string predictions = rfl::json::write(prediction_history);
-                            const std::string label = prediction_history.empty() ? "Uknown"     // I hope this first condition is not true
-                                                                                 : prediction_history.at(0).className;
-                            event.setLabel(QString::fromStdString(label));
-                            event.setCamera(frame->camera());
-                            event.setEndTime(last_seen_timestamps[tracker_id]); // last seen time
-                            event.setTrackerId(tracker_id);
-                            event.setData(QString::fromStdString(predictions));
-
-                            odb::transaction t(m_db->begin());
-                            try {
-                                m_db->persist(event);
-
-                                if (!t.finalized())
-                                    t.commit();
-                            } catch (const odb::exception& e) {
-                                try { if (!t.finalized()) t.rollback(); } catch (...) {}
-                                qCCritical(logger) << e.what();
-                            } catch(...) {
-                                try { if (!t.finalized()) t.rollback(); } catch (...) {}
-                                qCCritical(logger) << "Uknown/Uncaught exception occurred.";
-                            }
+                        float intersection_area = (plate.box & object.box).area();
+                        if (intersection_area / plate.box.area() < 0.95) {
+                            // Plate should be at least 95% inside the vehicle's box.
+                            // This step is necessary to avoid adding up plates 
+                            // of other vehicles, although some plates still 
+                            // may come inside the vehicle's bounding box.
+                            continue;
                         }
 
-                        // qCDebug(logger) << "Removed:" << tracker_id;
+                        if (best_plate.empty() || plate.box.area() > best_plate.total() * 1.2) {
+                            // This would be a single plate anyway. But this check is required for the more than one plate case.
+                            Utils::perspectiveCrop(frame_data, best_plate, plate.points);
 
-                        // cleanup tracking data
-                        object_history.remove(tracker_id);
-                        active_events.remove(tracker_id);
-                        lost_counts.remove(tracker_id);
-                        last_seen_timestamps.remove(tracker_id);
-                        prev_object_distance.remove(tracker_id);
+                            // TODO: This should be moved to a separate thread.
+                            if (!best_plate.empty())
+                                cv::imwrite(THUMB_DIR.filePath(QString("%1_%2_lp.jpg").arg(frame->camera()).arg(object.trackerId)).toStdString(), event_history.bestPlate);
+
+                            if (event_history.isPersisted)
+                                emit eventUpdated(event_history.id, EventPlate);
+                        }
                     }
+                }
+
+                if (!event_history.isPersisted) {
+                    // Event
+                    Event &event = event_history.event;
+                    event.setLabel(QString::fromStdString(object.className));
+                    event.setCamera(frame->camera());
+                    event.setStartTime(frame_time);
+                    event.setTopScore(object.conf);
+                    event.setTrackerId(object.trackerId);
+                    events_history[object.trackerId].predictions.push_back(object); // First Prediction
+
+                    try {
+                        odb::transaction t(m_db->begin());
+                        event_history.id = m_db->persist(event);
+                        t.commit();
+    
+                        event_history.isPersisted = true;
+
+                        emit eventPersisted(event_history.id);
+                    } catch (const std::exception &e) {
+                        qCCritical(logger) << "Error updating db event" << QString("(%1),").arg(event.id()) << e.what();
+                    }
+                } else {
+                    // Update existing event
+                    event_history.predictions.push_back(object);
+                    
+                    auto &event = events_history[object.trackerId].event;
+                    event.setEndTime(frame_time);
+                    if (object.conf > event.topScore())
+                        event.setTopScore(object.conf);
+
+                    // TODO: Do a proper average of all the scores
+                    event.setScore(object.conf);
+                    
+                    // emit eventUpdated(event_history.id);
                 }
             }
 
-            // process current predictions
-            for (const Prediction& pred : predictions) {
-                if (pred.trackerId < 0) continue;
-                const int tracker_id = pred.trackerId;
+            // Remove lost
+            for (auto it = events_history.begin(); it != events_history.end();) {
+                if (it->lostCount > TRACK_MAX_EVENTS) {
+                    const auto &history = events_history[it.key()];
 
-                if (!object_history.contains(tracker_id)) {
-                    // initialize new event
-                    Event newEvent;
-                    // TODO: See if we really need to create a QUuid and use timestamp
-                    newEvent.setId(QString("%1-%2")
-                                       .arg(frame_time.toString(Qt::ISODateWithMs),
-                                            QUuid::createUuid().toString(QUuid::WithoutBraces)));
-                    newEvent.setStartTime(frame_time);
-                    newEvent.setTopScore(pred.conf);
+                    // TODO: Persist events if they're not.
+                    Event event;
 
-                    // save the first thumbnail
-                    const QString thumb_name = QString("%1_%2.jpg").arg(frame->camera()).arg(pred.trackerId);
-                    const QString thumb_path = cropAndSaveThumbnail(thumb_name, frame, pred);
-                    newEvent.setThumbnail(thumb_path);
+                    try {
+                        odb::transaction t(m_db->begin());
+                        m_db->load(it->id, event);
+    
+                        event.setEndTime(history.event.endTime());
+                        event.setTopScore(history.event.topScore());
+                        event.setScore(history.event.score());
+                        event.setData(QString::fromStdString(rfl::json::write(history.predictions)));
+    
+                        m_db->update(event);
+                        t.commit();
 
-                    // store first prediction
-                    object_history[tracker_id] = {pred};
-                    active_events[tracker_id] = newEvent;
-                    last_seen_timestamps[tracker_id] = frame_time;
-                } else {
-                    // update existing event
-                    object_history[tracker_id].push_back(pred);
-                    last_seen_timestamps[tracker_id] = frame_time;
-
-                    auto &event = active_events[tracker_id];
-                    if (event.topScore() < pred.conf)
-                        event.setTopScore(pred.conf);
-
-                    event.setScore(pred.conf);
-                }
-
-                // determine and save the best thumbnail
-                if (!prev_object_distance.contains(tracker_id)) {
-                    prev_object_distance[tracker_id] = 0.0f;
-                } else {
-                    // we determine, how far the object is to the camera or how near it got to the center
-                    cv::Mat frame_img = frame->data();
-                    cv::Rect bbox = pred.box;
-                    cv::Point2f center(frame_img.cols / 2.0f, frame_img.rows / 2.0f);
-                    cv::Point2f obj_center(bbox.x + bbox.width / 2.0f,
-                                           bbox.y + bbox.height / 2.0f);
-
-                    const float curr_dist = cv::norm(obj_center - center);
-                    const float prev_dist = prev_object_distance[tracker_id];
-
-                    // compute percentage change
-                    float change = 0.0f;
-                    if (prev_dist > 1e-6f && curr_dist < prev_dist) {
-                        change = (prev_dist - curr_dist) / prev_dist * 100.0f;
+                        emit eventUpdated(it->id, EventEndTime | EventTopScore | EventScore | EventData);
+                    } catch (const std::exception &e) {
+                        qCCritical(logger) << "Error updating db event" << QString("(%1),").arg(event.id()) << e.what();
                     }
 
-                    if (change >= 15.0) { // 40% improvement
-                        // the object is closer to the center, than before
-                        const QString thumb_name = QString("%1_%2.jpg").arg(frame->camera()).arg(pred.trackerId);
-                        cropAndSaveThumbnail(thumb_name, frame, pred);
-                    }
-
-                    prev_object_distance[tracker_id] = curr_dist;
+                    it = events_history.erase(it);
+                } else {
+                    ++it;
                 }
             }
 
@@ -209,7 +214,29 @@ void TrackedObjectProcessor::run()
             frame->setData(frame_mat);
 
             emit frameChanged(frame);
-            emit frameChangedWithEvents(frame, active_events.keys());
+            emit frameChangedWithEvents(frame, events_history.keys());
+        }
+
+        // Submit the remaining events
+        for (auto cam = cameras_history.begin(); cam != cameras_history.end(); ++cam) {
+            for (auto e = cam->begin(); e != cam->end(); ++e) {
+                Event event;
+
+                try {
+                    odb::transaction t(m_db->begin());
+                    m_db->load(e->id, event);
+
+                    event.setEndTime(e->event.endTime());
+                    event.setTopScore(e->event.topScore());
+                    event.setScore(e->event.score());
+                    event.setData(QString::fromStdString(rfl::json::write(e->predictions)));
+
+                    m_db->update(event);
+                    t.commit();
+                } catch (const std::exception &e) {
+                    qCCritical(logger) << "Error updating db event" << QString("(%1),").arg(event.id()) << e.what();
+                }
+            }
         }
     }
     catch(const tbb::user_abort &) {}
@@ -217,29 +244,34 @@ void TrackedObjectProcessor::run()
         qCCritical(logger) << e.what();
     }
     catch(...) {
-        qCCritical(logger) << "Uknown/Uncaught exception occurred.";
+        qCCritical(logger) << "Uknown/Uncaught exception occurred in TrackedObjectProcessor.";
     }
 
     qCInfo(logger) << "Stopping" << objectName() << "thread";
 }
 
-QString TrackedObjectProcessor::cropAndSaveThumbnail(const QString &name,
-                                                     const SharedFrame frame,
-                                                     const Prediction &pred)
+std::pair<cv::Rect, bool> TrackedObjectProcessor::getSmartCropRect(cv::Rect objectBox, cv::Size frameSize, float aspectRatio)
 {
-    const QString thumb_path = THUMB_DIR.filePath(name);
-    cv::Rect box = pred.box;
-    cv::Mat img = frame->data();
+    const int center_x = objectBox.x + objectBox.width / 2;
+    const int center_y = objectBox.y + objectBox.height / 2;
 
-    // increase the box size a little bit
-    constexpr int max_increase = 20;
-    box.x = Utils::clamp(box.x - max_increase, 0, box.x);
-    box.y = Utils::clamp(box.y - max_increase, 0, box.y);
-    box.height = Utils::clamp(box.height + max_increase, box.height, img.rows);
-    box.width = Utils::clamp(box.width + max_increase, box.width, img.cols);
+    // Ratio 3:2
+    const int crop_h = objectBox.height * 2;
+    const int crop_w = crop_h * aspectRatio;
 
-    cv::Mat crop;
-    Utils::crop(img, crop, box);
-    cv::imwrite(thumb_path.toStdString(), crop);
-    return thumb_path;
+    const int ideal_x = center_x - crop_w / 2;
+    const int ideal_y = center_y - crop_h / 2;
+
+    const bool was_clamped = (ideal_x < 0 
+                            || ideal_y < 0 
+                            || (ideal_x + crop_w) > frameSize.width 
+                            || (ideal_y + crop_h) > frameSize.height);
+                            
+    const int x = std::max(0, ideal_x);
+    const int y = std::max(0, ideal_y);
+    
+    const int w = std::min(frameSize.width - x, crop_w);
+    const int h = std::min(frameSize.height - y, crop_h);
+    
+    return {cv::Rect(x, y, w, h), was_clamped};
 }
