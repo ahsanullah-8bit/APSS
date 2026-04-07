@@ -119,12 +119,14 @@ void Frame::setPredictions(PredictionList &&newPredictions)
 
 void Frame::addPredictions(const PredictionList &newPredictions)
 {
+    std::unique_lock<std::shared_mutex> lock(m_mtx);
     m_predictions.reserve(m_predictions.size() + newPredictions.size());
     std::copy(newPredictions.begin(), newPredictions.end(), std::back_inserter(m_predictions));
 }
 
 void Frame::addPredictions(PredictionList &&newPredictions)
 {
+    std::unique_lock<std::shared_mutex> lock(m_mtx);
     m_predictions.reserve(m_predictions.size() + newPredictions.size());
     std::move(newPredictions.begin(), newPredictions.end(), std::back_inserter(m_predictions));
 }
