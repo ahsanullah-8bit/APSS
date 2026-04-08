@@ -1,4 +1,5 @@
 #include "image.h"
+#include <opencv2/core/types.hpp>
 
 cv::Mat Utils::sigmoid(const cv::Mat &src) {
     cv::Mat dst;
@@ -373,7 +374,7 @@ void Utils::drawBoundingBoxMask(cv::Mat &image, const std::vector<Prediction> &p
     }
 }
 
-void Utils::drawDetections(cv::Mat &image, const std::vector<Prediction> &predictions, const std::vector<std::string> &classNames, const std::vector<cv::Scalar> &classColors, bool drawMask, float maskAlpha, bool drawBoxes, bool drawLabels) {
+void Utils::drawDetections(cv::Mat &image, const std::vector<Prediction> &predictions, const std::vector<std::string> &classNames, const std::vector<cv::Scalar> &classColors, float maskAlpha) {
     // Validate inputs
     if (image.empty()) {
         qWarning() << "Empty image provided to drawDetections, skipping!";
@@ -390,60 +391,59 @@ void Utils::drawDetections(cv::Mat &image, const std::vector<Prediction> &predic
 
     // Create mask layer if needed
     cv::Mat maskLayer;
-    if (drawMask) {
+    bool draw_mask = maskAlpha > 0.0f;
+    if (draw_mask) {
         maskLayer = cv::Mat::zeros(image.size(), image.type());
     }
 
     // Process each detection
     for (const auto& pred : predictions) {
-        // Validate class ID
-        if (pred.classId < 0 || static_cast<size_t>(pred.classId) >= classNames.size()) {
-            continue;
-        }
-
-        const cv::Scalar& color = classColors[pred.classId % classColors.size()];
+        const cv::Scalar& color = classColors.empty() ? cv::Scalar(0, 0, 255) : classColors[pred.classId % classColors.size()];
         const cv::Rect& box = pred.box;
 
         // Draw mask if enabled
-        if (drawMask) {
+        if (draw_mask) {
             cv::rectangle(maskLayer, box, color, cv::FILLED);
         }
 
-        // Draw bounding box if enabled
-        if (drawBoxes) {
-            cv::rectangle(image, box, color, boxThickness, cv::LINE_AA);
-        }
+        // Draw bounding box
+        cv::rectangle(image, box, color, boxThickness, cv::LINE_AA);
 
         // Draw label if enabled
-        if (drawLabels) {
-            std::string label = std::format("{}:{} ({}%)",
-                                            classNames[pred.classId],
-                                            pred.trackerId,
-                                            static_cast<int>(pred.conf * 100));
-
-            int baseline = 0;
-            cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX,
-                                                 fontSize, textThickness, &baseline);
-
-            // Calculate label position (avoid going off-screen)
-            int labelY = std::max(box.y, labelSize.height + 2);
-            cv::Point textOrg(box.x, labelY - 2);
-
-            // Draw label background
-            cv::rectangle(image,
-                          cv::Point(box.x, labelY - labelSize.height - 2),
-                          cv::Point(box.x + labelSize.width + 2, labelY + baseline),
-                          color, cv::FILLED);
-
-            // Draw text
-            cv::putText(image, label, textOrg,
-                        cv::FONT_HERSHEY_SIMPLEX, fontSize,
-                        cv::Scalar(255, 255, 255), textThickness, cv::LINE_AA);
+        std::string label;
+        if (classNames.empty()) {
+            label = std::format("{} ({}%)",
+                                pred.trackerId,
+                                static_cast<int>(pred.conf * 100));
+        } else {
+            label = std::format("{}:{} ({}%)",
+                                classNames[pred.classId],
+                                pred.trackerId,
+                                static_cast<int>(pred.conf * 100));
         }
+
+        int baseline = 0;
+        cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX,
+                                                fontSize, textThickness, &baseline);
+
+        // Calculate label position (avoid going off-screen)
+        int labelY = std::max(box.y, labelSize.height + 2);
+        cv::Point textOrg(box.x, labelY - 2);
+
+        // Draw label background
+        cv::rectangle(image,
+                        cv::Point(box.x, labelY - labelSize.height - 2),
+                        cv::Point(box.x + labelSize.width + 2, labelY + baseline),
+                        color, cv::FILLED);
+
+        // Draw text
+        cv::putText(image, label, textOrg,
+                    cv::FONT_HERSHEY_SIMPLEX, fontSize,
+                    cv::Scalar(255, 255, 255), textThickness, cv::LINE_AA);
     }
 
     // Blend mask layer if created
-    if (drawMask && !maskLayer.empty()) {
+    if (draw_mask && !maskLayer.empty()) {
         cv::addWeighted(maskLayer, maskAlpha, image, 1.0f, 0, image);
     }
 }

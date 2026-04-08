@@ -17,7 +17,7 @@ Tracker::Tracker(std::optional<std::set<std::string>> objectsToTrack,
         m_objectsToTrack = objectsToTrack.value();
 }
 
-std::vector<int> Tracker::track(const PredictionList &results)
+void Tracker::track(PredictionList &results)
 {
     std::set<int> filtered_indxs;
     std::vector<const Prediction*> sel_results;
@@ -30,7 +30,7 @@ std::vector<int> Tracker::track(const PredictionList &results)
     }
 
     if (sel_results.empty())
-        return {};
+        return;
 
     // Store results in a Nx5 matrix, row[xywh + conf]
     Eigen::MatrixXf e_predictions(sel_results.size(), 5);
@@ -55,17 +55,15 @@ std::vector<int> Tracker::track(const PredictionList &results)
     // TODO: find a better approah for this.
     // we filter objects, store the filtered indexes, and re-assign track ids in the same sequence as predictions
     std::vector<int> track_ids = match_detections_with_tracks(e_tlbr_boxes.cast<double>(), tracks);
-    std::vector<int> track_results(results.size(), -1);
+    // std::vector<int> track_results(results.size(), -1);
 
     for (size_t i = 0, j = 0; i < results.size(); ++i) {
         if (filtered_indxs.contains(i))
             continue;
 
-        track_results[i] = track_ids[j++];
+        results[i].trackerId = track_ids.at(j++);
+        // track_results[i] = track_ids[j++];
     }
-
-    // return track ids, filtered indexes
-    return { track_results };
 }
 
 float Tracker::trackThresh() const

@@ -41,7 +41,7 @@ PaddleOCREngine::PaddleOCREngine(std::shared_ptr<Ort::Env> env,
 
 std::vector<PaddleOCR::OCRPredictResultList> PaddleOCREngine::predict(const MatList &batch)
 {
-    std::vector<PaddleOCR::OCRPredictResultList> ocr_results_list;
+    std::vector<PaddleOCR::OCRPredictResultList> ocr_results_list(batch.size(), {});
 
     for (size_t b = 0; b < batch.size(); ++b) {
         cv::Mat img = batch.at(b);
@@ -91,7 +91,7 @@ std::vector<PaddleOCR::OCRPredictResultList> PaddleOCREngine::predict(const MatL
             ocr_result[i].score = rec_results[i].second;
         }
 
-        ocr_results_list.emplace_back(std::move(ocr_result));
+        ocr_results_list[b] = std::move(ocr_result);
     }
 
     return ocr_results_list;

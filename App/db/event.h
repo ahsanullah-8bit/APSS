@@ -1,10 +1,13 @@
 #pragma once
 
 // Hide includes from ODB_COMPILER
+#include <cstddef>
 #ifndef ODB_COMPILER
 #include <QtCore/QString>
 #include <QtCore/QDateTime>
 #endif
+
+#include <odb/forward.hxx>
 
 #pragma db model version(1, 1)
 
@@ -13,7 +16,7 @@ class Event
 {
 public:
     Event();
-    QString id() const;
+    size_t id() const;
     QString label() const;
     QString subLabel() const;
     QString camera() const;
@@ -25,15 +28,9 @@ public:
     QString zones() const;
     QString thumbnail() const;
     bool hasClip() const;
-    // bool hasSnapshot() const;
-    // QString region() const;
-    // QString box() const;
-    // long area() const;
-    // bool retainIndefinitely() const;
     QString data() const;
     int trackerId() const;
 
-    void setId(const QString &newId);
     void setLabel(const QString &newLabel);
     void setSubLabel(const QString &newSubLabel);
     void setCamera(const QString &newCamera);
@@ -45,17 +42,14 @@ public:
     void setZones(const QString &newZones);
     void setThumbnail(const QString &newThumbnail);
     void setHasClip(bool newHasClip);
-    // void setHasSnapshot(bool newHasSnapshot);
-    // void setRegion(const QString &newRegion);
-    // void setBox(const QString &newBox);
-    // void setArea(long newArea);
-    // void setRetainIndefinitely(bool newRetainIndefinitely);
     void setData(const QString &newData);
     void setTrackerId(int newTrackerId);
 
 private:
-    #pragma db id
-    QString m_id;
+    friend odb::access;
+
+    #pragma db id auto
+    size_t m_id;
     QString m_label;
     QString m_subLabel;
     QString m_camera;
@@ -68,17 +62,12 @@ private:
     QString m_zones;
     QString m_thumbnail;
     bool m_hasClip = false;
-    // bool m_hasSnapshot = false;
-    // QString m_region;
-    // QString m_box;
-    // long m_area = 0l;
-    // bool m_retainIndefinitely = false;
     QString m_data;
 };
 
 inline Event::Event() {}
 
-inline QString Event::id() const
+inline size_t Event::id() const
 {
     return m_id;
 }
@@ -138,26 +127,6 @@ inline bool Event::hasClip() const
     return m_hasClip;
 }
 
-// inline bool Event::hasSnapshot() const
-// {
-//     return m_hasSnapshot;
-// }
-
-// inline QString Event::region() const
-// {
-//     return m_region;
-// }
-
-// inline QString Event::box() const
-// {
-//     return m_box;
-// }
-
-// inline bool Event::retainIndefinitely() const
-// {
-//     return m_retainIndefinitely;
-// }
-
 inline QString Event::data() const
 {
     return m_data;
@@ -166,14 +135,6 @@ inline QString Event::data() const
 inline int Event::trackerId() const
 {
     return m_trackerId;
-}
-
-inline void Event::setId(const QString &newId)
-{
-    if (m_id == newId)
-        return;
-    m_id = newId;
-    // emit idChanged(m_id);
 }
 
 inline void Event::setLabel(const QString &newLabel)
@@ -263,30 +224,6 @@ inline void Event::setHasClip(bool newHasClip)
     m_hasClip = newHasClip;
     // emit hasClipChanged(m_hasClip);
 }
-
-// inline void Event::setHasSnapshot(bool newHasSnapshot)
-// {
-//     if (m_hasSnapshot == newHasSnapshot)
-//         return;
-//     m_hasSnapshot = newHasSnapshot;
-//     // emit hasSnapshotChanged(m_hasSnapshot);
-// }
-
-// inline void Event::setRegion(const QString &newRegion)
-// {
-//     if (m_region == newRegion)
-//         return;
-//     m_region = newRegion;
-//     // emit regionChanged(m_region);
-// }
-
-// inline void Event::setRetainIndefinitely(bool newRetainIndefinitely)
-// {
-//     if (m_retainIndefinitely == newRetainIndefinitely)
-//         return;
-//     m_retainIndefinitely = newRetainIndefinitely;
-//     // emit retainIndefinitelyChanged(m_retainIndefinitely);
-// }
 
 inline void Event::setData(const QString &newData)
 {

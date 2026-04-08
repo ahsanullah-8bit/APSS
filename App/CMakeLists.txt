@@ -43,6 +43,11 @@ add_library(APSSLib STATIC
 	utils/framemanager.cpp
 )
 
+target_compile_definitions(APSSLib PRIVATE
+  $<$<BOOL:${APSS_SUPPORT_CUDA_EP}>:APSS_SUPPORT_CUDA_EP>
+  $<$<BOOL:${APSS_SUPPORT_OPENVINO_EP}>:APSS_SUPPORT_OPENVINO_EP>
+)
+
 target_include_directories(APSSLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${FFMPEG_INCLUDE_DIRS}

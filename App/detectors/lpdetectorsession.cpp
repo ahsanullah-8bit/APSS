@@ -1,8 +1,10 @@
 #include "lpdetectorsession.h"
 
 #include <QDebug>
+#include <vector>
 
 #include "detectors/image.h"
+#include "utils/prediction.h"
 
 LPDetectorSession::LPDetectorSession(SharedFrameBoundedQueue &inFrameQueue,
                                      QHash<QString, QSharedPointer<QWaitCondition>> &cameraWaitConditions,
@@ -51,58 +53,62 @@ void LPDetectorSession::run() {
 
             // Detect LPs for a single frame.
             // We only need no-copy Mats from each frame that that are one of the filtered classes
-            const PredictionList &object_predictions = frame->predictions();
-            PredictionList filtered_vehicle_predictions;
+            PredictionList object_predictions = frame->predictions();
+            // std::vector<Prediction*> filtered_vehicle_predictions;
 
-            for (const auto& prediction : object_predictions) {
-                if (voi.contains(prediction.className) && prediction.hasDeltas)
-                    filtered_vehicle_predictions.emplace_back(prediction);
-            }
+            // for (const auto& prediction : object_predictions) {
+            //     if (voi.contains(prediction.className) && prediction.hasDeltas)
+            //         filtered_vehicle_predictions.emplace_back(&prediction);
+            // }
 
             MatList batch;
-            PredictionList lp_predictions;
-            for (size_t p = 0; p < filtered_vehicle_predictions.size(); ++p) {
-
+            // PredictionList lp_predictions;
+            std::vector<int> vehicle_indxs;
+            for (size_t p = 0; p < object_predictions.size(); ++p) {
+                const auto &prediction = object_predictions.at(p);
+                if (!(voi.contains(prediction.className) && prediction.hasDeltas))
+                    continue;
+                
+                // Is vehicle
                 cv::Mat vehicle;
-                const Prediction &vehicle_prediction = filtered_vehicle_predictions[p];
-                Utils::crop(frame->data(), vehicle, vehicle_prediction.box);
+                Utils::crop(frame->data(), vehicle, prediction.box);
                 batch.emplace_back(vehicle);
+                vehicle_indxs.emplace_back(p);
 
                 // Model doesn't support dynamic batch || Max batch size reached || No more predictions to complete the batch.
-                if (!m_keyPointDetector.hasDynamicBatch() || batch.size() >= max_batch_size || p + 1 >= filtered_vehicle_predictions.size()) {
+                if (!m_keyPointDetector.hasDynamicBatch() || batch.size() >= max_batch_size || p + 1 >= object_predictions.size()) {
                     // Detect LP
                     std::vector<PredictionList> results_list = m_keyPointDetector.predict(batch);
 
-                    int vehicle_x = vehicle_prediction.box.x;
-                    int vehicle_y = vehicle_prediction.box.y;
-                    for (auto& results : results_list) {
-                        // Go through each result, displace coordinates to the vehicle's location.
-                        for (size_t pred_indx = 0; pred_indx < results.size(); ++pred_indx) {
-                            Prediction& prediction = results[pred_indx];
+                    for (size_t b = 0; b < batch.size(); ++b) {
+                        const auto &vehicle_pred = object_predictions[vehicle_indxs.at(b)];
+
+                        // Go through each plate result, displace coordinates to the vehicle's location.
+                        for (auto &plate : results_list.at(b)) {
                             // Displace LP box coordinates
-                            prediction.box.x += vehicle_x;
-                            prediction.box.y += vehicle_y;
+                            plate.box.x += vehicle_pred.box.x;
+                            plate.box.y += vehicle_pred.box.y;
 
                             // Displace LP keypoint coordinates
-                            for (auto& point : prediction.points) {
-                                point.x += vehicle_x;
-                                point.y += vehicle_y;
+                            for (auto& point : plate.points) {
+                                point.x += vehicle_pred.box.x;
+                                point.y += vehicle_pred.box.y;
                             }
                         }
 
-                        results = filterLicensePlates(results);
-
-                        lp_predictions.insert(lp_predictions.end(), results.begin(), results.end());
+                        if (!results_list.at(b).empty())
+                            object_predictions[vehicle_indxs.at(b)].subPredictions = filterLicensePlates(results_list.at(b));
                     }
 
                     batch.clear();
+                    vehicle_indxs.clear();
                 }
             }
 
             if (!frame || frame->hasExpired())
                 continue;
 
-            frame->addPredictions(std::move(lp_predictions));
+            frame->setPredictions(std::move(object_predictions));
             frame->setHasBeenProcessed(true);   // NOTE: This is very necessary to prevent CameraProcessor's prediction blocking, if finished very early.
             QString camera_name = frame->camera();
             Q_ASSERT(m_cameraWaitConditions.contains(camera_name));

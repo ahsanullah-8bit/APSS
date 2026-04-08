@@ -12,22 +12,6 @@ Frame::Frame(const QString &camera,
     , m_timestamp(timestamp)
 {}
 
-Frame::Frame(const QString &camera,
-             size_t frameIndx,
-             const cv::Mat &data,
-             const PredictionList &predictions,
-             QDateTime timestamp,
-             const std::vector<PaddleOCR::OCRPredictResultList> &ocrResults,
-             std::optional<ANPRSnapshot> anprSnapshot)
-    : m_camera(camera),
-    m_frameIndx(std::move(frameIndx)),
-    m_data(data),
-    m_timestamp(std::move(timestamp)),
-    m_predictions(predictions),
-    m_ocrResults(ocrResults),
-    m_anprSnapshot(std::move(anprSnapshot))
-{}
-
 Frame::~Frame() {}
 
 Frame Frame::clone() const
@@ -35,8 +19,7 @@ Frame Frame::clone() const
     std::shared_lock<std::shared_mutex> lock(m_mtx);
 
     return Frame(m_camera, m_frameIndx, m_data.clone(),
-                 m_predictions, m_timestamp, m_ocrResults,
-                 m_anprSnapshot);
+                 m_predictions, m_timestamp);
 }
 
 QString Frame::id()
@@ -86,17 +69,17 @@ bool Frame::hasBeenProcessed() const
     return m_hasBeenProcessed.load(std::memory_order_acquire);
 }
 
-std::vector<PaddleOCR::OCRPredictResultList> Frame::ocrResults() const
-{
-    std::shared_lock<std::shared_mutex> lock(m_mtx);
-    return m_ocrResults;
-}
+// std::vector<PaddleOCR::OCRPredictResultList> Frame::ocrResults() const
+// {
+//     std::shared_lock<std::shared_mutex> lock(m_mtx);
+//     return m_ocrResults;
+// }
 
-std::optional<ANPRSnapshot> Frame::anprSnapshot() const
-{
-    std::shared_lock<std::shared_mutex> lock(m_mtx);
-    return m_anprSnapshot;
-}
+// std::optional<ANPRSnapshot> Frame::anprSnapshot() const
+// {
+//     std::shared_lock<std::shared_mutex> lock(m_mtx);
+//     return m_anprSnapshot;
+// }
 
 void Frame::setData(cv::Mat newData)
 {
@@ -136,12 +119,14 @@ void Frame::setPredictions(PredictionList &&newPredictions)
 
 void Frame::addPredictions(const PredictionList &newPredictions)
 {
+    std::unique_lock<std::shared_mutex> lock(m_mtx);
     m_predictions.reserve(m_predictions.size() + newPredictions.size());
     std::copy(newPredictions.begin(), newPredictions.end(), std::back_inserter(m_predictions));
 }
 
 void Frame::addPredictions(PredictionList &&newPredictions)
 {
+    std::unique_lock<std::shared_mutex> lock(m_mtx);
     m_predictions.reserve(m_predictions.size() + newPredictions.size());
     std::move(newPredictions.begin(), newPredictions.end(), std::back_inserter(m_predictions));
 }
@@ -180,23 +165,23 @@ void Frame::setHasBeenProcessed(bool newHasBeenProcessed)
     }
 }
 
-void Frame::setOcrResults(const std::vector<PaddleOCR::OCRPredictResultList> &newOcrResults)
-{
-    std::unique_lock<std::shared_mutex> lock(m_mtx);
-    m_ocrResults = newOcrResults;
-}
+// void Frame::setOcrResults(const std::vector<PaddleOCR::OCRPredictResultList> &newOcrResults)
+// {
+//     std::unique_lock<std::shared_mutex> lock(m_mtx);
+//     m_ocrResults = newOcrResults;
+// }
 
-void Frame::setOcrResults(std::vector<PaddleOCR::OCRPredictResultList> &&newOcrResults)
-{
-    std::unique_lock<std::shared_mutex> lock(m_mtx);
-    m_ocrResults = std::move(newOcrResults);
-}
+// void Frame::setOcrResults(std::vector<PaddleOCR::OCRPredictResultList> &&newOcrResults)
+// {
+//     std::unique_lock<std::shared_mutex> lock(m_mtx);
+//     m_ocrResults = std::move(newOcrResults);
+// }
 
-void Frame::setAnprSnapshot(std::optional<ANPRSnapshot> newAnprSnapshot)
-{
-    std::unique_lock<std::shared_mutex> lock(m_mtx);
-    m_anprSnapshot = newAnprSnapshot;
-}
+// void Frame::setAnprSnapshot(std::optional<ANPRSnapshot> newAnprSnapshot)
+// {
+//     std::unique_lock<std::shared_mutex> lock(m_mtx);
+//     m_anprSnapshot = newAnprSnapshot;
+// }
 
 QString Frame::makeFrameId(const QString &camera, size_t frameIndx)
 {

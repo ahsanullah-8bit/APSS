@@ -42,6 +42,26 @@ namespace odb
 
   access::object_traits_impl< ::Event, id_sqlite >::id_type
   access::object_traits_impl< ::Event, id_sqlite >::
+  id (const id_image_type& i)
+  {
+    sqlite::database* db (0);
+    ODB_POTENTIALLY_UNUSED (db);
+
+    id_type id;
+    {
+      sqlite::value_traits<
+          ::size_t,
+          sqlite::id_integer >::set_value (
+        id,
+        i.id_value,
+        i.id_null);
+    }
+
+    return id;
+  }
+
+  access::object_traits_impl< ::Event, id_sqlite >::id_type
+  access::object_traits_impl< ::Event, id_sqlite >::
   id (const image_type& i)
   {
     sqlite::database* db (0);
@@ -50,11 +70,10 @@ namespace odb
     id_type id;
     {
       sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
+          ::size_t,
+          sqlite::id_integer >::set_value (
         id,
         i.m_id_value,
-        i.m_id_size,
         i.m_id_null);
     }
 
@@ -72,11 +91,7 @@ namespace odb
 
     // m_id
     //
-    if (t[0UL])
-    {
-      i.m_id_value.capacity (i.m_id_size);
-      grew = true;
-    }
+    t[0UL] = false;
 
     // m_label
     //
@@ -180,12 +195,8 @@ namespace odb
     //
     if (sk != statement_update)
     {
-      b[n].type = sqlite::image_traits<
-        ::QString,
-        sqlite::id_text>::bind_value;
-      b[n].buffer = i.m_id_value.data ();
-      b[n].size = &i.m_id_size;
-      b[n].capacity = i.m_id_value.capacity ();
+      b[n].type = sqlite::bind::integer;
+      b[n].buffer = &i.m_id_value;
       b[n].is_null = &i.m_id_null;
       n++;
     }
@@ -318,12 +329,8 @@ namespace odb
   bind (sqlite::bind* b, id_image_type& i)
   {
     std::size_t n (0);
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.id_value.data ();
-    b[n].size = &i.id_size;
-    b[n].capacity = i.id_value.capacity ();
+    b[n].type = sqlite::bind::integer;
+    b[n].buffer = &i.id_value;
     b[n].is_null = &i.id_null;
   }
 
@@ -344,27 +351,24 @@ namespace odb
     //
     if (sk == statement_insert)
     {
-      ::QString const& v =
-        o.id ();
+      ::size_t const& v =
+        o.m_id;
 
       bool is_null (false);
-      std::size_t cap (i.m_id_value.capacity ());
       sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
+          ::size_t,
+          sqlite::id_integer >::set_image (
         i.m_id_value,
-        i.m_id_size,
         is_null,
         v);
       i.m_id_null = is_null;
-      grew = grew || (cap != i.m_id_value.capacity ());
     }
 
     // m_label
     //
     {
       ::QString const& v =
-        o.label ();
+        o.m_label;
 
       bool is_null (true);
       std::size_t cap (i.m_label_value.capacity ());
@@ -383,7 +387,7 @@ namespace odb
     //
     {
       ::QString const& v =
-        o.subLabel ();
+        o.m_subLabel;
 
       bool is_null (true);
       std::size_t cap (i.m_subLabel_value.capacity ());
@@ -402,7 +406,7 @@ namespace odb
     //
     {
       ::QString const& v =
-        o.camera ();
+        o.m_camera;
 
       bool is_null (true);
       std::size_t cap (i.m_camera_value.capacity ());
@@ -421,7 +425,7 @@ namespace odb
     //
     {
       ::QDateTime const& v =
-        o.startTime ();
+        o.m_startTime;
 
       bool is_null (true);
       std::size_t cap (i.m_startTime_value.capacity ());
@@ -440,7 +444,7 @@ namespace odb
     //
     {
       ::QDateTime const& v =
-        o.endTime ();
+        o.m_endTime;
 
       bool is_null (true);
       std::size_t cap (i.m_endTime_value.capacity ());
@@ -459,7 +463,7 @@ namespace odb
     //
     {
       int const& v =
-        o.trackerId ();
+        o.m_trackerId;
 
       bool is_null (false);
       sqlite::value_traits<
@@ -475,7 +479,7 @@ namespace odb
     //
     {
       float const& v =
-        o.topScore ();
+        o.m_topScore;
 
       bool is_null (true);
       sqlite::value_traits<
@@ -491,7 +495,7 @@ namespace odb
     //
     {
       float const& v =
-        o.score ();
+        o.m_score;
 
       bool is_null (true);
       sqlite::value_traits<
@@ -507,7 +511,7 @@ namespace odb
     //
     {
       bool const& v =
-        o.falsePositive ();
+        o.m_falsePositive;
 
       bool is_null (false);
       sqlite::value_traits<
@@ -523,7 +527,7 @@ namespace odb
     //
     {
       ::QString const& v =
-        o.zones ();
+        o.m_zones;
 
       bool is_null (true);
       std::size_t cap (i.m_zones_value.capacity ());
@@ -542,7 +546,7 @@ namespace odb
     //
     {
       ::QString const& v =
-        o.thumbnail ();
+        o.m_thumbnail;
 
       bool is_null (true);
       std::size_t cap (i.m_thumbnail_value.capacity ());
@@ -561,7 +565,7 @@ namespace odb
     //
     {
       bool const& v =
-        o.hasClip ();
+        o.m_hasClip;
 
       bool is_null (false);
       sqlite::value_traits<
@@ -577,7 +581,7 @@ namespace odb
     //
     {
       ::QString const& v =
-        o.data ();
+        o.m_data;
 
       bool is_null (true);
       std::size_t cap (i.m_data_value.capacity ());
@@ -607,23 +611,22 @@ namespace odb
     // m_id
     //
     {
-      ::QString v;
+      ::size_t& v =
+        o.m_id;
 
       sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
+          ::size_t,
+          sqlite::id_integer >::set_value (
         v,
         i.m_id_value,
-        i.m_id_size,
         i.m_id_null);
-
-      o.setId (v);
     }
 
     // m_label
     //
     {
-      ::QString v;
+      ::QString& v =
+        o.m_label;
 
       sqlite::value_traits<
           ::QString,
@@ -632,14 +635,13 @@ namespace odb
         i.m_label_value,
         i.m_label_size,
         i.m_label_null);
-
-      o.setLabel (v);
     }
 
     // m_subLabel
     //
     {
-      ::QString v;
+      ::QString& v =
+        o.m_subLabel;
 
       sqlite::value_traits<
           ::QString,
@@ -648,14 +650,13 @@ namespace odb
         i.m_subLabel_value,
         i.m_subLabel_size,
         i.m_subLabel_null);
-
-      o.setSubLabel (v);
     }
 
     // m_camera
     //
     {
-      ::QString v;
+      ::QString& v =
+        o.m_camera;
 
       sqlite::value_traits<
           ::QString,
@@ -664,14 +665,13 @@ namespace odb
         i.m_camera_value,
         i.m_camera_size,
         i.m_camera_null);
-
-      o.setCamera (v);
     }
 
     // m_startTime
     //
     {
-      ::QDateTime v;
+      ::QDateTime& v =
+        o.m_startTime;
 
       sqlite::value_traits<
           ::QDateTime,
@@ -680,14 +680,13 @@ namespace odb
         i.m_startTime_value,
         i.m_startTime_size,
         i.m_startTime_null);
-
-      o.setStartTime (v);
     }
 
     // m_endTime
     //
     {
-      ::QDateTime v;
+      ::QDateTime& v =
+        o.m_endTime;
 
       sqlite::value_traits<
           ::QDateTime,
@@ -696,14 +695,13 @@ namespace odb
         i.m_endTime_value,
         i.m_endTime_size,
         i.m_endTime_null);
-
-      o.setEndTime (v);
     }
 
     // m_trackerId
     //
     {
-      int v;
+      int& v =
+        o.m_trackerId;
 
       sqlite::value_traits<
           int,
@@ -711,14 +709,13 @@ namespace odb
         v,
         i.m_trackerId_value,
         i.m_trackerId_null);
-
-      o.setTrackerId (v);
     }
 
     // m_topScore
     //
     {
-      float v;
+      float& v =
+        o.m_topScore;
 
       sqlite::value_traits<
           float,
@@ -726,14 +723,13 @@ namespace odb
         v,
         i.m_topScore_value,
         i.m_topScore_null);
-
-      o.setTopScore (v);
     }
 
     // m_score
     //
     {
-      float v;
+      float& v =
+        o.m_score;
 
       sqlite::value_traits<
           float,
@@ -741,14 +737,13 @@ namespace odb
         v,
         i.m_score_value,
         i.m_score_null);
-
-      o.setScore (v);
     }
 
     // m_falsePositive
     //
     {
-      bool v;
+      bool& v =
+        o.m_falsePositive;
 
       sqlite::value_traits<
           bool,
@@ -756,14 +751,13 @@ namespace odb
         v,
         i.m_falsePositive_value,
         i.m_falsePositive_null);
-
-      o.setFalsePositive (v);
     }
 
     // m_zones
     //
     {
-      ::QString v;
+      ::QString& v =
+        o.m_zones;
 
       sqlite::value_traits<
           ::QString,
@@ -772,14 +766,13 @@ namespace odb
         i.m_zones_value,
         i.m_zones_size,
         i.m_zones_null);
-
-      o.setZones (v);
     }
 
     // m_thumbnail
     //
     {
-      ::QString v;
+      ::QString& v =
+        o.m_thumbnail;
 
       sqlite::value_traits<
           ::QString,
@@ -788,14 +781,13 @@ namespace odb
         i.m_thumbnail_value,
         i.m_thumbnail_size,
         i.m_thumbnail_null);
-
-      o.setThumbnail (v);
     }
 
     // m_hasClip
     //
     {
-      bool v;
+      bool& v =
+        o.m_hasClip;
 
       sqlite::value_traits<
           bool,
@@ -803,14 +795,13 @@ namespace odb
         v,
         i.m_hasClip_value,
         i.m_hasClip_null);
-
-      o.setHasClip (v);
     }
 
     // m_data
     //
     {
-      ::QString v;
+      ::QString& v =
+        o.m_data;
 
       sqlite::value_traits<
           ::QString,
@@ -819,31 +810,22 @@ namespace odb
         i.m_data_value,
         i.m_data_size,
         i.m_data_null);
-
-      o.setData (v);
     }
   }
 
   void access::object_traits_impl< ::Event, id_sqlite >::
   init (id_image_type& i, const id_type& id)
   {
-    bool grew (false);
     {
       bool is_null (false);
-      std::size_t cap (i.id_value.capacity ());
       sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
+          ::size_t,
+          sqlite::id_integer >::set_image (
         i.id_value,
-        i.id_size,
         is_null,
         id);
       i.id_null = is_null;
-      grew = grew || (cap != i.id_value.capacity ());
     }
-
-    if (grew)
-      i.version++;
   }
 
   const char access::object_traits_impl< ::Event, id_sqlite >::persist_statement[] =
@@ -931,7 +913,7 @@ namespace odb
   "\"Event\"";
 
   void access::object_traits_impl< ::Event, id_sqlite >::
-  persist (database& db, const object_type& obj)
+  persist (database& db, object_type& obj)
   {
     using namespace sqlite;
 
@@ -941,7 +923,7 @@ namespace odb
       conn.statement_cache ().find_object<object_type> ());
 
     callback (db,
-              obj,
+              static_cast<const object_type&> (obj),
               callback_event::pre_persist);
 
     image_type& im (sts.image ());
@@ -949,6 +931,8 @@ namespace odb
 
     if (init (im, obj, statement_insert))
       im.version++;
+
+    im.m_id_null = true;
 
     if (im.version != sts.insert_image_version () ||
         imb.version == 0)
@@ -958,12 +942,25 @@ namespace odb
       imb.version++;
     }
 
+    {
+      id_image_type& i (sts.id_image ());
+      binding& b (sts.id_image_binding ());
+      if (i.version != sts.id_image_version () || b.version == 0)
+      {
+        bind (b.bind, i);
+        sts.id_image_version (i.version);
+        b.version++;
+      }
+    }
+
     insert_statement& st (sts.persist_statement ());
     if (!st.execute ())
       throw object_already_persistent ();
 
+    obj.m_id = id (sts.id_image ());
+
     callback (db,
-              obj,
+              static_cast<const object_type&> (obj),
               callback_event::post_persist);
   }
 

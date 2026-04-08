@@ -78,9 +78,9 @@ namespace odb
 
     static const bool polymorphic = false;
 
-    typedef ::QString id_type;
+    typedef ::size_t id_type;
 
-    static const bool auto_id = false;
+    static const bool auto_id = true;
 
     static const bool abstract = false;
 
@@ -123,9 +123,9 @@ namespace odb
     typedef
     sqlite::query_column<
       sqlite::value_traits<
-        ::QString,
-        sqlite::id_text >::query_type,
-      sqlite::id_text >
+        ::size_t,
+        sqlite::id_integer >::query_type,
+      sqlite::id_integer >
     id_type_;
 
     static const id_type_ id;
@@ -370,8 +370,7 @@ namespace odb
     public:
     struct id_image_type
     {
-      details::buffer id_value;
-      std::size_t id_size;
+      long long id_value;
       bool id_null;
 
       std::size_t version;
@@ -381,8 +380,7 @@ namespace odb
     {
       // m_id
       //
-      details::buffer m_id_value;
-      std::size_t m_id_size;
+      long long m_id_value;
       bool m_id_null;
 
       // m_label
@@ -466,6 +464,9 @@ namespace odb
     using object_traits<object_type>::id;
 
     static id_type
+    id (const id_image_type&);
+
+    static id_type
     id (const image_type&);
 
     static bool
@@ -518,7 +519,7 @@ namespace odb
     static const char table_name[];
 
     static void
-    persist (database&, const object_type&);
+    persist (database&, object_type&);
 
     static pointer_type
     find (database&, const id_type&);
