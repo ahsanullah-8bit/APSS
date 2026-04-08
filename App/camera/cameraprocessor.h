@@ -61,7 +61,7 @@ protected:
 private:
     QString m_cameraName;
     CameraConfig m_config;
-    PaddleOCREngine m_ocrEngine;
+    // PaddleOCREngine m_ocrEngine;
     SharedFrameBoundedQueue &m_inDetectorFrameQueue;
     SharedFrameBoundedQueue &m_inLPDetectorFrameQueue;
     QSharedPointer<QWaitCondition> m_waitCondition;
