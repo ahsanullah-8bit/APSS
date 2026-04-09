@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <onnxruntime_cxx_api.h>
 
 #include <apss.h>
@@ -11,15 +12,13 @@ class PaddleRec
 {
 public:
     explicit PaddleRec(const PredictorConfig &config,
-                       const std::shared_ptr<Ort::Env> &env,
-                       const std::shared_ptr<CustomAllocator> &allocator,
-                       const std::shared_ptr<Ort::MemoryInfo> &memoryInfo);
+                       std::unique_ptr<ONNXInference> infer);
     // Returns rec_text, rec_texts_score pairs
     std::vector<std::pair<std::string, float>> predict(const MatList &batch);
-    const ONNXInference &inferSession() const;
+    ONNXInference *inferSession() const;
 
 private:
-    ONNXInference m_inferSession;
+    std::unique_ptr<ONNXInference> m_inferSession;
 
     // pre-process
     PaddleOCR::CrnnResizeImg m_resizeOp;

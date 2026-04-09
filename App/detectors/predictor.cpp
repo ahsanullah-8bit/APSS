@@ -5,17 +5,15 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <detectors/image.h>
 #include "predictor.h"
-#include "image.h"
 
 Predictor::Predictor(const PredictorConfig &config,
-                     const std::shared_ptr<Ort::Env> &env,
-                     const std::shared_ptr<CustomAllocator> &allocator,
-                     const std::shared_ptr<Ort::MemoryInfo> &memoryInfo)
-    : m_inferSession(config, env, allocator, memoryInfo)
+                     std::unique_ptr<ONNXInference> infer)
+    : m_inferSession(std::move(infer))
 {
-    const auto &model_metadata = m_inferSession.modelMetadata();
-    Ort::AllocatedStringPtr imgsz = model_metadata.LookupCustomMetadataMapAllocated("imgsz", m_inferSession.allocator());
+    const auto &model_metadata = m_inferSession->modelMetadata();
+    Ort::AllocatedStringPtr imgsz = model_metadata.LookupCustomMetadataMapAllocated("imgsz", m_inferSession->allocator());
     bool is_valid_imgsz = false;
     if (imgsz) {
         YAML::Node imgsz_yaml = YAML::Load(imgsz.get());
@@ -49,7 +47,7 @@ std::vector<PredictionList> Predictor::predict(const MatList &images)
 
     std::lock_guard<std::mutex> lock_guard(m_mtx);
 
-    const auto &input_tensor_shapes = m_inferSession.inputTensorShapes();
+    const auto &input_tensor_shapes = m_inferSession->inputTensorShapes();
     Q_ASSERT(!input_tensor_shapes.empty());
     std::vector<int64_t> input_tensor_shape(input_tensor_shapes[0]);    // BCHW
 
@@ -73,7 +71,7 @@ std::vector<PredictionList> Predictor::predict(const MatList &images)
         // }
 
         // Ensuring the stride
-        int model_stride = m_inferSession.modelStride();
+        int model_stride = m_inferSession->modelStride();
         if (m_height % model_stride != 0)
             m_height = ((m_height / model_stride) + 1) * model_stride;
         if (m_width % model_stride != 0)
@@ -95,7 +93,7 @@ std::vector<PredictionList> Predictor::predict(const MatList &images)
         preprocessed_images.emplace_back(preprocessed_image);
     }
 
-    std::vector<Ort::Value> output_tensors = m_inferSession.predictRaw(img_data, input_tensor_shape);
+    std::vector<Ort::Value> output_tensors = m_inferSession->predictRaw(img_data, input_tensor_shape);
     std::vector<PredictionList> predictions = postprocess(images, input_image_shape, output_tensors);
 
     return predictions; // Return the vector of detections
@@ -112,7 +110,7 @@ void Predictor::draw(MatList &images, const std::vector<PredictionList> &predict
 
 bool Predictor::hasDynamicBatch() const
 {
-    const auto &input_tshapes = m_inferSession.inputTensorShapes();
+    const auto &input_tshapes = m_inferSession->inputTensorShapes();
     return !input_tshapes.empty()
            && !input_tshapes.at(0).empty()
            &&  input_tshapes.at(0).at(0) == -1;
@@ -120,16 +118,16 @@ bool Predictor::hasDynamicBatch() const
 
 bool Predictor::hasDynamicShape() const
 {
-    const auto &input_tshapes = m_inferSession.inputTensorShapes();
+    const auto &input_tshapes = m_inferSession->inputTensorShapes();
     return !input_tshapes.empty()
            && !input_tshapes.at(0).empty()
            && (input_tshapes.at(0).at(2) == -1 ||
                input_tshapes.at(0).at(3) == -1);
 }
 
-const ONNXInference &Predictor::inferSession() const
+ONNXInference *Predictor::inferSession() const
 {
-    return m_inferSession;
+    return m_inferSession.get();
 }
 
 cv::Mat Predictor::preprocess(const cv::Mat &image, float *&imgData, cv::Size inputImageShape)

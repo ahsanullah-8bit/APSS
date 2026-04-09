@@ -1,7 +1,5 @@
 #include <filesystem>
-
-#include "apssengine.h"
-#include <opencv2/opencv.hpp>
+#include <memory>
 
 #include <QDir>
 #include <QVideoSink>
@@ -10,21 +8,22 @@
 #include <QSqlQuery>
 #include <QSqlError>
 
+#include <onnxruntime_cxx_api.h>
+#include <opencv2/opencv.hpp>
 #include <odb/core.hxx>
 #include <odb/database.hxx>
 #include <odb/transaction.hxx>
 #include <odb/session.hxx>
 #include <odb/schema-catalog.hxx>
 #include <odb/sqlite/database.hxx>
-#include <qcontainerfwd.h>
-#include <qloggingcategory.h>
 
-#include "apss.h"
-#include "camera/cameraprocessor.h"
-#include "camera/cameracapture.h"
-#include "detectors/objectdetectorsession.h"
-#include "detectors/lpdetectorsession.h"
-#include "utils/framemanager.h"
+#include <apss.h>
+#include <camera/cameraprocessor.h>
+#include <camera/cameracapture.h>
+#include <detectors/objectdetectorsession.h>
+#include <detectors/lpdetectorsession.h>
+#include <utils/framemanager.h>
+#include "apssengine.h"
 
 Q_STATIC_LOGGING_CATEGORY(logger, "apss.engine")
 
@@ -301,6 +300,12 @@ void APSSEngine::initRecordingManager()
 
 void APSSEngine::startDetectors()
 {
+    // Initialize the global Ort::Env
+    Ort::ThreadingOptions threading_options;
+    threading_options.SetGlobalIntraOpNumThreads(2);
+    threading_options.SetGlobalInterOpNumThreads(1);
+    m_globalOrtEnv = std::make_shared<Ort::Env>(threading_options, ORT_LOGGING_LEVEL_WARNING, "Global_ONNX");
+
     for (const auto&[name, config] : m_config->cameras)
         m_cameraWaitConditions.emplace(QString::fromStdString(name), new QWaitCondition());
 

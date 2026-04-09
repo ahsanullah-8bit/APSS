@@ -1,34 +1,46 @@
-#include "lpdetectorsession.h"
-
-#include <QDebug>
+#include <memory>
+#include <utility>
 #include <vector>
 
-#include "detectors/image.h"
-#include "utils/prediction.h"
+#include <QDebug>
+#include <onnxruntime_cxx_api.h>
+
+#include <detectors/image.h>
+#include <detectors/poseestimator.h>
+#include <utils/prediction.h>
+
+#include "lpdetectorsession.h"
 
 LPDetectorSession::LPDetectorSession(SharedFrameBoundedQueue &inFrameQueue,
                                      QHash<QString, QSharedPointer<QWaitCondition>> &cameraWaitConditions,
                                      const PredictorConfig &config,
                                      const LicensePlateConfig &lpConfig,
+                                     std::shared_ptr<Ort::Env> env,
                                      QObject *parent)
     : QThread(parent)
     , m_inFrameQueue(inFrameQueue)
     , m_cameraWaitConditions(cameraWaitConditions)
-    , m_keyPointDetector(config)
     , m_config(config)
     , m_lpConfig(lpConfig)
+    , m_env(env)
 {
     setObjectName("lp_detector");
 }
 
-PoseEstimator& LPDetectorSession::detector() {
-    return m_keyPointDetector;
-}
-
 void LPDetectorSession::run() {
-    // Skeleton: top-left -> top-right -> bottom-right -> bottom-left -> top-left
-    static const std::vector<std::pair<int, int>> skeleton = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
-    m_keyPointDetector.setPoseSkeleton(skeleton);
+    
+    std::unordered_map<std::string, std::string> ov_options;
+    ov_options["device_type"] = "CPU";
+    ov_options["precision"] = "ACCURACY";
+    ov_options["num_of_threads"] = "2";
+    ov_options["disable_dynamic_shapes"] = "false";
+
+    std::shared_ptr<Ort::SessionOptions> session_options = std::make_shared<Ort::SessionOptions>();
+    session_options->DisablePerSessionThreads();
+    session_options->AppendExecutionProvider_OpenVINO_V2(ov_options);
+
+    std::unique_ptr<ONNXInference> infer = std::make_unique<ONNXInference>(m_config, m_env, session_options, nullptr, nullptr);
+    m_keyPointDetector = QSharedPointer<PoseEstimator>(new PoseEstimator(m_config, std::move(infer)));
 
     qInfo() << "Starting" << objectName() << "thread";
 
@@ -76,9 +88,9 @@ void LPDetectorSession::run() {
                 vehicle_indxs.emplace_back(p);
 
                 // Model doesn't support dynamic batch || Max batch size reached || No more predictions to complete the batch.
-                if (!m_keyPointDetector.hasDynamicBatch() || batch.size() >= max_batch_size || p + 1 >= object_predictions.size()) {
+                if (!m_keyPointDetector->hasDynamicBatch() || batch.size() >= max_batch_size || p + 1 >= object_predictions.size()) {
                     // Detect LP
-                    std::vector<PredictionList> results_list = m_keyPointDetector.predict(batch);
+                    std::vector<PredictionList> results_list = m_keyPointDetector->predict(batch);
 
                     for (size_t b = 0; b < batch.size(); ++b) {
                         const auto &vehicle_pred = object_predictions[vehicle_indxs.at(b)];

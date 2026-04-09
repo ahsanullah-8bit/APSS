@@ -12,17 +12,15 @@ class PaddleCls
 {
 public:
     explicit PaddleCls(const PredictorConfig &config,
-                       const std::shared_ptr<Ort::Env> &env,
-                       const std::shared_ptr<CustomAllocator> &allocator,
-                       const std::shared_ptr<Ort::MemoryInfo> &memoryInfo);
+                       std::unique_ptr<ONNXInference> infer);
 
     // Returns cls_labels, cls_scores
     std::vector<std::pair<int, float>> predict(const MatList &batch);
     double threshold() const;
-    const ONNXInference &inferSession() const;
+    ONNXInference *inferSession() const;
 
 private:
-    ONNXInference m_inferSession;
+    std::unique_ptr<ONNXInference> m_inferSession;
 
     // pre-process
     PaddleOCR::ClsResizeImg m_resizeOp;

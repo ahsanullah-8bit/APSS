@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <QThread>
 #include <QHash>
 #include <QQmlEngine>
@@ -14,8 +16,9 @@
 #include <QSqlQuery>
 
 #include <odb/sqlite/database.hxx>
-#include <tbb_patched.h>
+#include <onnxruntime_cxx_api.h>
 
+#include <tbb_patched.h>
 #include <camera/camerametrics.h>
 #include <config/apssconfig.h>
 #include <events/zmqproxy.h>
@@ -23,6 +26,7 @@
 #include <output/recordingsmanager.h>
 #include <output/trackedobjectprocessor.h>
 #include <utils/frame.h>
+
 // This class will handle most of the stuff
 class APSSEngine : public QObject
 {
@@ -62,6 +66,7 @@ private:
     // void startAPSSWatchdog();
 
 private:
+    std::shared_ptr<Ort::Env> m_globalOrtEnv;
 
     QHash<QString, QVideoSink*> m_cameraOutputFeeds;
     SharedFrameBoundedQueue m_inUnifiedObjDetectorQ;

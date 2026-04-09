@@ -1,10 +1,11 @@
 #pragma once
 
+#include <memory>
 #include <mutex>
 
-#include <detectors/wrappers/customallocator.h>
 #include <onnxruntime_cxx_api.h>
 
+#include <detectors/wrappers/customallocator.h>
 #include <config/predictorconfig.h>
 
 class ONNXInference
@@ -12,6 +13,7 @@ class ONNXInference
 public:
     explicit ONNXInference(const PredictorConfig &config,
                   const std::shared_ptr<Ort::Env> &env,
+                  const std::shared_ptr<Ort::SessionOptions> &sessionOptions,
                   const std::shared_ptr<CustomAllocator> &allocator,
                   const std::shared_ptr<Ort::MemoryInfo> &memoryInfo);
 

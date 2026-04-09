@@ -2,12 +2,12 @@
 
 #include <memory>
 
-#include "apss.h"
-#include "licensed/utility.h"
-#include "wrappers/customallocator.h"
-#include "paddlecls.h"
-#include "paddledet.h"
-#include "paddlerec.h"
+#include <apss.h>
+#include <detectors/licensed/utility.h>
+#include <detectors/wrappers/customallocator.h>
+#include <detectors/paddlecls.h>
+#include <detectors/paddledet.h>
+#include <detectors/paddlerec.h>
 
 class PaddleOCREngine
 {

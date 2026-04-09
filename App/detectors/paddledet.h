@@ -2,26 +2,25 @@
 
 #pragma once
 
+#include <memory>
 #include <onnxruntime_cxx_api.h>
 
-#include "apss.h"
-#include "config/predictorconfig.h"
-#include "onnxinference.h"
-#include "licensed/preprocess_op.h"
-#include "licensed/postprocess_op.h"
+#include <apss.h>
+#include <config/predictorconfig.h>
+#include <detectors/onnxinference.h>
+#include <detectors/licensed/preprocess_op.h>
+#include <detectors/licensed/postprocess_op.h>
 
 class PaddleDet {
 public:
     explicit PaddleDet(const PredictorConfig &config,
-                       const std::shared_ptr<Ort::Env> &env,
-                       const std::shared_ptr<CustomAllocator> &allocator,
-                       const std::shared_ptr<Ort::MemoryInfo> &memoryInfo);
+                       std::unique_ptr<ONNXInference> infer);
     std::vector<Vector3d<int>> predict(const MatList &batch);
-    const ONNXInference &inferSession() const;
+    ONNXInference *inferSession() const;
     bool hasDynamicBatch();
 
 private:
-    ONNXInference m_inferSession;
+    std::unique_ptr<ONNXInference> m_inferSession;
 
     // pre-process
     PaddleOCR::ResizeImgType0 m_resizeOp;

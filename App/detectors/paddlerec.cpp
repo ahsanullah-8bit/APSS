@@ -1,14 +1,13 @@
+#include <utility>
+
 #include <yaml-cpp/yaml.h>
 
-#include "paddlerec.h"
-
-#include "licensed/utility.h"
+#include <detectors/paddlerec.h>
+#include <detectors/licensed/utility.h>
 
 PaddleRec::PaddleRec(const PredictorConfig &config,
-                     const std::shared_ptr<Ort::Env> &env,
-                     const std::shared_ptr<CustomAllocator> &allocator,
-                     const std::shared_ptr<Ort::MemoryInfo> &memoryInfo)
-    : m_inferSession(config, env, allocator, memoryInfo)
+                     std::unique_ptr<ONNXInference> infer)
+    : m_inferSession(std::move(infer))
 {
     if (!config.model)
         throw std::runtime_error("No Model config provided");
@@ -99,7 +98,7 @@ std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &bat
     const std::vector<size_t> sri = PaddleOCR::Utility::argsort(batch_ratios);
 
     // expected shape ['DynamicDimension.0', 3, 48, 'DynamicDimension.1'] (batch, channels, height, width)
-    const auto input_tensor_shapes = m_inferSession.inputTensorShapes();
+    const auto input_tensor_shapes = m_inferSession->inputTensorShapes();
     Q_ASSERT(!input_tensor_shapes.empty());
     std::vector<int64_t> rec_input_shape = input_tensor_shapes[0];
     // set fixed width, because onnx/onnxruntime/openvino doesn't like to re-use buffers bigger than before/after
@@ -145,7 +144,7 @@ std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &bat
         m_permuteOp.Run(sel_batch, input.data());
 
         // Inference.
-        std::vector<Ort::Value> output_tensors = m_inferSession.predictRaw(input, rec_input_shape);
+        std::vector<Ort::Value> output_tensors = m_inferSession->predictRaw(input, rec_input_shape);
         if (output_tensors.empty())
             continue;
 
@@ -216,7 +215,7 @@ std::vector<std::pair<std::string, float>> PaddleRec::predict(const MatList &bat
     return rec_texts;
 }
 
-const ONNXInference &PaddleRec::inferSession() const
+ONNXInference *PaddleRec::inferSession() const
 {
-    return m_inferSession;
+    return m_inferSession.get();
 }

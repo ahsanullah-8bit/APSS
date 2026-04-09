@@ -1,16 +1,14 @@
 #pragma once
 
-#include "config/predictorconfig.h"
-#include "predictor.h"
-#include "apss.h"
+#include <apss.h>
+#include <config/predictorconfig.h>
+#include <detectors/predictor.h>
 
 class PoseEstimator : public Predictor
 {
 public:
     explicit PoseEstimator(const PredictorConfig& config,
-                           const std::shared_ptr<Ort::Env> &env = nullptr,
-                           const std::shared_ptr<CustomAllocator> &allocator = nullptr,
-                           const std::shared_ptr<Ort::MemoryInfo> &memoryInfo = nullptr);
+                           std::unique_ptr<ONNXInference> infer);
 
     // Predictor interface
     void draw(cv::Mat &image, const PredictionList &predictions, float maskAlpha) const override;

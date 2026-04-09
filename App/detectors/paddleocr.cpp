@@ -1,5 +1,9 @@
+#include <memory>
+
+#include <onnxruntime_cxx_api.h>
 #include <opencv2/core.hpp>
 
+#include <detectors/onnxinference.h>
 #include "paddleocr.h"
 
 PaddleOCREngine::PaddleOCREngine(std::shared_ptr<Ort::Env> env,
@@ -21,21 +25,57 @@ PaddleOCREngine::PaddleOCREngine(std::shared_ptr<Ort::Env> env,
         PredictorConfig det_config;
         det_config.model = ModelConfig();
         det_config.model->path = "models/PP-OCRv5_mobile_det_infer_slim_onnx/inference.onnx";
-        m_det = std::make_unique<PaddleDet>(det_config, env, allocator, nullptr);
+
+        std::unordered_map<std::string, std::string> ov_options;
+        ov_options["device_type"] = "CPU";
+        ov_options["precision"] = "ACCURACY";
+        ov_options["num_of_threads"] = "1";
+        ov_options["disable_dynamic_shapes"] = "false";
+
+        std::shared_ptr<Ort::SessionOptions> session_options = std::make_shared<Ort::SessionOptions>();
+        session_options->DisablePerSessionThreads();
+        session_options->AppendExecutionProvider_OpenVINO_V2(ov_options);
+
+        std::unique_ptr<ONNXInference> infer = std::make_unique<ONNXInference>(det_config, env, session_options, allocator, nullptr);
+        m_det = std::make_unique<PaddleDet>(det_config, std::move(infer));
     }
 
     if (!m_cls) {
         PredictorConfig cls_config;
         cls_config.model = ModelConfig();
         cls_config.model->path = "models/PP-LCNet_x1_0_textline_ori_infer_slim_onnx/inference.onnx";
-        m_cls = std::make_unique<PaddleCls>(cls_config, env, allocator, nullptr);
+
+        std::unordered_map<std::string, std::string> ov_options;
+        ov_options["device_type"] = "CPU";
+        ov_options["precision"] = "ACCURACY";
+        ov_options["num_of_threads"] = "1";
+        ov_options["disable_dynamic_shapes"] = "false";
+
+        std::shared_ptr<Ort::SessionOptions> session_options = std::make_shared<Ort::SessionOptions>();
+        session_options->DisablePerSessionThreads();
+        session_options->AppendExecutionProvider_OpenVINO_V2(ov_options);
+
+        std::unique_ptr<ONNXInference> infer = std::make_unique<ONNXInference>(cls_config, env, session_options, allocator, nullptr);
+        m_cls = std::make_unique<PaddleCls>(cls_config, std::move(infer));
     }
 
     if (!m_rec) {
         PredictorConfig rec_config;
         rec_config.model = ModelConfig();
         rec_config.model->path = "models/en_PP-OCRv4_mobile_rec_infer_slim_onnx/inference.onnx";
-        m_rec = std::make_unique<PaddleRec>(rec_config, env, allocator, nullptr);
+
+        std::unordered_map<std::string, std::string> ov_options;
+        ov_options["device_type"] = "CPU";
+        ov_options["precision"] = "ACCURACY";
+        ov_options["num_of_threads"] = "2";
+        ov_options["disable_dynamic_shapes"] = "false";
+
+        std::shared_ptr<Ort::SessionOptions> session_options = std::make_shared<Ort::SessionOptions>();
+        session_options->DisablePerSessionThreads();
+        session_options->AppendExecutionProvider_OpenVINO_V2(ov_options);
+
+        std::unique_ptr<ONNXInference> infer = std::make_unique<ONNXInference>(rec_config, env, session_options, allocator, nullptr);
+        m_rec = std::make_unique<PaddleRec>(rec_config, std::move(infer));
     }
 }
 

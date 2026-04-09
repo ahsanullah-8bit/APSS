@@ -1,17 +1,16 @@
 // Disclaimer: This implementation is heavily inspired by PaddleOCR cpp_infer example's implementation
 
+#include <utility>
+
 #include <opencv2/core.hpp>
 #include <yaml-cpp/yaml.h>
 
+#include <detectors/image.h>
 #include "paddledet.h"
 
-#include "image.h"
-
 PaddleDet::PaddleDet(const PredictorConfig &config,
-                     const std::shared_ptr<Ort::Env> &env,
-                     const std::shared_ptr<CustomAllocator> &allocator,
-                     const std::shared_ptr<Ort::MemoryInfo> &memoryInfo)
-    : m_inferSession(config, env, allocator, memoryInfo)
+                     std::unique_ptr<ONNXInference> infer)
+    : m_inferSession(std::move(infer))
 {
     if (!config.model)
         throw std::runtime_error("No Model config provided");
@@ -102,7 +101,7 @@ std::vector<Vector3d<int>> PaddleDet::predict(const MatList &batch)
 
     std::vector<Vector3d<int>> boxes_results_list(batch.size(), {});
 
-    const auto input_tensor_shapes = m_inferSession.inputTensorShapes();
+    const auto input_tensor_shapes = m_inferSession->inputTensorShapes();
     Q_ASSERT(!input_tensor_shapes.empty());
     std::vector<int64_t> input_tensor_shape(input_tensor_shapes[0]);    // BCHW
 
@@ -139,7 +138,7 @@ std::vector<Vector3d<int>> PaddleDet::predict(const MatList &batch)
     }
 
     // Inference
-    std::vector<Ort::Value> output_tensors = m_inferSession.predictRaw(img_data, input_tensor_shape);
+    std::vector<Ort::Value> output_tensors = m_inferSession->predictRaw(img_data, input_tensor_shape);
     if (output_tensors.empty())
         return boxes_results_list;
 
@@ -201,14 +200,14 @@ std::vector<Vector3d<int>> PaddleDet::predict(const MatList &batch)
     return boxes_results_list;
 }
 
-const ONNXInference &PaddleDet::inferSession() const
+ONNXInference *PaddleDet::inferSession() const
 {
-    return m_inferSession;
+    return m_inferSession.get();
 }
 
 bool PaddleDet::hasDynamicBatch()
 {
-    const auto &input_tshapes = m_inferSession.inputTensorShapes();
+    const auto &input_tshapes = m_inferSession->inputTensorShapes();
     return !input_tshapes.empty()
            && !input_tshapes.at(0).empty()
            &&  input_tshapes.at(0).at(0) == -1;

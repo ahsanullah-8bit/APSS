@@ -1,14 +1,12 @@
+#include <utility>
 #include <yaml-cpp/yaml.h>
 
+#include <detectors/licensed/utility.h>
 #include "paddlecls.h"
 
-#include "licensed/utility.h"
-
 PaddleCls::PaddleCls(const PredictorConfig &config,
-                     const std::shared_ptr<Ort::Env> &env,
-                     const std::shared_ptr<CustomAllocator> &allocator,
-                     const std::shared_ptr<Ort::MemoryInfo> &memoryInfo)
-    : m_inferSession(config, env, allocator, memoryInfo)
+                     std::unique_ptr<ONNXInference> infer)
+    : m_inferSession(std::move(infer))
 {
     if (!config.model)
         throw std::runtime_error("No Model config provided");
@@ -108,7 +106,7 @@ std::vector<std::pair<int, float>> PaddleCls::predict(const MatList &batch)
     std::vector<std::pair<int, float>> cls_results(batch_size, {});
 
     // (expected) ['DynamicDimension.0', 3, 80, 160] (batch, channels, height, width) as reported by the model itself.
-    const auto input_tensor_shapes = m_inferSession.inputTensorShapes();
+    const auto input_tensor_shapes = m_inferSession->inputTensorShapes();
     Q_ASSERT(!input_tensor_shapes.empty());
     std::vector<int64_t> cls_input_shape = input_tensor_shapes[0];
     const int64_t in_channels = cls_input_shape[1];
@@ -147,7 +145,7 @@ std::vector<std::pair<int, float>> PaddleCls::predict(const MatList &batch)
         m_permuteOp.Run(sel_batch, input.data());
 
         // inference on sub-batch
-        const std::vector<Ort::Value> output_tensors = m_inferSession.predictRaw(input, cls_input_shape);
+        const std::vector<Ort::Value> output_tensors = m_inferSession->predictRaw(input, cls_input_shape);
         if (output_tensors.empty())
             continue;
 
@@ -182,7 +180,7 @@ double PaddleCls::threshold() const
     return m_threshold;
 }
 
-const ONNXInference &PaddleCls::inferSession() const
+ONNXInference *PaddleCls::inferSession() const
 {
-    return m_inferSession;
+    return m_inferSession.get();
 }
