@@ -29,7 +29,7 @@ public:
 
     struct TrackedEvent {
         size_t id;
-        Event event;
+        APSS::ODB::Event event;
         bool isPersisted = false;
         int lostCount = 0;
         int lastObjectBoxArea;

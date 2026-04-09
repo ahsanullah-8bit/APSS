@@ -10,10 +10,10 @@
 #include <rfl/json/write.hpp>
 #include <rfl/json.hpp>
 
+#include <apss.h>
 #include <detectors/image.h>
+#include <db/event-odb.hxx>
 #include "trackedobjectprocessor.h"
-#include "apss.h"
-#include "db/event.h"
 
 Q_STATIC_LOGGING_CATEGORY(logger, "apss.engine.object_proc")
 
@@ -94,9 +94,9 @@ void TrackedObjectProcessor::run()
                         event_history.lastObjectBoxArea = object.box.area();
                         
                         if (is_first_ever)
-                            event_history.event.setThumbnail(THUMB_DIR.filePath(QString("%1_%2.jpg").arg(frame->camera()).arg(object.trackerId)));  // Dragons, I KNOW!
+                            event_history.event.thumbnail = THUMB_DIR.filePath(QString("%1_%2.jpg").arg(frame->camera()).arg(object.trackerId));  // Dragons, I KNOW!
                         // TODO: This should be moved to a separate thread.
-                        cv::imwrite(event_history.event.thumbnail().toStdString(), event_history.bestThumbnail.img);
+                        cv::imwrite(event_history.event.thumbnail.toStdString(), event_history.bestThumbnail.img);
 
                         if (event_history.isPersisted)
                             emit eventUpdated(event_history.id, EventThumbnail);
@@ -135,12 +135,12 @@ void TrackedObjectProcessor::run()
 
                 if (!event_history.isPersisted) {
                     // Event
-                    Event &event = event_history.event;
-                    event.setLabel(QString::fromStdString(object.className));
-                    event.setCamera(frame->camera());
-                    event.setStartTime(frame_time);
-                    event.setTopScore(object.conf);
-                    event.setTrackerId(object.trackerId);
+                    auto &event = event_history.event;
+                    event.label = QString::fromStdString(object.className);
+                    event.camera = frame->camera();
+                    event.startTime = frame_time;
+                    event.topScore = object.conf;
+                    event.trackerId = object.trackerId;
                     events_history[object.trackerId].predictions.push_back(object); // First Prediction
 
                     try {
@@ -152,19 +152,19 @@ void TrackedObjectProcessor::run()
 
                         emit eventPersisted(event_history.id);
                     } catch (const std::exception &e) {
-                        qCCritical(logger) << "Error updating db event" << QString("(%1),").arg(event.id()) << e.what();
+                        qCCritical(logger) << "Error updating db event" << QString("(%1),").arg(event.id) << e.what();
                     }
                 } else {
                     // Update existing event
                     event_history.predictions.push_back(object);
                     
                     auto &event = events_history[object.trackerId].event;
-                    event.setEndTime(frame_time);
-                    if (object.conf > event.topScore())
-                        event.setTopScore(object.conf);
+                    event.endTime = frame_time;
+                    if (object.conf > event.topScore)
+                        event.topScore = object.conf;
 
                     // TODO: Do a proper average of all the scores
-                    event.setScore(object.conf);
+                    event.score = object.conf;
                     
                     // emit eventUpdated(event_history.id);
                 }
@@ -176,23 +176,23 @@ void TrackedObjectProcessor::run()
                     const auto &history = events_history[it.key()];
 
                     // TODO: Persist events if they're not.
-                    Event event;
+                    APSS::ODB::Event event;
 
                     try {
                         odb::transaction t(m_db->begin());
                         m_db->load(it->id, event);
     
-                        event.setEndTime(history.event.endTime());
-                        event.setTopScore(history.event.topScore());
-                        event.setScore(history.event.score());
-                        event.setData(QString::fromStdString(rfl::json::write(history.predictions)));
+                        event.endTime = history.event.endTime;
+                        event.topScore = history.event.topScore;
+                        event.score = history.event.score;
+                        // event.data(QString::fromStdString(rfl::json::write(history.predictions)));
     
                         m_db->update(event);
                         t.commit();
 
                         emit eventUpdated(it->id, EventEndTime | EventTopScore | EventScore | EventData);
                     } catch (const std::exception &e) {
-                        qCCritical(logger) << "Error updating db event" << QString("(%1),").arg(event.id()) << e.what();
+                        qCCritical(logger) << "Error updating db event" << QString("(%1),").arg(event.id) << e.what();
                     }
 
                     it = events_history.erase(it);
@@ -221,21 +221,21 @@ void TrackedObjectProcessor::run()
         // Submit the remaining events
         for (auto cam = cameras_history.begin(); cam != cameras_history.end(); ++cam) {
             for (auto e = cam->begin(); e != cam->end(); ++e) {
-                Event event;
+                APSS::ODB::Event event;
 
                 try {
                     odb::transaction t(m_db->begin());
                     m_db->load(e->id, event);
 
-                    event.setEndTime(e->event.endTime());
-                    event.setTopScore(e->event.topScore());
-                    event.setScore(e->event.score());
-                    event.setData(QString::fromStdString(rfl::json::write(e->predictions)));
+                    event.endTime = e->event.endTime;
+                    event.topScore = e->event.topScore;
+                    event.score = e->event.score;
+                    // event.data(QString::fromStdString(rfl::json::write(e->predictions)));
 
                     m_db->update(event);
                     t.commit();
                 } catch (const std::exception &e) {
-                    qCCritical(logger) << "Error updating db event" << QString("(%1),").arg(event.id()) << e.what();
+                    qCCritical(logger) << "Error updating db event" << QString("(%1),").arg(event.id) << e.what();
                 }
             }
         }
