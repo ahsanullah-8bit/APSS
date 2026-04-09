@@ -30,7 +30,7 @@ namespace odb
         }
         case 2:
         {
-          db.execute ("DROP TABLE IF EXISTS \"FramePrediction\"");
+          db.execute ("DROP TABLE IF EXISTS \"Prediction\"");
           db.execute ("CREATE TABLE IF NOT EXISTS \"schema_version\" (\n"
                       "  \"name\" TEXT NOT NULL PRIMARY KEY,\n"
                       "  \"version\" INTEGER NOT NULL,\n"
@@ -47,11 +47,12 @@ namespace odb
       {
         case 1:
         {
-          db.execute ("CREATE TABLE \"FramePrediction\" (\n"
+          db.execute ("CREATE TABLE \"Prediction\" (\n"
                       "  \"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,\n"
-                      "  \"frame_id\" TEXT NULL,\n"
-                      "  \"video_timestamp\" TEXT NULL,\n"
-                      "  \"stream_timestamp\" TEXT NULL,\n"
+                      "  \"eventId\" INTEGER NOT NULL,\n"
+                      "  \"frameId\" TEXT NULL,\n"
+                      "  \"videoTimestamp\" TEXT NULL,\n"
+                      "  \"streamTimestamp\" TEXT NULL,\n"
                       "  \"data\" TEXT NULL)");
           return true;
         }

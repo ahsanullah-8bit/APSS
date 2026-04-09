@@ -57,11 +57,8 @@ namespace odb
                       "  \"trackerId\" INTEGER NOT NULL,\n"
                       "  \"topScore\" REAL NULL,\n"
                       "  \"score\" REAL NULL,\n"
-                      "  \"falsePositive\" INTEGER NOT NULL,\n"
-                      "  \"zones\" TEXT NULL,\n"
                       "  \"thumbnail\" TEXT NULL,\n"
-                      "  \"hasClip\" INTEGER NOT NULL,\n"
-                      "  \"data\" TEXT NULL)");
+                      "  \"hasClip\" INTEGER NOT NULL)");
           return true;
         }
         case 2:

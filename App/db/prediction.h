@@ -1,6 +1,7 @@
 #pragma once
 
 // Hide includes from ODB_COMPILER
+#include <cstddef>
 #ifndef ODB_COMPILER
 #include <QtCore/QString>
 #include <QtCore/QDateTime>
@@ -8,13 +9,18 @@
 
 #pragma db model version(1, 1)
 
+namespace APSS::ODB {
+    
 #pragma db object
-class FramePrediction {
+class Prediction {
 public:
     #pragma db id auto
     size_t id;
-    QString frame_id;
-    QDateTime video_timestamp;
-    QDateTime stream_timestamp;
+    size_t eventId;
+    QString frameId;
+    QDateTime videoTimestamp;
+    QDateTime streamTimestamp;
     QString data;
 };
+
+}

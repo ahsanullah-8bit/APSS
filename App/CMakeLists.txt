@@ -5,8 +5,7 @@ add_library(APSSLib STATIC
     camera/camerawatchdog.cpp
 
     db/event-odb.cxx
-	db/frameprediction-odb.cxx
-	db/recording-odb.cxx
+	db/prediction-odb.cxx
 
     detectors/image.cpp
 	detectors/lpdetectorsession.cpp
@@ -78,8 +77,7 @@ target_link_libraries(APSSLib PUBLIC
 # include_directories won't reveal the includes to this main target and we have to do it explicitly.
 target_sources(${CMAKE_PROJECT_NAME} PUBLIC
     db/event-schema.cxx
-    db/frameprediction-schema.cxx
-    db/recording-schema.cxx
+    db/prediction-schema.cxx
 
     main.cpp
 )

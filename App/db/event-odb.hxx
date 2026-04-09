@@ -63,17 +63,17 @@ namespace odb
   // Event
   //
   template <>
-  struct class_traits< ::Event >
+  struct class_traits< ::APSS::ODB::Event >
   {
     static const class_kind kind = class_object;
   };
 
   template <>
-  class access::object_traits< ::Event >
+  class access::object_traits< ::APSS::ODB::Event >
   {
     public:
-    typedef ::Event object_type;
-    typedef ::QSharedPointer< ::Event > pointer_type;
+    typedef ::APSS::ODB::Event object_type;
+    typedef ::QSharedPointer< ::APSS::ODB::Event > pointer_type;
     typedef odb::pointer_traits<pointer_type> pointer_traits;
 
     static const bool polymorphic = false;
@@ -116,7 +116,7 @@ namespace odb
   // Event
   //
   template <typename A>
-  struct query_columns< ::Event, id_sqlite, A >
+  struct query_columns< ::APSS::ODB::Event, id_sqlite, A >
   {
     // id
     //
@@ -226,30 +226,6 @@ namespace odb
 
     static const score_type_ score;
 
-    // falsePositive
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        bool,
-        sqlite::id_integer >::query_type,
-      sqlite::id_integer >
-    falsePositive_type_;
-
-    static const falsePositive_type_ falsePositive;
-
-    // zones
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        ::QString,
-        sqlite::id_text >::query_type,
-      sqlite::id_text >
-    zones_type_;
-
-    static const zones_type_ zones;
-
     // thumbnail
     //
     typedef
@@ -273,99 +249,72 @@ namespace odb
     hasClip_type_;
 
     static const hasClip_type_ hasClip;
-
-    // data
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        ::QString,
-        sqlite::id_text >::query_type,
-      sqlite::id_text >
-    data_type_;
-
-    static const data_type_ data;
   };
 
   template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::id_type_
-  query_columns< ::Event, id_sqlite, A >::
+  const typename query_columns< ::APSS::ODB::Event, id_sqlite, A >::id_type_
+  query_columns< ::APSS::ODB::Event, id_sqlite, A >::
   id (A::table_name, "\"id\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::label_type_
-  query_columns< ::Event, id_sqlite, A >::
+  const typename query_columns< ::APSS::ODB::Event, id_sqlite, A >::label_type_
+  query_columns< ::APSS::ODB::Event, id_sqlite, A >::
   label (A::table_name, "\"label\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::subLabel_type_
-  query_columns< ::Event, id_sqlite, A >::
+  const typename query_columns< ::APSS::ODB::Event, id_sqlite, A >::subLabel_type_
+  query_columns< ::APSS::ODB::Event, id_sqlite, A >::
   subLabel (A::table_name, "\"subLabel\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::camera_type_
-  query_columns< ::Event, id_sqlite, A >::
+  const typename query_columns< ::APSS::ODB::Event, id_sqlite, A >::camera_type_
+  query_columns< ::APSS::ODB::Event, id_sqlite, A >::
   camera (A::table_name, "\"camera\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::startTime_type_
-  query_columns< ::Event, id_sqlite, A >::
+  const typename query_columns< ::APSS::ODB::Event, id_sqlite, A >::startTime_type_
+  query_columns< ::APSS::ODB::Event, id_sqlite, A >::
   startTime (A::table_name, "\"startTime\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::endTime_type_
-  query_columns< ::Event, id_sqlite, A >::
+  const typename query_columns< ::APSS::ODB::Event, id_sqlite, A >::endTime_type_
+  query_columns< ::APSS::ODB::Event, id_sqlite, A >::
   endTime (A::table_name, "\"endTime\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::trackerId_type_
-  query_columns< ::Event, id_sqlite, A >::
+  const typename query_columns< ::APSS::ODB::Event, id_sqlite, A >::trackerId_type_
+  query_columns< ::APSS::ODB::Event, id_sqlite, A >::
   trackerId (A::table_name, "\"trackerId\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::topScore_type_
-  query_columns< ::Event, id_sqlite, A >::
+  const typename query_columns< ::APSS::ODB::Event, id_sqlite, A >::topScore_type_
+  query_columns< ::APSS::ODB::Event, id_sqlite, A >::
   topScore (A::table_name, "\"topScore\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::score_type_
-  query_columns< ::Event, id_sqlite, A >::
+  const typename query_columns< ::APSS::ODB::Event, id_sqlite, A >::score_type_
+  query_columns< ::APSS::ODB::Event, id_sqlite, A >::
   score (A::table_name, "\"score\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::falsePositive_type_
-  query_columns< ::Event, id_sqlite, A >::
-  falsePositive (A::table_name, "\"falsePositive\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::zones_type_
-  query_columns< ::Event, id_sqlite, A >::
-  zones (A::table_name, "\"zones\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::thumbnail_type_
-  query_columns< ::Event, id_sqlite, A >::
+  const typename query_columns< ::APSS::ODB::Event, id_sqlite, A >::thumbnail_type_
+  query_columns< ::APSS::ODB::Event, id_sqlite, A >::
   thumbnail (A::table_name, "\"thumbnail\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::hasClip_type_
-  query_columns< ::Event, id_sqlite, A >::
+  const typename query_columns< ::APSS::ODB::Event, id_sqlite, A >::hasClip_type_
+  query_columns< ::APSS::ODB::Event, id_sqlite, A >::
   hasClip (A::table_name, "\"hasClip\"", 0);
 
   template <typename A>
-  const typename query_columns< ::Event, id_sqlite, A >::data_type_
-  query_columns< ::Event, id_sqlite, A >::
-  data (A::table_name, "\"data\"", 0);
-
-  template <typename A>
-  struct pointer_query_columns< ::Event, id_sqlite, A >:
-    query_columns< ::Event, id_sqlite, A >
+  struct pointer_query_columns< ::APSS::ODB::Event, id_sqlite, A >:
+    query_columns< ::APSS::ODB::Event, id_sqlite, A >
   {
   };
 
   template <>
-  class access::object_traits_impl< ::Event, id_sqlite >:
-    public access::object_traits< ::Event >
+  class access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >:
+    public access::object_traits< ::APSS::ODB::Event >
   {
     public:
     struct id_image_type
@@ -378,83 +327,66 @@ namespace odb
 
     struct image_type
     {
-      // m_id
+      // id
       //
-      long long m_id_value;
-      bool m_id_null;
+      long long id_value;
+      bool id_null;
 
-      // m_label
+      // label
       //
-      details::buffer m_label_value;
-      std::size_t m_label_size;
-      bool m_label_null;
+      details::buffer label_value;
+      std::size_t label_size;
+      bool label_null;
 
-      // m_subLabel
+      // subLabel
       //
-      details::buffer m_subLabel_value;
-      std::size_t m_subLabel_size;
-      bool m_subLabel_null;
+      details::buffer subLabel_value;
+      std::size_t subLabel_size;
+      bool subLabel_null;
 
-      // m_camera
+      // camera
       //
-      details::buffer m_camera_value;
-      std::size_t m_camera_size;
-      bool m_camera_null;
+      details::buffer camera_value;
+      std::size_t camera_size;
+      bool camera_null;
 
-      // m_startTime
+      // startTime
       //
-      details::buffer m_startTime_value;
-      std::size_t m_startTime_size;
-      bool m_startTime_null;
+      details::buffer startTime_value;
+      std::size_t startTime_size;
+      bool startTime_null;
 
-      // m_endTime
+      // endTime
       //
-      details::buffer m_endTime_value;
-      std::size_t m_endTime_size;
-      bool m_endTime_null;
+      details::buffer endTime_value;
+      std::size_t endTime_size;
+      bool endTime_null;
 
-      // m_trackerId
+      // trackerId
       //
-      long long m_trackerId_value;
-      bool m_trackerId_null;
+      long long trackerId_value;
+      bool trackerId_null;
 
-      // m_topScore
+      // topScore
       //
-      double m_topScore_value;
-      bool m_topScore_null;
+      double topScore_value;
+      bool topScore_null;
 
-      // m_score
+      // score
       //
-      double m_score_value;
-      bool m_score_null;
+      double score_value;
+      bool score_null;
 
-      // m_falsePositive
+      // thumbnail
       //
-      long long m_falsePositive_value;
-      bool m_falsePositive_null;
+      details::buffer thumbnail_value;
+      std::size_t thumbnail_size;
+      bool thumbnail_null;
 
-      // m_zones
+      // hasClip
       //
-      details::buffer m_zones_value;
-      std::size_t m_zones_size;
-      bool m_zones_null;
-
-      // m_thumbnail
-      //
-      details::buffer m_thumbnail_value;
-      std::size_t m_thumbnail_size;
-      bool m_thumbnail_null;
-
-      // m_hasClip
-      //
-      long long m_hasClip_value;
-      bool m_hasClip_null;
-
-      // m_data
-      //
-      details::buffer m_data_value;
-      std::size_t m_data_size;
-      bool m_data_null;
+      long long hasClip_value;
+      bool hasClip_null;
 
       std::size_t version;
     };
@@ -498,7 +430,7 @@ namespace odb
 
     typedef sqlite::query_base query_base_type;
 
-    static const std::size_t column_count = 14UL;
+    static const std::size_t column_count = 11UL;
     static const std::size_t id_column_count = 1UL;
     static const std::size_t inverse_column_count = 0UL;
     static const std::size_t readonly_column_count = 0UL;
@@ -557,8 +489,8 @@ namespace odb
   };
 
   template <>
-  class access::object_traits_impl< ::Event, id_common >:
-    public access::object_traits_impl< ::Event, id_sqlite >
+  class access::object_traits_impl< ::APSS::ODB::Event, id_common >:
+    public access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >
   {
   };
 

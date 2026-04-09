@@ -6,7 +6,7 @@
 
 #include <odb/pre.hxx>
 
-#include "recording-odb.hxx"
+#include "prediction-odb.hxx"
 
 #include <cassert>
 #include <cstring>  // std::memcpy
@@ -25,10 +25,10 @@
 
 namespace odb
 {
-  // Recording
+  // Prediction
   //
 
-  struct access::object_traits_impl< ::Recording, id_sqlite >::extra_statement_cache_type
+  struct access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::extra_statement_cache_type
   {
     extra_statement_cache_type (
       sqlite::connection&,
@@ -40,8 +40,28 @@ namespace odb
     }
   };
 
-  access::object_traits_impl< ::Recording, id_sqlite >::id_type
-  access::object_traits_impl< ::Recording, id_sqlite >::
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::id_type
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
+  id (const id_image_type& i)
+  {
+    sqlite::database* db (0);
+    ODB_POTENTIALLY_UNUSED (db);
+
+    id_type id;
+    {
+      sqlite::value_traits<
+          ::size_t,
+          sqlite::id_integer >::set_value (
+        id,
+        i.id_value,
+        i.id_null);
+    }
+
+    return id;
+  }
+
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::id_type
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   id (const image_type& i)
   {
     sqlite::database* db (0);
@@ -50,18 +70,17 @@ namespace odb
     id_type id;
     {
       sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
+          ::size_t,
+          sqlite::id_integer >::set_value (
         id,
-        i.m_id_value,
-        i.m_id_size,
-        i.m_id_null);
+        i.id_value,
+        i.id_null);
     }
 
     return id;
   }
 
-  bool access::object_traits_impl< ::Recording, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   grow (image_type& i,
         bool* t)
   {
@@ -70,74 +89,50 @@ namespace odb
 
     bool grew (false);
 
-    // m_id
+    // id
     //
-    if (t[0UL])
-    {
-      i.m_id_value.capacity (i.m_id_size);
-      grew = true;
-    }
+    t[0UL] = false;
 
-    // m_camera
+    // eventId
     //
-    if (t[1UL])
-    {
-      i.m_camera_value.capacity (i.m_camera_size);
-      grew = true;
-    }
+    t[1UL] = false;
 
-    // m_path
+    // frameId
     //
     if (t[2UL])
     {
-      i.m_path_value.capacity (i.m_path_size);
+      i.frameId_value.capacity (i.frameId_size);
       grew = true;
     }
 
-    // m_startTime
+    // videoTimestamp
     //
     if (t[3UL])
     {
-      i.m_startTime_value.capacity (i.m_startTime_size);
+      i.videoTimestamp_value.capacity (i.videoTimestamp_size);
       grew = true;
     }
 
-    // m_endTime
+    // streamTimestamp
     //
     if (t[4UL])
     {
-      i.m_endTime_value.capacity (i.m_endTime_size);
+      i.streamTimestamp_value.capacity (i.streamTimestamp_size);
       grew = true;
     }
 
-    // m_duration
+    // data
     //
-    t[5UL] = false;
-
-    // m_motion
-    //
-    t[6UL] = false;
-
-    // m_objects
-    //
-    t[7UL] = false;
-
-    // m_dBFS
-    //
-    t[8UL] = false;
-
-    // m_segmentSize
-    //
-    t[9UL] = false;
-
-    // m_regions
-    //
-    t[10UL] = false;
+    if (t[5UL])
+    {
+      i.data_value.capacity (i.data_size);
+      grew = true;
+    }
 
     return grew;
   }
 
-  void access::object_traits_impl< ::Recording, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   bind (sqlite::bind* b,
         image_type& i,
         sqlite::statement_kind sk)
@@ -148,121 +143,78 @@ namespace odb
 
     std::size_t n (0);
 
-    // m_id
+    // id
     //
     if (sk != statement_update)
     {
-      b[n].type = sqlite::image_traits<
-        ::QString,
-        sqlite::id_text>::bind_value;
-      b[n].buffer = i.m_id_value.data ();
-      b[n].size = &i.m_id_size;
-      b[n].capacity = i.m_id_value.capacity ();
-      b[n].is_null = &i.m_id_null;
+      b[n].type = sqlite::bind::integer;
+      b[n].buffer = &i.id_value;
+      b[n].is_null = &i.id_null;
       n++;
     }
 
-    // m_camera
+    // eventId
+    //
+    b[n].type = sqlite::bind::integer;
+    b[n].buffer = &i.eventId_value;
+    b[n].is_null = &i.eventId_null;
+    n++;
+
+    // frameId
     //
     b[n].type = sqlite::image_traits<
       ::QString,
       sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_camera_value.data ();
-    b[n].size = &i.m_camera_size;
-    b[n].capacity = i.m_camera_value.capacity ();
-    b[n].is_null = &i.m_camera_null;
+    b[n].buffer = i.frameId_value.data ();
+    b[n].size = &i.frameId_size;
+    b[n].capacity = i.frameId_value.capacity ();
+    b[n].is_null = &i.frameId_null;
     n++;
 
-    // m_path
+    // videoTimestamp
+    //
+    b[n].type = sqlite::image_traits<
+      ::QDateTime,
+      sqlite::id_text>::bind_value;
+    b[n].buffer = i.videoTimestamp_value.data ();
+    b[n].size = &i.videoTimestamp_size;
+    b[n].capacity = i.videoTimestamp_value.capacity ();
+    b[n].is_null = &i.videoTimestamp_null;
+    n++;
+
+    // streamTimestamp
+    //
+    b[n].type = sqlite::image_traits<
+      ::QDateTime,
+      sqlite::id_text>::bind_value;
+    b[n].buffer = i.streamTimestamp_value.data ();
+    b[n].size = &i.streamTimestamp_size;
+    b[n].capacity = i.streamTimestamp_value.capacity ();
+    b[n].is_null = &i.streamTimestamp_null;
+    n++;
+
+    // data
     //
     b[n].type = sqlite::image_traits<
       ::QString,
       sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_path_value.data ();
-    b[n].size = &i.m_path_size;
-    b[n].capacity = i.m_path_value.capacity ();
-    b[n].is_null = &i.m_path_null;
-    n++;
-
-    // m_startTime
-    //
-    b[n].type = sqlite::image_traits<
-      ::QDateTime,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_startTime_value.data ();
-    b[n].size = &i.m_startTime_size;
-    b[n].capacity = i.m_startTime_value.capacity ();
-    b[n].is_null = &i.m_startTime_null;
-    n++;
-
-    // m_endTime
-    //
-    b[n].type = sqlite::image_traits<
-      ::QDateTime,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_endTime_value.data ();
-    b[n].size = &i.m_endTime_size;
-    b[n].capacity = i.m_endTime_value.capacity ();
-    b[n].is_null = &i.m_endTime_null;
-    n++;
-
-    // m_duration
-    //
-    b[n].type = sqlite::bind::real;
-    b[n].buffer = &i.m_duration_value;
-    b[n].is_null = &i.m_duration_null;
-    n++;
-
-    // m_motion
-    //
-    b[n].type = sqlite::bind::integer;
-    b[n].buffer = &i.m_motion_value;
-    b[n].is_null = &i.m_motion_null;
-    n++;
-
-    // m_objects
-    //
-    b[n].type = sqlite::bind::integer;
-    b[n].buffer = &i.m_objects_value;
-    b[n].is_null = &i.m_objects_null;
-    n++;
-
-    // m_dBFS
-    //
-    b[n].type = sqlite::bind::integer;
-    b[n].buffer = &i.m_dBFS_value;
-    b[n].is_null = &i.m_dBFS_null;
-    n++;
-
-    // m_segmentSize
-    //
-    b[n].type = sqlite::bind::real;
-    b[n].buffer = &i.m_segmentSize_value;
-    b[n].is_null = &i.m_segmentSize_null;
-    n++;
-
-    // m_regions
-    //
-    b[n].type = sqlite::bind::integer;
-    b[n].buffer = &i.m_regions_value;
-    b[n].is_null = &i.m_regions_null;
+    b[n].buffer = i.data_value.data ();
+    b[n].size = &i.data_size;
+    b[n].capacity = i.data_value.capacity ();
+    b[n].is_null = &i.data_null;
     n++;
   }
 
-  void access::object_traits_impl< ::Recording, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   bind (sqlite::bind* b, id_image_type& i)
   {
     std::size_t n (0);
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.id_value.data ();
-    b[n].size = &i.id_size;
-    b[n].capacity = i.id_value.capacity ();
+    b[n].type = sqlite::bind::integer;
+    b[n].buffer = &i.id_value;
     b[n].is_null = &i.id_null;
   }
 
-  bool access::object_traits_impl< ::Recording, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   init (image_type& i,
         const object_type& o,
         sqlite::statement_kind sk)
@@ -275,202 +227,119 @@ namespace odb
 
     bool grew (false);
 
-    // m_id
+    // id
     //
     if (sk == statement_insert)
     {
-      ::QString const& v =
-        o.id ();
+      ::size_t const& v =
+        o.id;
 
       bool is_null (false);
-      std::size_t cap (i.m_id_value.capacity ());
       sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_id_value,
-        i.m_id_size,
+          ::size_t,
+          sqlite::id_integer >::set_image (
+        i.id_value,
         is_null,
         v);
-      i.m_id_null = is_null;
-      grew = grew || (cap != i.m_id_value.capacity ());
+      i.id_null = is_null;
     }
 
-    // m_camera
+    // eventId
+    //
+    {
+      ::size_t const& v =
+        o.eventId;
+
+      bool is_null (false);
+      sqlite::value_traits<
+          ::size_t,
+          sqlite::id_integer >::set_image (
+        i.eventId_value,
+        is_null,
+        v);
+      i.eventId_null = is_null;
+    }
+
+    // frameId
     //
     {
       ::QString const& v =
-        o.camera ();
+        o.frameId;
 
       bool is_null (true);
-      std::size_t cap (i.m_camera_value.capacity ());
+      std::size_t cap (i.frameId_value.capacity ());
       sqlite::value_traits<
           ::QString,
           sqlite::id_text >::set_image (
-        i.m_camera_value,
-        i.m_camera_size,
+        i.frameId_value,
+        i.frameId_size,
         is_null,
         v);
-      i.m_camera_null = is_null;
-      grew = grew || (cap != i.m_camera_value.capacity ());
+      i.frameId_null = is_null;
+      grew = grew || (cap != i.frameId_value.capacity ());
     }
 
-    // m_path
-    //
-    {
-      ::QString const& v =
-        o.path ();
-
-      bool is_null (true);
-      std::size_t cap (i.m_path_value.capacity ());
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_path_value,
-        i.m_path_size,
-        is_null,
-        v);
-      i.m_path_null = is_null;
-      grew = grew || (cap != i.m_path_value.capacity ());
-    }
-
-    // m_startTime
+    // videoTimestamp
     //
     {
       ::QDateTime const& v =
-        o.startTime ();
+        o.videoTimestamp;
 
       bool is_null (true);
-      std::size_t cap (i.m_startTime_value.capacity ());
+      std::size_t cap (i.videoTimestamp_value.capacity ());
       sqlite::value_traits<
           ::QDateTime,
           sqlite::id_text >::set_image (
-        i.m_startTime_value,
-        i.m_startTime_size,
+        i.videoTimestamp_value,
+        i.videoTimestamp_size,
         is_null,
         v);
-      i.m_startTime_null = is_null;
-      grew = grew || (cap != i.m_startTime_value.capacity ());
+      i.videoTimestamp_null = is_null;
+      grew = grew || (cap != i.videoTimestamp_value.capacity ());
     }
 
-    // m_endTime
+    // streamTimestamp
     //
     {
       ::QDateTime const& v =
-        o.endTime ();
+        o.streamTimestamp;
 
       bool is_null (true);
-      std::size_t cap (i.m_endTime_value.capacity ());
+      std::size_t cap (i.streamTimestamp_value.capacity ());
       sqlite::value_traits<
           ::QDateTime,
           sqlite::id_text >::set_image (
-        i.m_endTime_value,
-        i.m_endTime_size,
+        i.streamTimestamp_value,
+        i.streamTimestamp_size,
         is_null,
         v);
-      i.m_endTime_null = is_null;
-      grew = grew || (cap != i.m_endTime_value.capacity ());
+      i.streamTimestamp_null = is_null;
+      grew = grew || (cap != i.streamTimestamp_value.capacity ());
     }
 
-    // m_duration
+    // data
     //
     {
-      float const& v =
-        o.duration ();
+      ::QString const& v =
+        o.data;
 
       bool is_null (true);
+      std::size_t cap (i.data_value.capacity ());
       sqlite::value_traits<
-          float,
-          sqlite::id_real >::set_image (
-        i.m_duration_value,
+          ::QString,
+          sqlite::id_text >::set_image (
+        i.data_value,
+        i.data_size,
         is_null,
         v);
-      i.m_duration_null = is_null;
-    }
-
-    // m_motion
-    //
-    {
-      long int const& v =
-        o.motion ();
-
-      bool is_null (false);
-      sqlite::value_traits<
-          long int,
-          sqlite::id_integer >::set_image (
-        i.m_motion_value,
-        is_null,
-        v);
-      i.m_motion_null = is_null;
-    }
-
-    // m_objects
-    //
-    {
-      long int const& v =
-        o.objects ();
-
-      bool is_null (false);
-      sqlite::value_traits<
-          long int,
-          sqlite::id_integer >::set_image (
-        i.m_objects_value,
-        is_null,
-        v);
-      i.m_objects_null = is_null;
-    }
-
-    // m_dBFS
-    //
-    {
-      long int const& v =
-        o.dBFS ();
-
-      bool is_null (false);
-      sqlite::value_traits<
-          long int,
-          sqlite::id_integer >::set_image (
-        i.m_dBFS_value,
-        is_null,
-        v);
-      i.m_dBFS_null = is_null;
-    }
-
-    // m_segmentSize
-    //
-    {
-      float const& v =
-        o.segmentSize ();
-
-      bool is_null (true);
-      sqlite::value_traits<
-          float,
-          sqlite::id_real >::set_image (
-        i.m_segmentSize_value,
-        is_null,
-        v);
-      i.m_segmentSize_null = is_null;
-    }
-
-    // m_regions
-    //
-    {
-      long int const& v =
-        o.regions ();
-
-      bool is_null (false);
-      sqlite::value_traits<
-          long int,
-          sqlite::id_integer >::set_image (
-        i.m_regions_value,
-        is_null,
-        v);
-      i.m_regions_null = is_null;
+      i.data_null = is_null;
+      grew = grew || (cap != i.data_value.capacity ());
     }
 
     return grew;
   }
 
-  void access::object_traits_impl< ::Recording, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   init (object_type& o,
         const image_type& i,
         database* db)
@@ -479,273 +348,164 @@ namespace odb
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (db);
 
-    // m_id
+    // id
     //
     {
-      ::QString v;
+      ::size_t& v =
+        o.id;
+
+      sqlite::value_traits<
+          ::size_t,
+          sqlite::id_integer >::set_value (
+        v,
+        i.id_value,
+        i.id_null);
+    }
+
+    // eventId
+    //
+    {
+      ::size_t& v =
+        o.eventId;
+
+      sqlite::value_traits<
+          ::size_t,
+          sqlite::id_integer >::set_value (
+        v,
+        i.eventId_value,
+        i.eventId_null);
+    }
+
+    // frameId
+    //
+    {
+      ::QString& v =
+        o.frameId;
 
       sqlite::value_traits<
           ::QString,
           sqlite::id_text >::set_value (
         v,
-        i.m_id_value,
-        i.m_id_size,
-        i.m_id_null);
-
-      o.setId (v);
+        i.frameId_value,
+        i.frameId_size,
+        i.frameId_null);
     }
 
-    // m_camera
+    // videoTimestamp
     //
     {
-      ::QString v;
-
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_camera_value,
-        i.m_camera_size,
-        i.m_camera_null);
-
-      o.setCamera (v);
-    }
-
-    // m_path
-    //
-    {
-      ::QString v;
-
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_path_value,
-        i.m_path_size,
-        i.m_path_null);
-
-      o.setPath (v);
-    }
-
-    // m_startTime
-    //
-    {
-      ::QDateTime v;
+      ::QDateTime& v =
+        o.videoTimestamp;
 
       sqlite::value_traits<
           ::QDateTime,
           sqlite::id_text >::set_value (
         v,
-        i.m_startTime_value,
-        i.m_startTime_size,
-        i.m_startTime_null);
-
-      o.setStartTime (v);
+        i.videoTimestamp_value,
+        i.videoTimestamp_size,
+        i.videoTimestamp_null);
     }
 
-    // m_endTime
+    // streamTimestamp
     //
     {
-      ::QDateTime v;
+      ::QDateTime& v =
+        o.streamTimestamp;
 
       sqlite::value_traits<
           ::QDateTime,
           sqlite::id_text >::set_value (
         v,
-        i.m_endTime_value,
-        i.m_endTime_size,
-        i.m_endTime_null);
-
-      o.setEndTime (v);
+        i.streamTimestamp_value,
+        i.streamTimestamp_size,
+        i.streamTimestamp_null);
     }
 
-    // m_duration
+    // data
     //
     {
-      float v;
+      ::QString& v =
+        o.data;
 
       sqlite::value_traits<
-          float,
-          sqlite::id_real >::set_value (
+          ::QString,
+          sqlite::id_text >::set_value (
         v,
-        i.m_duration_value,
-        i.m_duration_null);
-
-      o.setDuration (v);
-    }
-
-    // m_motion
-    //
-    {
-      long int v;
-
-      sqlite::value_traits<
-          long int,
-          sqlite::id_integer >::set_value (
-        v,
-        i.m_motion_value,
-        i.m_motion_null);
-
-      o.setMotion (v);
-    }
-
-    // m_objects
-    //
-    {
-      long int v;
-
-      sqlite::value_traits<
-          long int,
-          sqlite::id_integer >::set_value (
-        v,
-        i.m_objects_value,
-        i.m_objects_null);
-
-      o.setObjects (v);
-    }
-
-    // m_dBFS
-    //
-    {
-      long int v;
-
-      sqlite::value_traits<
-          long int,
-          sqlite::id_integer >::set_value (
-        v,
-        i.m_dBFS_value,
-        i.m_dBFS_null);
-
-      o.setDBFS (v);
-    }
-
-    // m_segmentSize
-    //
-    {
-      float v;
-
-      sqlite::value_traits<
-          float,
-          sqlite::id_real >::set_value (
-        v,
-        i.m_segmentSize_value,
-        i.m_segmentSize_null);
-
-      o.setSegmentSize (v);
-    }
-
-    // m_regions
-    //
-    {
-      long int v;
-
-      sqlite::value_traits<
-          long int,
-          sqlite::id_integer >::set_value (
-        v,
-        i.m_regions_value,
-        i.m_regions_null);
-
-      o.setRegions (v);
+        i.data_value,
+        i.data_size,
+        i.data_null);
     }
   }
 
-  void access::object_traits_impl< ::Recording, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   init (id_image_type& i, const id_type& id)
   {
-    bool grew (false);
     {
       bool is_null (false);
-      std::size_t cap (i.id_value.capacity ());
       sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
+          ::size_t,
+          sqlite::id_integer >::set_image (
         i.id_value,
-        i.id_size,
         is_null,
         id);
       i.id_null = is_null;
-      grew = grew || (cap != i.id_value.capacity ());
     }
-
-    if (grew)
-      i.version++;
   }
 
-  const char access::object_traits_impl< ::Recording, id_sqlite >::persist_statement[] =
-  "INSERT INTO \"Recording\" "
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::persist_statement[] =
+  "INSERT INTO \"Prediction\" "
   "(\"id\", "
-  "\"camera\", "
-  "\"path\", "
-  "\"startTime\", "
-  "\"endTime\", "
-  "\"duration\", "
-  "\"motion\", "
-  "\"objects\", "
-  "\"dBFS\", "
-  "\"segmentSize\", "
-  "\"regions\") "
+  "\"eventId\", "
+  "\"frameId\", "
+  "\"videoTimestamp\", "
+  "\"streamTimestamp\", "
+  "\"data\") "
   "VALUES "
-  "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  "(?, ?, ?, ?, ?, ?)";
 
-  const char access::object_traits_impl< ::Recording, id_sqlite >::find_statement[] =
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::find_statement[] =
   "SELECT "
-  "\"Recording\".\"id\", "
-  "\"Recording\".\"camera\", "
-  "\"Recording\".\"path\", "
-  "\"Recording\".\"startTime\", "
-  "\"Recording\".\"endTime\", "
-  "\"Recording\".\"duration\", "
-  "\"Recording\".\"motion\", "
-  "\"Recording\".\"objects\", "
-  "\"Recording\".\"dBFS\", "
-  "\"Recording\".\"segmentSize\", "
-  "\"Recording\".\"regions\" "
-  "FROM \"Recording\" "
-  "WHERE \"Recording\".\"id\"=?";
+  "\"Prediction\".\"id\", "
+  "\"Prediction\".\"eventId\", "
+  "\"Prediction\".\"frameId\", "
+  "\"Prediction\".\"videoTimestamp\", "
+  "\"Prediction\".\"streamTimestamp\", "
+  "\"Prediction\".\"data\" "
+  "FROM \"Prediction\" "
+  "WHERE \"Prediction\".\"id\"=?";
 
-  const char access::object_traits_impl< ::Recording, id_sqlite >::update_statement[] =
-  "UPDATE \"Recording\" "
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::update_statement[] =
+  "UPDATE \"Prediction\" "
   "SET "
-  "\"camera\"=?, "
-  "\"path\"=?, "
-  "\"startTime\"=?, "
-  "\"endTime\"=?, "
-  "\"duration\"=?, "
-  "\"motion\"=?, "
-  "\"objects\"=?, "
-  "\"dBFS\"=?, "
-  "\"segmentSize\"=?, "
-  "\"regions\"=? "
+  "\"eventId\"=?, "
+  "\"frameId\"=?, "
+  "\"videoTimestamp\"=?, "
+  "\"streamTimestamp\"=?, "
+  "\"data\"=? "
   "WHERE \"id\"=?";
 
-  const char access::object_traits_impl< ::Recording, id_sqlite >::erase_statement[] =
-  "DELETE FROM \"Recording\" "
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::erase_statement[] =
+  "DELETE FROM \"Prediction\" "
   "WHERE \"id\"=?";
 
-  const char access::object_traits_impl< ::Recording, id_sqlite >::query_statement[] =
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::query_statement[] =
   "SELECT "
-  "\"Recording\".\"id\", "
-  "\"Recording\".\"camera\", "
-  "\"Recording\".\"path\", "
-  "\"Recording\".\"startTime\", "
-  "\"Recording\".\"endTime\", "
-  "\"Recording\".\"duration\", "
-  "\"Recording\".\"motion\", "
-  "\"Recording\".\"objects\", "
-  "\"Recording\".\"dBFS\", "
-  "\"Recording\".\"segmentSize\", "
-  "\"Recording\".\"regions\" "
-  "FROM \"Recording\"";
+  "\"Prediction\".\"id\", "
+  "\"Prediction\".\"eventId\", "
+  "\"Prediction\".\"frameId\", "
+  "\"Prediction\".\"videoTimestamp\", "
+  "\"Prediction\".\"streamTimestamp\", "
+  "\"Prediction\".\"data\" "
+  "FROM \"Prediction\"";
 
-  const char access::object_traits_impl< ::Recording, id_sqlite >::erase_query_statement[] =
-  "DELETE FROM \"Recording\"";
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::erase_query_statement[] =
+  "DELETE FROM \"Prediction\"";
 
-  const char access::object_traits_impl< ::Recording, id_sqlite >::table_name[] =
-  "\"Recording\"";
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::table_name[] =
+  "\"Prediction\"";
 
-  void access::object_traits_impl< ::Recording, id_sqlite >::
-  persist (database& db, const object_type& obj)
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
+  persist (database& db, object_type& obj)
   {
     using namespace sqlite;
 
@@ -755,7 +515,7 @@ namespace odb
       conn.statement_cache ().find_object<object_type> ());
 
     callback (db,
-              obj,
+              static_cast<const object_type&> (obj),
               callback_event::pre_persist);
 
     image_type& im (sts.image ());
@@ -763,6 +523,8 @@ namespace odb
 
     if (init (im, obj, statement_insert))
       im.version++;
+
+    im.id_null = true;
 
     if (im.version != sts.insert_image_version () ||
         imb.version == 0)
@@ -772,16 +534,29 @@ namespace odb
       imb.version++;
     }
 
+    {
+      id_image_type& i (sts.id_image ());
+      binding& b (sts.id_image_binding ());
+      if (i.version != sts.id_image_version () || b.version == 0)
+      {
+        bind (b.bind, i);
+        sts.id_image_version (i.version);
+        b.version++;
+      }
+    }
+
     insert_statement& st (sts.persist_statement ());
     if (!st.execute ())
       throw object_already_persistent ();
 
+    obj.id = id (sts.id_image ());
+
     callback (db,
-              obj,
+              static_cast<const object_type&> (obj),
               callback_event::post_persist);
   }
 
-  void access::object_traits_impl< ::Recording, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   update (database& db, const object_type& obj)
   {
     ODB_POTENTIALLY_UNUSED (db);
@@ -840,7 +615,7 @@ namespace odb
     pointer_cache_traits::update (db, obj);
   }
 
-  void access::object_traits_impl< ::Recording, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   erase (database& db, const id_type& id)
   {
     using namespace sqlite;
@@ -867,8 +642,8 @@ namespace odb
     pointer_cache_traits::erase (db, id);
   }
 
-  access::object_traits_impl< ::Recording, id_sqlite >::pointer_type
-  access::object_traits_impl< ::Recording, id_sqlite >::
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::pointer_type
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   find (database& db, const id_type& id)
   {
     using namespace sqlite;
@@ -923,7 +698,7 @@ namespace odb
     return p;
   }
 
-  bool access::object_traits_impl< ::Recording, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   find (database& db, const id_type& id, object_type& obj)
   {
     using namespace sqlite;
@@ -957,7 +732,7 @@ namespace odb
     return true;
   }
 
-  bool access::object_traits_impl< ::Recording, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   reload (database& db, object_type& obj)
   {
     using namespace sqlite;
@@ -986,7 +761,7 @@ namespace odb
     return true;
   }
 
-  bool access::object_traits_impl< ::Recording, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   find_ (statements_type& sts,
          const id_type* id)
   {
@@ -1037,8 +812,8 @@ namespace odb
     return r != select_statement::no_data;
   }
 
-  result< access::object_traits_impl< ::Recording, id_sqlite >::object_type >
-  access::object_traits_impl< ::Recording, id_sqlite >::
+  result< access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::object_type >
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   query (database& db, const query_base_type& q)
   {
     using namespace sqlite;
@@ -1088,7 +863,7 @@ namespace odb
     return result<object_type> (r);
   }
 
-  unsigned long long access::object_traits_impl< ::Recording, id_sqlite >::
+  unsigned long long access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   erase_query (database& db, const query_base_type& q)
   {
     using namespace sqlite;
