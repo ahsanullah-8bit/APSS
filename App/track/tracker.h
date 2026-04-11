@@ -10,9 +10,9 @@ class Tracker
 public:
     explicit Tracker(std::optional<std::set<std::string>> objectsToTrack,
                      float trackThresh = 0.25,
-                     int trackBuffer = 30,
+                     int trackBuffer = 150,
                      float matchThresh = 0.8,
-                     int videoFrameRate = 30);
+                     int videoFrameRate = 24);
 
     // Modifies Prediction.trackerId
     void track(PredictionList &results);
