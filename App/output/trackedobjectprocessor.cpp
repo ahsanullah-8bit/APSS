@@ -135,6 +135,7 @@ void TrackedObjectProcessor::processFrame(SharedFrame frame, QHash<int, TrackedE
                 p.eventId = event_history.id;
                 p.frameId = frame->id();
                 p.streamTimestamp = frame->timestamp();
+                p.hasSubPredictions = object.subPredictions.has_value();
                 event_history.predictions.emplace_back(p, object);
 
                 t.commit();
