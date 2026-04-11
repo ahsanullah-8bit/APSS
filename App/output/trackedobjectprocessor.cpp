@@ -13,6 +13,7 @@
 #include <apss.h>
 #include <detectors/image.h>
 #include <db/event-odb.hxx>
+#include <db/prediction-odb.hxx>
 #include "trackedobjectprocessor.h"
 
 Q_STATIC_LOGGING_CATEGORY(logger, "apss.engine.object_proc")
@@ -63,143 +64,8 @@ void TrackedObjectProcessor::run()
                 continue;
 
             auto &events_history = cameras_history[frame->camera()];
-            for (auto &event_history : events_history)
-                event_history.lostCount++;
-
-            const PredictionList& predictions = frame->predictions();
-            const QDateTime frame_time = frame->timestamp();
-            const cv::Mat frame_data = frame->data();
-
-            // Process current predictions
-            for (const Prediction& object : predictions) {
-                if (object.trackerId < 0) 
-                    continue;
-
-                auto &event_history = events_history[object.trackerId];
-                event_history.lostCount = 0;
-
-                // Thumbnail
-                if (event_history.bestThumbnail.counter < 2) {
-                    auto &best_thumbnail = event_history.bestThumbnail;
-                    const auto [crop_rect, is_smart_croppable] = getSmartCropRect(object.box, frame_data.size());
-
-                    bool is_first_ever = best_thumbnail.img.empty();
-                    bool improved_visibility = is_smart_croppable && !best_thumbnail.wasSmartCropped;
-                    bool significantly_larger = (object.box.area() > event_history.lastObjectBoxArea * 1.2f);
-
-                    if (is_first_ever || improved_visibility || (is_smart_croppable && significantly_larger)) {
-                        best_thumbnail.img = frame_data(crop_rect).clone();
-                        best_thumbnail.counter++;
-                        best_thumbnail.wasSmartCropped = is_smart_croppable;
-                        event_history.lastObjectBoxArea = object.box.area();
-                        
-                        if (is_first_ever)
-                            event_history.event.thumbnail = THUMB_DIR.filePath(QString("%1_%2.jpg").arg(frame->camera()).arg(object.trackerId));  // Dragons, I KNOW!
-                        // TODO: This should be moved to a separate thread.
-                        cv::imwrite(event_history.event.thumbnail.toStdString(), event_history.bestThumbnail.img);
-
-                        if (event_history.isPersisted)
-                            emit eventUpdated(event_history.id, EventThumbnail);
-                    }
-                }
-
-                // Plate
-                if (object.subPredictions) {
-                    auto &best_plate = event_history.bestPlate;
-                    for (const auto &plate : object.subPredictions.value()) {
-                        if (plate.className != "license_plate")
-                            continue;
-
-                        float intersection_area = (plate.box & object.box).area();
-                        if (intersection_area / plate.box.area() < 0.95) {
-                            // Plate should be at least 95% inside the vehicle's box.
-                            // This step is necessary to avoid adding up plates 
-                            // of other vehicles, although some plates still 
-                            // may come inside the vehicle's bounding box.
-                            continue;
-                        }
-
-                        if (best_plate.empty() || plate.box.area() > best_plate.total() * 1.2) {
-                            // This would be a single plate anyway. But this check is required for the more than one plate case.
-                            Utils::perspectiveCrop(frame_data, best_plate, plate.points);
-
-                            // TODO: This should be moved to a separate thread.
-                            if (!best_plate.empty())
-                                cv::imwrite(THUMB_DIR.filePath(QString("%1_%2_lp.jpg").arg(frame->camera()).arg(object.trackerId)).toStdString(), event_history.bestPlate);
-
-                            if (event_history.isPersisted)
-                                emit eventUpdated(event_history.id, EventPlate);
-                        }
-                    }
-                }
-
-                if (!event_history.isPersisted) {
-                    // Event
-                    auto &event = event_history.event;
-                    event.label = QString::fromStdString(object.className);
-                    event.camera = frame->camera();
-                    event.startTime = frame_time;
-                    event.topScore = object.conf;
-                    event.trackerId = object.trackerId;
-                    events_history[object.trackerId].predictions.push_back(object); // First Prediction
-
-                    try {
-                        odb::transaction t(m_db->begin());
-                        event_history.id = m_db->persist(event);
-                        t.commit();
-    
-                        event_history.isPersisted = true;
-
-                        emit eventPersisted(event_history.id);
-                    } catch (const std::exception &e) {
-                        qCCritical(logger) << "Error updating db event" << QString("(%1),").arg(event.id) << e.what();
-                    }
-                } else {
-                    // Update existing event
-                    event_history.predictions.push_back(object);
-                    
-                    auto &event = events_history[object.trackerId].event;
-                    event.endTime = frame_time;
-                    if (object.conf > event.topScore)
-                        event.topScore = object.conf;
-
-                    // TODO: Do a proper average of all the scores
-                    event.score = object.conf;
-                    
-                    // emit eventUpdated(event_history.id);
-                }
-            }
-
-            // Remove lost
-            for (auto it = events_history.begin(); it != events_history.end();) {
-                if (it->lostCount > TRACK_MAX_EVENTS) {
-                    const auto &history = events_history[it.key()];
-
-                    // TODO: Persist events if they're not.
-                    APSS::ODB::Event event;
-
-                    try {
-                        odb::transaction t(m_db->begin());
-                        m_db->load(it->id, event);
-    
-                        event.endTime = history.event.endTime;
-                        event.topScore = history.event.topScore;
-                        event.score = history.event.score;
-                        // event.data(QString::fromStdString(rfl::json::write(history.predictions)));
-    
-                        m_db->update(event);
-                        t.commit();
-
-                        emit eventUpdated(it->id, EventEndTime | EventTopScore | EventScore | EventData);
-                    } catch (const std::exception &e) {
-                        qCCritical(logger) << "Error updating db event" << QString("(%1),").arg(event.id) << e.what();
-                    }
-
-                    it = events_history.erase(it);
-                } else {
-                    ++it;
-                }
-            }
+            processFrame(frame, events_history);
+            cleanupLostTracks(events_history);
 
             // draw results
             PredictionList predictions_ = frame->predictions();
@@ -218,27 +84,7 @@ void TrackedObjectProcessor::run()
             emit frameChangedWithEvents(frame, events_history.keys());
         }
 
-        // Submit the remaining events
-        for (auto cam = cameras_history.begin(); cam != cameras_history.end(); ++cam) {
-            for (auto e = cam->begin(); e != cam->end(); ++e) {
-                APSS::ODB::Event event;
-
-                try {
-                    odb::transaction t(m_db->begin());
-                    m_db->load(e->id, event);
-
-                    event.endTime = e->event.endTime;
-                    event.topScore = e->event.topScore;
-                    event.score = e->event.score;
-                    // event.data(QString::fromStdString(rfl::json::write(e->predictions)));
-
-                    m_db->update(event);
-                    t.commit();
-                } catch (const std::exception &e) {
-                    qCCritical(logger) << "Error updating db event" << QString("(%1),").arg(event.id) << e.what();
-                }
-            }
-        }
+        finalizeAllEvents(cameras_history);
     }
     catch(const tbb::user_abort &) {}
     catch(const std::exception &e) {
@@ -249,6 +95,73 @@ void TrackedObjectProcessor::run()
     }
 
     qCInfo(logger) << "Stopping" << objectName() << "thread";
+}
+
+void TrackedObjectProcessor::processFrame(SharedFrame frame, QHash<int, TrackedEvent> &eventsHistory)
+{
+    for (auto &event_history : eventsHistory)
+        event_history.lostCount++;
+
+    // Process current predictions
+    try {
+        for (const Prediction& object : frame->predictions()) {
+            if (object.trackerId < 0) 
+                continue;
+
+            auto &event_history = eventsHistory[object.trackerId];
+            event_history.lostCount = 0;
+
+            updateThumbnails(event_history, object, frame);
+            processLicensePlates(event_history, object, frame);
+
+            if (!event_history.isPersisted) {
+                odb::transaction t(m_db->begin());
+
+                // Event
+                auto &event = event_history.event;
+                event.label = QString::fromStdString(object.className);
+                event.camera = frame->camera();
+                event.startTime = frame->timestamp();
+                event.topScore = object.conf;
+                event.trackerId = object.trackerId;
+                event_history.id = m_db->persist(event);
+
+                // NOTE: Only the first prediction will have timestamp. To acheive replayable prediction footage,
+                // we would need to track predictions separately. But that's not my goal and nothing is using the
+                // predictions being submitted to the database, at the moment. So, I won't bother updating them. 
+                // But only submitted at the end.
+                
+                APSS::ODB::Prediction p;
+                p.eventId = event_history.id;
+                p.frameId = frame->id();
+                p.streamTimestamp = frame->timestamp();
+                event_history.predictions.emplace_back(p, object);
+
+                t.commit();
+
+                event_history.isPersisted = true;
+                emit eventPersisted(event_history.id);
+            } else {
+                // Update existing event
+                APSS::ODB::Prediction p;
+                p.eventId = event_history.id;
+                p.frameId = frame->id();
+                p.streamTimestamp = frame->timestamp();
+                event_history.predictions.emplace_back(p, object);
+                event_history.event.endTime = frame->timestamp();
+
+                if (object.conf > event_history.event.topScore)
+                    event_history.event.topScore = object.conf;
+
+                // TODO: Do a proper average of all the scores
+                event_history.event.score = object.conf;
+
+                // emit eventUpdated(event_history.id);
+            }
+        }
+    } catch (const std::exception &e) {
+        qCCritical(logger) << "Error updating db event," << e.what();
+    }
 }
 
 std::pair<cv::Rect, bool> TrackedObjectProcessor::getSmartCropRect(cv::Rect objectBox, cv::Size frameSize, float aspectRatio)
@@ -275,4 +188,130 @@ std::pair<cv::Rect, bool> TrackedObjectProcessor::getSmartCropRect(cv::Rect obje
     const int h = std::min(frameSize.height - y, crop_h);
     
     return {cv::Rect(x, y, w, h), was_clamped};
+}
+
+void TrackedObjectProcessor::updateThumbnails(TrackedEvent &eventHistory, const Prediction& object, SharedFrame frame)
+{
+    if (eventHistory.bestThumbnail.counter > 2)
+        return;
+
+    cv::Mat frame_data = frame->data();
+    auto &best_thumbnail = eventHistory.bestThumbnail;
+    const auto [crop_rect, is_smart_croppable] = getSmartCropRect(object.box, frame_data.size());
+
+    bool is_first_ever = best_thumbnail.img.empty();
+    bool improved_visibility = is_smart_croppable && !best_thumbnail.wasSmartCropped;
+    bool significantly_larger = (object.box.area() > eventHistory.lastObjectBoxArea * 1.2f);
+
+    if (is_first_ever || improved_visibility || (is_smart_croppable && significantly_larger)) {
+        best_thumbnail.img = frame_data(crop_rect).clone();
+        best_thumbnail.counter++;
+        best_thumbnail.wasSmartCropped = is_smart_croppable;
+        eventHistory.lastObjectBoxArea = object.box.area();
+        
+        if (is_first_ever)
+            eventHistory.event.thumbnail = THUMB_DIR.filePath(QString("%1_%2.jpg").arg(frame->camera()).arg(object.trackerId));  // Dragons, I KNOW!
+        // TODO: This should be moved to a separate thread.
+        cv::imwrite(eventHistory.event.thumbnail.toStdString(), eventHistory.bestThumbnail.img);
+
+        if (eventHistory.isPersisted)
+            emit eventUpdated(eventHistory.id, EventThumbnail);
+    }
+}
+
+void TrackedObjectProcessor::processLicensePlates(TrackedEvent& eventHistory, const Prediction& object, SharedFrame frame)
+{
+    if (!object.subPredictions)
+        return;
+
+    cv::Mat frame_data = frame->data();
+    auto &best_plate = eventHistory.bestPlate;
+    for (const auto &plate : object.subPredictions.value()) {
+        if (plate.className != "license_plate")
+            continue;
+
+        float intersection_area = (plate.box & object.box).area();
+        if (intersection_area / plate.box.area() < 0.95) {
+            // Plate should be at least 95% inside the vehicle's box.
+            // This step is necessary to avoid adding up plates 
+            // of other vehicles, although some plates still 
+            // may come inside the vehicle's bounding box.
+            continue;
+        }
+
+        if (best_plate.empty() || plate.box.area() > best_plate.total() * 1.2) {
+            // This would be a single plate anyway. But this check is required for the more than one plate case.
+            Utils::perspectiveCrop(frame_data, best_plate, plate.points);
+
+            // TODO: This should be moved to a separate thread.
+            if (!best_plate.empty())
+                cv::imwrite(THUMB_DIR.filePath(QString("%1_%2_lp.jpg").arg(frame->camera()).arg(object.trackerId)).toStdString(), eventHistory.bestPlate);
+
+            if (eventHistory.isPersisted)
+                emit eventUpdated(eventHistory.id, EventPlate);
+        }
+    }
+}
+void TrackedObjectProcessor::cleanupLostTracks(QHash<int, TrackedEvent>& eventsHistory)
+{
+    // Remove lost
+    try {
+        for (auto it = eventsHistory.begin(); it != eventsHistory.end();) {
+            if (it->lostCount > TRACK_MAX_EVENTS) {
+                const auto &history = eventsHistory[it.key()];
+
+                // TODO: Persist events if they're not.                
+                APSS::ODB::Event event;
+                odb::transaction t(m_db->begin());
+
+                m_db->load(it->id, event);
+                event.endTime = history.event.endTime;
+                event.topScore = history.event.topScore;
+                event.score = history.event.score;
+                m_db->update(event);
+
+                for (auto [p, object] : history.predictions) {
+                    p.data = QString::fromStdString(rfl::json::write(object));
+                    m_db->persist(p);
+                }
+
+                t.commit();
+
+                emit eventUpdated(it->id, EventEndTime | EventTopScore | EventScore | EventData);
+                
+                it = eventsHistory.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    } catch (const std::exception &e) {
+        qCCritical(logger) << "Error updating db event," << e.what();
+    }
+}
+void TrackedObjectProcessor::finalizeAllEvents(QHash<QString, QHash<int, TrackedEvent>> &camerasHistory)
+{
+    // Submit the remaining events
+    try {
+        for (auto cam = camerasHistory.begin(); cam != camerasHistory.end(); ++cam) {
+            for (auto e = cam->begin(); e != cam->end(); ++e) {
+                APSS::ODB::Event event;
+                odb::transaction t(m_db->begin());
+                
+                m_db->load(e->id, event);
+                event.endTime = e->event.endTime;
+                event.topScore = e->event.topScore;
+                event.score = e->event.score;
+                m_db->update(event);
+
+                for (auto [p, object] : e->predictions) {
+                    p.data = QString::fromStdString(rfl::json::write(object));
+                    m_db->persist(p);
+                }
+
+                t.commit();
+            }
+        }
+    } catch (const std::exception &e) {
+        qCCritical(logger) << "Error updating db event," << e.what();
+    }
 }
