@@ -7,7 +7,7 @@
 #include <QtCore/QDateTime>
 #endif
 
-#pragma db model version(1, 1)
+#pragma db model version(1, 2)
 
 namespace APSS::ODB {
     
@@ -21,6 +21,9 @@ public:
     QDateTime videoTimestamp;
     QDateTime streamTimestamp;
     QString data;
+
+    #pragma db added(2)
+    bool hasSubPredictions;
 };
 
 }

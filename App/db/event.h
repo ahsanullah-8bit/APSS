@@ -9,7 +9,7 @@
 
 #include <odb/forward.hxx>
 
-#pragma db model version(1, 1)
+#pragma db model version(1, 2)
 
 namespace APSS::ODB {
 
@@ -29,6 +29,9 @@ public:
     float score = 0.0f;
     QString thumbnail;
     bool hasClip = false;
+
+    #pragma db added(2)
+    QString licensePlateResults;
 };
 
 }

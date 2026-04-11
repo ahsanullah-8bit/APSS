@@ -56,10 +56,12 @@ namespace odb
   void access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   load_ (statements_type& sts,
          object_type& obj,
-         bool)
+         bool,
+         const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (sts);
     ODB_POTENTIALLY_UNUSED (obj);
+    ODB_POTENTIALLY_UNUSED (svm);
   }
 }
 

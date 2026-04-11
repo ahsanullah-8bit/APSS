@@ -82,10 +82,12 @@ namespace odb
 
   bool access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   grow (image_type& i,
-        bool* t)
+        bool* t,
+        const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (t);
+    ODB_POTENTIALLY_UNUSED (svm);
 
     bool grew (false);
 
@@ -129,15 +131,24 @@ namespace odb
       grew = true;
     }
 
+    // hasSubPredictions
+    //
+    if (svm >= schema_version_migration (2ULL, true))
+    {
+      t[6UL] = false;
+    }
+
     return grew;
   }
 
   void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   bind (sqlite::bind* b,
         image_type& i,
-        sqlite::statement_kind sk)
+        sqlite::statement_kind sk,
+        const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (sk);
+    ODB_POTENTIALLY_UNUSED (svm);
 
     using namespace sqlite;
 
@@ -203,6 +214,17 @@ namespace odb
     b[n].capacity = i.data_value.capacity ();
     b[n].is_null = &i.data_null;
     n++;
+
+    // hasSubPredictions
+    //
+    if (svm >= schema_version_migration (2ULL, true))
+    {
+      b[n].type = sqlite::bind::integer;
+      b[n].buffer = &i.hasSubPredictions_value;
+      b[n].is_null = &i.hasSubPredictions_null;
+    }
+
+    n++;
   }
 
   void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
@@ -217,11 +239,13 @@ namespace odb
   bool access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   init (image_type& i,
         const object_type& o,
-        sqlite::statement_kind sk)
+        sqlite::statement_kind sk,
+        const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (o);
     ODB_POTENTIALLY_UNUSED (sk);
+    ODB_POTENTIALLY_UNUSED (svm);
 
     using namespace sqlite;
 
@@ -336,17 +360,38 @@ namespace odb
       grew = grew || (cap != i.data_value.capacity ());
     }
 
+    // hasSubPredictions
+    //
+    if (svm >= schema_version_migration (2ULL, true))
+    {
+      {
+        bool const& v =
+          o.hasSubPredictions;
+
+        bool is_null (false);
+        sqlite::value_traits<
+            bool,
+            sqlite::id_integer >::set_image (
+          i.hasSubPredictions_value,
+          is_null,
+          v);
+        i.hasSubPredictions_null = is_null;
+      }
+    }
+
     return grew;
   }
 
   void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   init (object_type& o,
         const image_type& i,
-        database* db)
+        database* db,
+        const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (o);
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (db);
+    ODB_POTENTIALLY_UNUSED (svm);
 
     // id
     //
@@ -435,6 +480,21 @@ namespace odb
         i.data_size,
         i.data_null);
     }
+
+    // hasSubPredictions
+    //
+    if (svm >= schema_version_migration (2ULL, true))
+    {
+      bool& v =
+        o.hasSubPredictions;
+
+      sqlite::value_traits<
+          bool,
+          sqlite::id_integer >::set_value (
+        v,
+        i.hasSubPredictions_value,
+        i.hasSubPredictions_null);
+    }
   }
 
   void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
@@ -453,35 +513,38 @@ namespace odb
   }
 
   const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::persist_statement[] =
-  "INSERT INTO \"Prediction\" "
-  "(\"id\", "
-  "\"eventId\", "
-  "\"frameId\", "
-  "\"videoTimestamp\", "
-  "\"streamTimestamp\", "
-  "\"data\") "
-  "VALUES "
-  "(?, ?, ?, ?, ?, ?)";
+  "INSERT INTO \"Prediction\"\n"
+  "(\"id\",\n"
+  "\"eventId\",\n"
+  "\"frameId\",\n"
+  "\"videoTimestamp\",\n"
+  "\"streamTimestamp\",\n"
+  "\"data\",\n"
+  "\"hasSubPredictions\")\n"
+  "VALUES\n"
+  "(?,\n?,\n?,\n?,\n?,\n?,\n?)";
 
   const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::find_statement[] =
-  "SELECT "
-  "\"Prediction\".\"id\", "
-  "\"Prediction\".\"eventId\", "
-  "\"Prediction\".\"frameId\", "
-  "\"Prediction\".\"videoTimestamp\", "
-  "\"Prediction\".\"streamTimestamp\", "
-  "\"Prediction\".\"data\" "
-  "FROM \"Prediction\" "
+  "SELECT\n"
+  "\"Prediction\".\"id\",\n"
+  "\"Prediction\".\"eventId\",\n"
+  "\"Prediction\".\"frameId\",\n"
+  "\"Prediction\".\"videoTimestamp\",\n"
+  "\"Prediction\".\"streamTimestamp\",\n"
+  "\"Prediction\".\"data\",\n"
+  "\"Prediction\".\"hasSubPredictions\"\n"
+  "FROM \"Prediction\"\n"
   "WHERE \"Prediction\".\"id\"=?";
 
   const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::update_statement[] =
-  "UPDATE \"Prediction\" "
-  "SET "
-  "\"eventId\"=?, "
-  "\"frameId\"=?, "
-  "\"videoTimestamp\"=?, "
-  "\"streamTimestamp\"=?, "
-  "\"data\"=? "
+  "UPDATE \"Prediction\"\n"
+  "SET\n"
+  "\"eventId\"=?,\n"
+  "\"frameId\"=?,\n"
+  "\"videoTimestamp\"=?,\n"
+  "\"streamTimestamp\"=?,\n"
+  "\"data\"=?,\n"
+  "\"hasSubPredictions\"=?\n"
   "WHERE \"id\"=?";
 
   const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::erase_statement[] =
@@ -489,13 +552,14 @@ namespace odb
   "WHERE \"id\"=?";
 
   const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::query_statement[] =
-  "SELECT "
-  "\"Prediction\".\"id\", "
-  "\"Prediction\".\"eventId\", "
-  "\"Prediction\".\"frameId\", "
-  "\"Prediction\".\"videoTimestamp\", "
-  "\"Prediction\".\"streamTimestamp\", "
-  "\"Prediction\".\"data\" "
+  "SELECT\n"
+  "\"Prediction\".\"id\",\n"
+  "\"Prediction\".\"eventId\",\n"
+  "\"Prediction\".\"frameId\",\n"
+  "\"Prediction\".\"videoTimestamp\",\n"
+  "\"Prediction\".\"streamTimestamp\",\n"
+  "\"Prediction\".\"data\",\n"
+  "\"Prediction\".\"hasSubPredictions\"\n"
   "FROM \"Prediction\"";
 
   const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::erase_query_statement[] =
@@ -513,6 +577,7 @@ namespace odb
       sqlite::transaction::current ().connection (db));
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     callback (db,
               static_cast<const object_type&> (obj),
@@ -521,7 +586,7 @@ namespace odb
     image_type& im (sts.image ());
     binding& imb (sts.insert_image_binding ());
 
-    if (init (im, obj, statement_insert))
+    if (init (im, obj, statement_insert, svm))
       im.version++;
 
     im.id_null = true;
@@ -529,7 +594,7 @@ namespace odb
     if (im.version != sts.insert_image_version () ||
         imb.version == 0)
     {
-      bind (imb.bind, im, statement_insert);
+      bind (imb.bind, im, statement_insert, svm);
       sts.insert_image_version (im.version);
       imb.version++;
     }
@@ -571,11 +636,13 @@ namespace odb
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
 
+    const schema_version_migration& svm (sts.version_migration ());
+
     id_image_type& idi (sts.id_image ());
     init (idi, id (obj));
 
     image_type& im (sts.image ());
-    if (init (im, obj, statement_update))
+    if (init (im, obj, statement_update, svm))
       im.version++;
 
     bool u (false);
@@ -583,7 +650,7 @@ namespace odb
     if (im.version != sts.update_image_version () ||
         imb.version == 0)
     {
-      bind (imb.bind, im, statement_update);
+      bind (imb.bind, im, statement_update, svm);
       sts.update_image_version (im.version);
       imb.version++;
       u = true;
@@ -608,7 +675,7 @@ namespace odb
     }
 
     update_statement& st (sts.update_statement ());
-    if (st.execute () == 0)
+    if (!st.empty () && st.execute () == 0)
       throw object_not_persistent ();
 
     callback (db, obj, callback_event::post_update);
@@ -659,12 +726,13 @@ namespace odb
       sqlite::transaction::current ().connection (db));
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     statements_type::auto_lock l (sts);
 
     if (l.locked ())
     {
-      if (!find_ (sts, &id))
+      if (!find_ (sts, &id, svm))
         return pointer_type ();
     }
 
@@ -683,9 +751,9 @@ namespace odb
       ODB_POTENTIALLY_UNUSED (st);
 
       callback (db, obj, callback_event::pre_load);
-      init (obj, sts.image (), &db);
-      load_ (sts, obj, false);
-      sts.load_delayed (0);
+      init (obj, sts.image (), &db, svm);
+      load_ (sts, obj, false, svm);
+      sts.load_delayed (&svm);
       l.unlock ();
       callback (db, obj, callback_event::post_load);
       pointer_cache_traits::load (ig.position ());
@@ -707,11 +775,12 @@ namespace odb
       sqlite::transaction::current ().connection (db));
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     statements_type::auto_lock l (sts);
     assert (l.locked ()) /* Must be a top-level call. */;
 
-    if (!find_ (sts, &id))
+    if (!find_ (sts, &id, svm))
       return false;
 
     select_statement& st (sts.find_statement ());
@@ -722,9 +791,9 @@ namespace odb
     reference_cache_traits::insert_guard ig (pos);
 
     callback (db, obj, callback_event::pre_load);
-    init (obj, sts.image (), &db);
-    load_ (sts, obj, false);
-    sts.load_delayed (0);
+    init (obj, sts.image (), &db, svm);
+    load_ (sts, obj, false, svm);
+    sts.load_delayed (&svm);
     l.unlock ();
     callback (db, obj, callback_event::post_load);
     reference_cache_traits::load (pos);
@@ -741,21 +810,22 @@ namespace odb
       sqlite::transaction::current ().connection (db));
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     statements_type::auto_lock l (sts);
     assert (l.locked ()) /* Must be a top-level call. */;
 
     const id_type& id (object_traits_impl::id (obj));
-    if (!find_ (sts, &id))
+    if (!find_ (sts, &id, svm))
       return false;
 
     select_statement& st (sts.find_statement ());
     ODB_POTENTIALLY_UNUSED (st);
 
     callback (db, obj, callback_event::pre_load);
-    init (obj, sts.image (), &db);
-    load_ (sts, obj, true);
-    sts.load_delayed (0);
+    init (obj, sts.image (), &db, svm);
+    load_ (sts, obj, true, svm);
+    sts.load_delayed (&svm);
     l.unlock ();
     callback (db, obj, callback_event::post_load);
     return true;
@@ -763,7 +833,8 @@ namespace odb
 
   bool access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   find_ (statements_type& sts,
-         const id_type* id)
+         const id_type* id,
+         const schema_version_migration& svm)
   {
     using namespace sqlite;
 
@@ -784,7 +855,7 @@ namespace odb
     if (im.version != sts.select_image_version () ||
         imb.version == 0)
     {
-      bind (imb.bind, im, statement_select);
+      bind (imb.bind, im, statement_select, svm);
       sts.select_image_version (im.version);
       imb.version++;
     }
@@ -797,12 +868,12 @@ namespace odb
 
     if (r == select_statement::truncated)
     {
-      if (grow (im, sts.select_image_truncated ()))
+      if (grow (im, sts.select_image_truncated (), svm))
         im.version++;
 
       if (im.version != sts.select_image_version ())
       {
-        bind (imb.bind, im, statement_select);
+        bind (imb.bind, im, statement_select, svm);
         sts.select_image_version (im.version);
         imb.version++;
         st.refetch ();
@@ -825,6 +896,7 @@ namespace odb
 
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     image_type& im (sts.image ());
     binding& imb (sts.select_image_binding ());
@@ -832,7 +904,7 @@ namespace odb
     if (im.version != sts.select_image_version () ||
         imb.version == 0)
     {
-      bind (imb.bind, im, statement_select);
+      bind (imb.bind, im, statement_select, svm);
       sts.select_image_version (im.version);
       imb.version++;
     }
@@ -840,7 +912,7 @@ namespace odb
     std::string text (query_statement);
     if (!q.empty ())
     {
-      text += " ";
+      text += "\n";
       text += q.clause ();
     }
 
@@ -849,7 +921,7 @@ namespace odb
       new (shared) select_statement (
         conn,
         text,
-        false,
+        true,
         true,
         q.parameters_binding (),
         imb));
@@ -858,7 +930,7 @@ namespace odb
 
     shared_ptr< odb::object_result_impl<object_type> > r (
       new (shared) sqlite::object_result_impl<object_type> (
-        q, st, sts, 0));
+        q, st, sts, &svm));
 
     return result<object_type> (r);
   }

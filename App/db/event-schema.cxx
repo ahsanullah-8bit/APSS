@@ -58,7 +58,8 @@ namespace odb
                       "  \"topScore\" REAL NULL,\n"
                       "  \"score\" REAL NULL,\n"
                       "  \"thumbnail\" TEXT NULL,\n"
-                      "  \"hasClip\" INTEGER NOT NULL)");
+                      "  \"hasClip\" INTEGER NOT NULL,\n"
+                      "  \"licensePlateResults\" TEXT NULL)");
           return true;
         }
         case 2:
@@ -69,7 +70,7 @@ namespace odb
                       "  \"migration\" INTEGER NOT NULL)");
           db.execute ("INSERT OR IGNORE INTO \"schema_version\" (\n"
                       "  \"name\", \"version\", \"migration\")\n"
-                      "  VALUES ('', 1, 0)");
+                      "  VALUES ('', 2, 0)");
           return false;
         }
       }
@@ -90,6 +91,60 @@ namespace odb
     "",
     1ULL,
     0);
+
+  static bool
+  migrate_schema_2 (database& db, unsigned short pass, bool pre)
+  {
+    ODB_POTENTIALLY_UNUSED (db);
+    ODB_POTENTIALLY_UNUSED (pass);
+    ODB_POTENTIALLY_UNUSED (pre);
+
+    if (pre)
+    {
+      switch (pass)
+      {
+        case 1:
+        {
+          db.execute ("ALTER TABLE \"Event\"\n"
+                      "  ADD COLUMN \"licensePlateResults\" TEXT NULL");
+          return true;
+        }
+        case 2:
+        {
+          db.execute ("UPDATE \"schema_version\"\n"
+                      "  SET \"version\" = 2, \"migration\" = 1\n"
+                      "  WHERE \"name\" = ''");
+          return false;
+        }
+      }
+    }
+    else
+    {
+      switch (pass)
+      {
+        case 1:
+        {
+          return true;
+        }
+        case 2:
+        {
+          db.execute ("UPDATE \"schema_version\"\n"
+                      "  SET \"migration\" = 0\n"
+                      "  WHERE \"name\" = ''");
+          return false;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  static const schema_catalog_migrate_entry
+  migrate_schema_entry_2_ (
+    id_sqlite,
+    "",
+    2ULL,
+    &migrate_schema_2);
 }
 
 #include <odb/post.hxx>

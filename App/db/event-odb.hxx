@@ -249,6 +249,18 @@ namespace odb
     hasClip_type_;
 
     static const hasClip_type_ hasClip;
+
+    // licensePlateResults
+    //
+    typedef
+    sqlite::query_column<
+      sqlite::value_traits<
+        ::QString,
+        sqlite::id_text >::query_type,
+      sqlite::id_text >
+    licensePlateResults_type_;
+
+    static const licensePlateResults_type_ licensePlateResults;
   };
 
   template <typename A>
@@ -305,6 +317,11 @@ namespace odb
   const typename query_columns< ::APSS::ODB::Event, id_sqlite, A >::hasClip_type_
   query_columns< ::APSS::ODB::Event, id_sqlite, A >::
   hasClip (A::table_name, "\"hasClip\"", 0);
+
+  template <typename A>
+  const typename query_columns< ::APSS::ODB::Event, id_sqlite, A >::licensePlateResults_type_
+  query_columns< ::APSS::ODB::Event, id_sqlite, A >::
+  licensePlateResults (A::table_name, "\"licensePlateResults\"", 0);
 
   template <typename A>
   struct pointer_query_columns< ::APSS::ODB::Event, id_sqlite, A >:
@@ -388,6 +405,12 @@ namespace odb
       long long hasClip_value;
       bool hasClip_null;
 
+      // licensePlateResults
+      //
+      details::buffer licensePlateResults_value;
+      std::size_t licensePlateResults_size;
+      bool licensePlateResults_null;
+
       std::size_t version;
     };
 
@@ -403,12 +426,14 @@ namespace odb
 
     static bool
     grow (image_type&,
-          bool*);
+          bool*,
+          const schema_version_migration&);
 
     static void
     bind (sqlite::bind*,
           image_type&,
-          sqlite::statement_kind);
+          sqlite::statement_kind,
+          const schema_version_migration&);
 
     static void
     bind (sqlite::bind*, id_image_type&);
@@ -416,12 +441,14 @@ namespace odb
     static bool
     init (image_type&,
           const object_type&,
-          sqlite::statement_kind);
+          sqlite::statement_kind,
+          const schema_version_migration&);
 
     static void
     init (object_type&,
           const image_type&,
-          database*);
+          database*,
+          const schema_version_migration&);
 
     static void
     init (id_image_type&, const id_type&);
@@ -430,7 +457,7 @@ namespace odb
 
     typedef sqlite::query_base query_base_type;
 
-    static const std::size_t column_count = 11UL;
+    static const std::size_t column_count = 12UL;
     static const std::size_t id_column_count = 1UL;
     static const std::size_t inverse_column_count = 0UL;
     static const std::size_t readonly_column_count = 0UL;
@@ -439,7 +466,7 @@ namespace odb
     static const std::size_t separate_load_column_count = 0UL;
     static const std::size_t separate_update_column_count = 0UL;
 
-    static const bool versioned = false;
+    static const bool versioned = true;
 
     static const char persist_statement[];
     static const char find_statement[];
@@ -480,12 +507,14 @@ namespace odb
     public:
     static bool
     find_ (statements_type&,
-           const id_type*);
+           const id_type*,
+           const schema_version_migration&);
 
     static void
     load_ (statements_type&,
            object_type&,
-           bool reload);
+           bool reload,
+           const schema_version_migration&);
   };
 
   template <>
