@@ -21,6 +21,7 @@
 #include <tbb_patched.h>
 #include <camera/camerametrics.h>
 #include <config/apssconfig.h>
+#include <detectors/lprsession.h>
 #include <events/zmqproxy.h>
 #include <models/camerametricsmodel.h>
 #include <output/recordingsmanager.h>
@@ -76,9 +77,9 @@ private:
     // New interface
     APSSConfig *m_config;
     std::atomic_bool m_stopEvent;
-    // SharedFrameBoundedQueue m_detectionQueue;
     QHash<QString, QSharedPointer<QThread>> m_detectors;
-    QSharedPointer<QThread> m_lpdetector;
+    QHash<QString, QSharedPointer<QThread>> m_lpdetectors;
+    QPair<LPRSessionWorker*, QThread*> m_lprWorkerThread;
     QHash<QString, SharedCameraMetrics> m_cameraMetrics;
     SharedCameraMetricsModel m_cameraMetricsModel;
 

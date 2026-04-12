@@ -278,7 +278,7 @@ void TrackedObjectProcessor::cleanupLostTracks(QHash<int, TrackedEvent>& eventsH
 
                 t.commit();
 
-                emit eventUpdated(it->id, EventEndTime | EventTopScore | EventScore | EventData);
+                emit eventCompleted(it->id);
                 
                 it = eventsHistory.erase(it);
             } else {

@@ -9,6 +9,7 @@ add_library(APSSLib STATIC
 
     detectors/image.cpp
 	detectors/lpdetectorsession.cpp
+    detectors/lprsession.cpp
 	detectors/objectdetector.cpp
 	detectors/objectdetectorsession.cpp
 	detectors/onnxinference.cpp
@@ -64,6 +65,7 @@ target_link_libraries(APSSLib PUBLIC
     TBB::tbb
     Eigen3::Eigen
     bytetrackeigen
+    fmr_libfmr
     onnxruntime::onnxruntime
     reflectcpp::reflectcpp
     ${OpenCV_LIBS}

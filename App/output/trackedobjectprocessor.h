@@ -53,6 +53,7 @@ public:
 signals:
     void eventPersisted(size_t id);
     void eventUpdated(size_t id, int updateType);
+    void eventCompleted(size_t id);
     void frameChanged(SharedFrame frame);
     void frameChangedWithEvents(SharedFrame frame, const QList<int> &activeEvents);
 
