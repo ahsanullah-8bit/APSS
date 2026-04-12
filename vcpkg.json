@@ -59,6 +59,14 @@
         {
             "name": "libodb-sqlite",
             "version>=": "2.5.0"
+        },
+        {
+            "name": "spdlog",
+            "version>=": "1.15.3"
+        },
+        {
+            "name": "clipper2",
+            "version>=": "1.5.3"
         }
     ]
 }
