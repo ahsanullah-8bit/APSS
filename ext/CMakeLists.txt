@@ -1,1 +1,2 @@
 add_subdirectory(ByteTrackEigen)
+add_subdirectory(fmr)
