@@ -16,7 +16,6 @@
 
 #include "apss.h"
 #include "utils/prediction.h"
-#include "licensed/utility.h"
 
 class Utils {
 public:
@@ -188,44 +187,6 @@ public:
                                const std::vector<std::string> &classNames = {},
                                const std::vector<cv::Scalar> &classColors = {},
                                float maskAlpha = 0.4f);
-
-    static void drawOCR(cv::Mat &image,
-                               const std::vector<PaddleOCR::OCRPredictResult> &predictions,
-                               bool drawMask = false,
-                               float maskAlpha = 0.4f,
-                               bool drawBoxes = true,
-                               bool drawLabels = true);
-
-    // static void drawSegmentationsAndBoxes(cv::Mat &image, const std::vector<Prediction> &predictions,
-    //                                       const std::vector<std::string> &classNames,
-    //                                       const std::vector<cv::Scalar> &classColors,
-    //                                       float maskAlpha = 0.3f);
-
-    // static void drawSegmentations(cv::Mat &image, const std::vector<Prediction> &predictions,
-    //                               const std::vector<std::string> &classNames,
-    //                               const std::vector<cv::Scalar> &classColors,
-    //                               float maskAlpha = 0.3f);
-
-    // /**
-    //  * @brief Draws segmentation masks, bounding boxes, and labels on the image
-    //  *
-    //  * @param image Image to draw on (modified in-place)
-    //  * @param predictions Vector of detection predictions
-    //  * @param classNames Class names corresponding to class IDs
-    //  * @param classColors Colors for each class
-    //  * @param drawMasks Whether to draw segmentation masks (default true)
-    //  * @param drawBoxes Whether to draw bounding boxes (default true)
-    //  * @param drawLabels Whether to draw class labels (default true)
-    //  * @param maskAlpha Transparency level for masks (0-1, default 0.4)
-    //  */
-    // static void drawsSegmentations(cv::Mat &image,
-    //                                const std::vector<Prediction> &predictions,
-    //                                const std::vector<std::string> &classNames,
-    //                                const std::vector<cv::Scalar> &classColors,
-    //                                bool drawMasks = true,
-    //                                float maskAlpha = 0.4f,
-    //                                bool drawBoxes = true,
-    //                                bool drawLabels = true);
 
     /**
      * @brief Draws pose estimations including bounding boxes, keypoints, and skeleton

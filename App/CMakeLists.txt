@@ -2,7 +2,6 @@ add_library(APSSLib STATIC
     camera/cameracapture.cpp
     camera/camerametrics.cpp
     camera/cameraprocessor.cpp
-    camera/camerawatchdog.cpp
 
     db/event-odb.cxx
 	db/prediction-odb.cxx
@@ -13,18 +12,8 @@ add_library(APSSLib STATIC
 	detectors/objectdetector.cpp
 	detectors/objectdetectorsession.cpp
 	detectors/onnxinference.cpp
-	detectors/paddlecls.cpp
-	detectors/paddledet.cpp
-	detectors/paddleocr.cpp
-	detectors/paddlerec.cpp
 	detectors/poseestimator.cpp
 	detectors/predictor.cpp
-
-	# Licensed
-	detectors/licensed/clipper.cpp
-	detectors/licensed/postprocess_op.cpp
-	detectors/licensed/preprocess_op.cpp
-	detectors/licensed/utility.cpp
 
     engine/apssengine.cpp
 
