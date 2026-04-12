@@ -64,14 +64,14 @@ QVariant EventsModel::data(const QModelIndex &index, int role) const
         return static_cast<int>(QSqlTableModel::data(createIndex(index.row(), 7)).toFloat() * 100);
     case Score:     // 8
         return QSqlTableModel::data(createIndex(index.row(), 8));
-    case Thumbnail: { // 11
-        QString path = QSqlTableModel::data(createIndex(index.row(), 11)).toString();
+    case Thumbnail: { // 9
+        QString path = QSqlTableModel::data(createIndex(index.row(), 9)).toString();
         return QUrl::fromLocalFile(path);
     }
     case ReviewClip: // custom
         return QVariant();
     case LicensePlatePath: {
-        QString path = QSqlTableModel::data(createIndex(index.row(), 11)).toString();
+        QString path = QSqlTableModel::data(createIndex(index.row(), 9)).toString();
         QFileInfo file(path);
         QString file_name = QString("%1_lp.jpg").arg(file.baseName());
         path = file.dir().filePath(file_name);
