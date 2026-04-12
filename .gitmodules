@@ -1,3 +1,6 @@
 [submodule "ext/ByteTrackEigen"]
 	path = ext/ByteTrackEigen
 	url = https://github.com/ahsanullah-8bit/ByteTrackEigen.git
+[submodule "ext/fmr"]
+	path = ext/fmr
+	url = https://github.com/ahsanullah-8bit/fmr.git
