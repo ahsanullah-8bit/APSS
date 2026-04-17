@@ -7,7 +7,7 @@ by my obssession of perfection and uncomplete features. It could've been much ea
 This project was heavily inspired by the architecture of [Frigate NVR](https://github.com/blakeblackshear/frigate.git) and how it works, as I never had any experience with such heavy video pipeline systems. In other words, we only had 6-7 months to make a light-weight surveillance system and could not acheive something that big in such a short period. So, I really didn't have the time to make mistakes and find out.
 
 ## Demo
-https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/apss_live_page_recording.mp4
+https://github.com/user-attachments/assets/e5eb7593-71a2-498c-a61f-13891cfdb85c
 
 > [Footage by Sysvideo](https://www.youtube.com/watch?v=eO19UTm93GQ), looped. 
 
