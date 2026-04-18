@@ -27,9 +27,9 @@ signals:
     void processed(size_t eventDbId);
 
 private:
-    fmr::paddleocr_config readPaddleOCRDetYaml(const std::string &detModelPath);
-    fmr::paddleocr_config readPaddleOCRClsYaml(const std::string &clsModelPath);
-    fmr::paddleocr_config readPaddleOCRRecYaml(const std::string &recModelPath);
+    // fmr::paddleocr_config readPaddleOCRDetYaml(const std::string &detModelPath);
+    // fmr::paddleocr_config readPaddleOCRClsYaml(const std::string &clsModelPath);
+    // fmr::paddleocr_config readPaddleOCRRecYaml(const std::string &recModelPath);
     std::string getModelYamlPath(const std::string &modelPath);
 
 private:
