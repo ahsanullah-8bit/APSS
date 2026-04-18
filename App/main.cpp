@@ -13,6 +13,7 @@
 #include "config/apssconfig.h"
 #include "engine/apssengine.h"
 #include "models/eventsmodel.h"
+#include "output/trackedobjectprocessor.h"
 
 APSSConfig loadConfig(const QString &filepath);
 
@@ -39,7 +40,10 @@ int main(int argc, char *argv[])
     if (!db.open() || !db.isValid()) {
         qCritical() << "Failed to open a database connection:" << db.lastError().text();
     }
+    auto top = apssEngine->trackedObjectProcessor();
     EventsModel events_model(db);
+    top->connect(top.get(), &TrackedObjectProcessor::eventPersisted, &events_model, &EventsModel::newEvent);
+    top->connect(top.get(), &TrackedObjectProcessor::eventUpdated, &events_model, &EventsModel::eventUpdated);
     engine.rootContext()->setContextProperty("eventsModel", &events_model);
 
     // --------------------------

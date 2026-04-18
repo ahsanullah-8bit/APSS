@@ -38,6 +38,9 @@ public:
     explicit APSSEngine(APSSConfig *config, QObject *parent = nullptr);
     ~APSSEngine();
     SharedCameraMetricsModel cameraMetricsModel() const;
+    QSharedPointer<TrackedObjectProcessor> trackedObjectProcessor() const {
+        return m_trackedObjectsProcessor;
+    }
 
 public slots:
     void start();

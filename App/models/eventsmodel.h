@@ -2,6 +2,7 @@
 
 #include <QAbstractListModel>
 #include <QtSql/QSqlTableModel>
+#include <cstddef>
 
 class EventsModel : public QSqlTableModel
 {
@@ -34,4 +35,8 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
     Q_INVOKABLE QString formatRange(const QDateTime &startTime, const QDateTime &endTime) const;
+public slots:
+    void newEvent(size_t id);
+    void eventUpdated(size_t id, int updateType);
+    void eventCompleted(size_t id);
 };

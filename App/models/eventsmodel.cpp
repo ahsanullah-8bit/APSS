@@ -6,25 +6,24 @@
 #include <QtSql/QSqlError>
 #include <QLoggingCategory>
 #include <QUrl>
+#include <cstddef>
+#include <cstdint>
 #include <qfileinfo.h>
 #include <QDir>
+#include <qloggingcategory.h>
+#include <qnamespace.h>
+#include <qtpreprocessorsupport.h>
 
 Q_STATIC_LOGGING_CATEGORY(logger, "apss.models.event")
 
 EventsModel::EventsModel(const QSqlDatabase &db, QObject *parent)
     : QSqlTableModel(parent, db)
 {
-    // QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", "event_reader_conn");
-    // db.setDatabaseName("apss.db");
-
-    // if (!db.open()) {
-    //     qCCritical(logger) << "Failed to open a database connection:" << db.lastError().text();
-    // } else {
     setTable("Event");
     // no edit strategy
     // no header
+    setSort(4, Qt::DescendingOrder);
     select();
-    // }
 }
 
 QVariant EventsModel::data(const QModelIndex &index, int role) const
@@ -149,4 +148,15 @@ QString EventsModel::formatRange(const QDateTime &startTime, const QDateTime &en
         .arg(sTime)
         .arg(endTime.toString("MMM d yyyy"))
         .arg(eTime);
+}
+
+void EventsModel::newEvent(size_t id)
+{
+    select();
+}
+
+void EventsModel::eventUpdated(size_t id, int updateType)
+{
+    Q_UNUSED(updateType);
+    selectRow(static_cast<int>(id));
 }
