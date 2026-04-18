@@ -37,20 +37,6 @@ ONNXInference::ONNXInference(const PredictorConfig &config,
 
             m_availableEPProviders = Ort::GetAvailableProviders();
 
-#ifdef APSS_SUPPORT_CUDA_EP
-            if (std::find(m_availableEPProviders.begin(), m_availableEPProviders.end(), "CUDAExecutionProvider")
-                != m_availableEPProviders.end()) {
-
-                OrtCUDAProviderOptions cudaOptions;
-                sessionOptions->AppendExecutionProvider_CUDA(cudaOptions);
-
-                m_selectedEPProviders.emplace_back("CUDAExecutionProvider");
-            } else {
-                qWarning() << std::format("Inference device {} not available", "CUDAExecutionProvider");
-            }
-#endif
-
-#ifdef APSS_SUPPORT_OPENVINO_EP
             if (std::find(m_availableEPProviders.begin(), m_availableEPProviders.end(), "OpenVINOExecutionProvider")
                 != m_availableEPProviders.end()) {
 
@@ -66,7 +52,7 @@ ONNXInference::ONNXInference(const PredictorConfig &config,
             else {
                 qWarning() << std::format("Inference device {} not available", "OpenVINOExecutionProvider");
             }
-#endif
+
             m_selectedEPProviders.emplace_back("CPUExecutionProvider");
 
         }
