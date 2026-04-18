@@ -1,27 +1,28 @@
-> [!IMPORTANT]
-> This project was heavily inspired by [Frigate NVR](https://github.com/blakeblackshear/frigate.git) and how it works, as I Ahsan U. have had no experience regarding such systems and how their architecture works on deep technical level.
-> In simple words, we only had 4-5 months to make a light-weight surveillance system. No one can acheive something like that in 4 months. So, I really didn't have the time to make mistakes and find out. I learned and implemented.
-> I'm gonna add references later...
+# AI Powered (Vehicle) Surveillance System
+A light-weight Vehicle Surveillance System for our BS Computer Science Final Year Project, at [Khushal Khan Khattak University, Karak, PK](https://kkkuk.edu.pk). This pile of spaghetti code
+was inspired 🤏 this much by, solving the issue of paper work done by our university security gaurds for vehicle entrance and more
+by my obssession of perfection and uncomplete features. It could've been much easier!
+
+## Motivation
+This project was heavily inspired by the architecture of [Frigate NVR](https://github.com/blakeblackshear/frigate.git) and how it works, as I never had any experience with such heavy video pipeline systems. In other words, we only had 6-7 months to make a light-weight surveillance system and could not acheive something that big in such a short period. So, I really didn't have the time to make mistakes and find out.
+
+## Demo
+https://github.com/user-attachments/assets/e5eb7593-71a2-498c-a61f-13891cfdb85c
+
+> [Footage by Sysvideo](https://www.youtube.com/watch?v=eO19UTm93GQ), looped. 
 
 > [!NOTE]
 > Tested only on Windows.
 > We're in a bit of hurry at the moment. So, this might turnout more spaghetti than I thought.
 
-
-# AI Powered (Vehicle) Surveillance System
-A light-weight Vehicle Surveillance System for our FYP, at Khushal Khan Khattak University, Karak, PK. This pile of spaghetti code
-was inspired 🤏 this much by solving the issue of paper work done by our university's security gaurds for vehicle entrance and more
-by my obssession of perfection and uncomplete features. Man, I regret throwin' it at the (show your idea) presentation, it could've been much easier!
-
 ## Building from Source
-Building from source includes setting up vcpkg and some more configuration. I'm strictly following this approach till I find an easier
-way to resolve dependency issue. APSS uses vcpkg for some packages and uses prebuilt binaries for bigger and time-consuming dependencies.
-Prebuilt binaries are hosted in my [0.1 release](https://github.com/ahsanullah-8bit/APSS/releases/tag/v0.1) as it takes a lot of time building from source the right way.
+Building from source includes setting up vcpkg and some more configuration. I'm strictly following this approach till I find an easier way to resolve dependency issues. APSS uses vcpkg for some packages and uses prebuilt binaries for bigger and time-consuming dependencies.
+Prebuilt binaries are hosted in [v0.1 release](https://github.com/ahsanullah-8bit/APSS/releases/tag/v0.1).
 
 ### Prerequisites
 
 #### Tools
-* IDE (i.e Qt Creator, VS 2022, etc.)
+* IDE (i.e Qt Creator, VS 2022, etc.) (Optional,)
 * [vcpkg](https://learn.microsoft.com/en-us/vcpkg/get_started/overview)
 * [ODB 2.5.0](https://github.com/codesynthesis-com/odb.git) Compiler
 * [pkgconf 2.4.3](https://github.com/pkgconf/pkgconf.git)
@@ -76,4 +77,4 @@ git clone --recursive https://github.com/ahsanullah-8bit/APSS.git
 * If you use vcpkg and do frequent builds. I'd recommend looking into [Binary Caching using a Nuget Feed](https://learn.microsoft.com/en-us/vcpkg/consume/binary-caching-nuget) or alternatives.
 
 > [!NOTE]
-> Copying of dlls to the binary directory is automated for non-vcpkg packages, as vcpkg does copy dlls automatically.
+> Copying of dlls to the binary directory is automated for non-vcpkg packages.

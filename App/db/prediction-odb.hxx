@@ -4,8 +4,8 @@
 // compiler for C++.
 //
 
-#ifndef FRAMEPREDICTION_ODB_HXX
-#define FRAMEPREDICTION_ODB_HXX
+#ifndef PREDICTION_ODB_HXX
+#define PREDICTION_ODB_HXX
 
 // Begin prologue.
 //
@@ -39,7 +39,7 @@
 
 #include <odb/pre.hxx>
 
-#include "frameprediction.h"
+#include "prediction.h"
 
 #include <memory>
 #include <cstddef>
@@ -60,20 +60,20 @@
 
 namespace odb
 {
-  // FramePrediction
+  // Prediction
   //
   template <>
-  struct class_traits< ::FramePrediction >
+  struct class_traits< ::APSS::ODB::Prediction >
   {
     static const class_kind kind = class_object;
   };
 
   template <>
-  class access::object_traits< ::FramePrediction >
+  class access::object_traits< ::APSS::ODB::Prediction >
   {
     public:
-    typedef ::FramePrediction object_type;
-    typedef ::QSharedPointer< ::FramePrediction > pointer_type;
+    typedef ::APSS::ODB::Prediction object_type;
+    typedef ::QSharedPointer< ::APSS::ODB::Prediction > pointer_type;
     typedef odb::pointer_traits<pointer_type> pointer_traits;
 
     static const bool polymorphic = false;
@@ -113,10 +113,10 @@ namespace odb
 
 namespace odb
 {
-  // FramePrediction
+  // Prediction
   //
   template <typename A>
-  struct query_columns< ::FramePrediction, id_sqlite, A >
+  struct query_columns< ::APSS::ODB::Prediction, id_sqlite, A >
   {
     // id
     //
@@ -130,7 +130,19 @@ namespace odb
 
     static const id_type_ id;
 
-    // frame_id
+    // eventId
+    //
+    typedef
+    sqlite::query_column<
+      sqlite::value_traits<
+        ::size_t,
+        sqlite::id_integer >::query_type,
+      sqlite::id_integer >
+    eventId_type_;
+
+    static const eventId_type_ eventId;
+
+    // frameId
     //
     typedef
     sqlite::query_column<
@@ -138,11 +150,11 @@ namespace odb
         ::QString,
         sqlite::id_text >::query_type,
       sqlite::id_text >
-    frame_id_type_;
+    frameId_type_;
 
-    static const frame_id_type_ frame_id;
+    static const frameId_type_ frameId;
 
-    // video_timestamp
+    // videoTimestamp
     //
     typedef
     sqlite::query_column<
@@ -150,11 +162,11 @@ namespace odb
         ::QDateTime,
         sqlite::id_text >::query_type,
       sqlite::id_text >
-    video_timestamp_type_;
+    videoTimestamp_type_;
 
-    static const video_timestamp_type_ video_timestamp;
+    static const videoTimestamp_type_ videoTimestamp;
 
-    // stream_timestamp
+    // streamTimestamp
     //
     typedef
     sqlite::query_column<
@@ -162,9 +174,9 @@ namespace odb
         ::QDateTime,
         sqlite::id_text >::query_type,
       sqlite::id_text >
-    stream_timestamp_type_;
+    streamTimestamp_type_;
 
-    static const stream_timestamp_type_ stream_timestamp;
+    static const streamTimestamp_type_ streamTimestamp;
 
     // data
     //
@@ -177,42 +189,64 @@ namespace odb
     data_type_;
 
     static const data_type_ data;
+
+    // hasSubPredictions
+    //
+    typedef
+    sqlite::query_column<
+      sqlite::value_traits<
+        bool,
+        sqlite::id_integer >::query_type,
+      sqlite::id_integer >
+    hasSubPredictions_type_;
+
+    static const hasSubPredictions_type_ hasSubPredictions;
   };
 
   template <typename A>
-  const typename query_columns< ::FramePrediction, id_sqlite, A >::id_type_
-  query_columns< ::FramePrediction, id_sqlite, A >::
+  const typename query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::id_type_
+  query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::
   id (A::table_name, "\"id\"", 0);
 
   template <typename A>
-  const typename query_columns< ::FramePrediction, id_sqlite, A >::frame_id_type_
-  query_columns< ::FramePrediction, id_sqlite, A >::
-  frame_id (A::table_name, "\"frame_id\"", 0);
+  const typename query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::eventId_type_
+  query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::
+  eventId (A::table_name, "\"eventId\"", 0);
 
   template <typename A>
-  const typename query_columns< ::FramePrediction, id_sqlite, A >::video_timestamp_type_
-  query_columns< ::FramePrediction, id_sqlite, A >::
-  video_timestamp (A::table_name, "\"video_timestamp\"", 0);
+  const typename query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::frameId_type_
+  query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::
+  frameId (A::table_name, "\"frameId\"", 0);
 
   template <typename A>
-  const typename query_columns< ::FramePrediction, id_sqlite, A >::stream_timestamp_type_
-  query_columns< ::FramePrediction, id_sqlite, A >::
-  stream_timestamp (A::table_name, "\"stream_timestamp\"", 0);
+  const typename query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::videoTimestamp_type_
+  query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::
+  videoTimestamp (A::table_name, "\"videoTimestamp\"", 0);
 
   template <typename A>
-  const typename query_columns< ::FramePrediction, id_sqlite, A >::data_type_
-  query_columns< ::FramePrediction, id_sqlite, A >::
+  const typename query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::streamTimestamp_type_
+  query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::
+  streamTimestamp (A::table_name, "\"streamTimestamp\"", 0);
+
+  template <typename A>
+  const typename query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::data_type_
+  query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::
   data (A::table_name, "\"data\"", 0);
 
   template <typename A>
-  struct pointer_query_columns< ::FramePrediction, id_sqlite, A >:
-    query_columns< ::FramePrediction, id_sqlite, A >
+  const typename query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::hasSubPredictions_type_
+  query_columns< ::APSS::ODB::Prediction, id_sqlite, A >::
+  hasSubPredictions (A::table_name, "\"hasSubPredictions\"", 0);
+
+  template <typename A>
+  struct pointer_query_columns< ::APSS::ODB::Prediction, id_sqlite, A >:
+    query_columns< ::APSS::ODB::Prediction, id_sqlite, A >
   {
   };
 
   template <>
-  class access::object_traits_impl< ::FramePrediction, id_sqlite >:
-    public access::object_traits< ::FramePrediction >
+  class access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >:
+    public access::object_traits< ::APSS::ODB::Prediction >
   {
     public:
     struct id_image_type
@@ -230,29 +264,39 @@ namespace odb
       long long id_value;
       bool id_null;
 
-      // frame_id
+      // eventId
       //
-      details::buffer frame_id_value;
-      std::size_t frame_id_size;
-      bool frame_id_null;
+      long long eventId_value;
+      bool eventId_null;
 
-      // video_timestamp
+      // frameId
       //
-      details::buffer video_timestamp_value;
-      std::size_t video_timestamp_size;
-      bool video_timestamp_null;
+      details::buffer frameId_value;
+      std::size_t frameId_size;
+      bool frameId_null;
 
-      // stream_timestamp
+      // videoTimestamp
       //
-      details::buffer stream_timestamp_value;
-      std::size_t stream_timestamp_size;
-      bool stream_timestamp_null;
+      details::buffer videoTimestamp_value;
+      std::size_t videoTimestamp_size;
+      bool videoTimestamp_null;
+
+      // streamTimestamp
+      //
+      details::buffer streamTimestamp_value;
+      std::size_t streamTimestamp_size;
+      bool streamTimestamp_null;
 
       // data
       //
       details::buffer data_value;
       std::size_t data_size;
       bool data_null;
+
+      // hasSubPredictions
+      //
+      long long hasSubPredictions_value;
+      bool hasSubPredictions_null;
 
       std::size_t version;
     };
@@ -269,12 +313,14 @@ namespace odb
 
     static bool
     grow (image_type&,
-          bool*);
+          bool*,
+          const schema_version_migration&);
 
     static void
     bind (sqlite::bind*,
           image_type&,
-          sqlite::statement_kind);
+          sqlite::statement_kind,
+          const schema_version_migration&);
 
     static void
     bind (sqlite::bind*, id_image_type&);
@@ -282,12 +328,14 @@ namespace odb
     static bool
     init (image_type&,
           const object_type&,
-          sqlite::statement_kind);
+          sqlite::statement_kind,
+          const schema_version_migration&);
 
     static void
     init (object_type&,
           const image_type&,
-          database*);
+          database*,
+          const schema_version_migration&);
 
     static void
     init (id_image_type&, const id_type&);
@@ -296,7 +344,7 @@ namespace odb
 
     typedef sqlite::query_base query_base_type;
 
-    static const std::size_t column_count = 5UL;
+    static const std::size_t column_count = 7UL;
     static const std::size_t id_column_count = 1UL;
     static const std::size_t inverse_column_count = 0UL;
     static const std::size_t readonly_column_count = 0UL;
@@ -305,7 +353,7 @@ namespace odb
     static const std::size_t separate_load_column_count = 0UL;
     static const std::size_t separate_update_column_count = 0UL;
 
-    static const bool versioned = false;
+    static const bool versioned = true;
 
     static const char persist_statement[];
     static const char find_statement[];
@@ -346,26 +394,28 @@ namespace odb
     public:
     static bool
     find_ (statements_type&,
-           const id_type*);
+           const id_type*,
+           const schema_version_migration&);
 
     static void
     load_ (statements_type&,
            object_type&,
-           bool reload);
+           bool reload,
+           const schema_version_migration&);
   };
 
   template <>
-  class access::object_traits_impl< ::FramePrediction, id_common >:
-    public access::object_traits_impl< ::FramePrediction, id_sqlite >
+  class access::object_traits_impl< ::APSS::ODB::Prediction, id_common >:
+    public access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >
   {
   };
 
-  // FramePrediction
+  // Prediction
   //
 }
 
-#include "frameprediction-odb.ixx"
+#include "prediction-odb.ixx"
 
 #include <odb/post.hxx>
 
-#endif // FRAMEPREDICTION_ODB_HXX
+#endif // PREDICTION_ODB_HXX

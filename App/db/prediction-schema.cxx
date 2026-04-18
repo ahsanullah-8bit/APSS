@@ -30,7 +30,7 @@ namespace odb
         }
         case 2:
         {
-          db.execute ("DROP TABLE IF EXISTS \"FramePrediction\"");
+          db.execute ("DROP TABLE IF EXISTS \"Prediction\"");
           db.execute ("CREATE TABLE IF NOT EXISTS \"schema_version\" (\n"
                       "  \"name\" TEXT NOT NULL PRIMARY KEY,\n"
                       "  \"version\" INTEGER NOT NULL,\n"
@@ -47,12 +47,14 @@ namespace odb
       {
         case 1:
         {
-          db.execute ("CREATE TABLE \"FramePrediction\" (\n"
+          db.execute ("CREATE TABLE \"Prediction\" (\n"
                       "  \"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,\n"
-                      "  \"frame_id\" TEXT NULL,\n"
-                      "  \"video_timestamp\" TEXT NULL,\n"
-                      "  \"stream_timestamp\" TEXT NULL,\n"
-                      "  \"data\" TEXT NULL)");
+                      "  \"eventId\" INTEGER NOT NULL,\n"
+                      "  \"frameId\" TEXT NULL,\n"
+                      "  \"videoTimestamp\" TEXT NULL,\n"
+                      "  \"streamTimestamp\" TEXT NULL,\n"
+                      "  \"data\" TEXT NULL,\n"
+                      "  \"hasSubPredictions\" INTEGER NOT NULL)");
           return true;
         }
         case 2:
@@ -63,7 +65,7 @@ namespace odb
                       "  \"migration\" INTEGER NOT NULL)");
           db.execute ("INSERT OR IGNORE INTO \"schema_version\" (\n"
                       "  \"name\", \"version\", \"migration\")\n"
-                      "  VALUES ('', 1, 0)");
+                      "  VALUES ('', 2, 0)");
           return false;
         }
       }
@@ -84,6 +86,60 @@ namespace odb
     "",
     1ULL,
     0);
+
+  static bool
+  migrate_schema_2 (database& db, unsigned short pass, bool pre)
+  {
+    ODB_POTENTIALLY_UNUSED (db);
+    ODB_POTENTIALLY_UNUSED (pass);
+    ODB_POTENTIALLY_UNUSED (pre);
+
+    if (pre)
+    {
+      switch (pass)
+      {
+        case 1:
+        {
+          db.execute ("ALTER TABLE \"Prediction\"\n"
+                      "  ADD COLUMN \"hasSubPredictions\" INTEGER NULL");
+          return true;
+        }
+        case 2:
+        {
+          db.execute ("UPDATE \"schema_version\"\n"
+                      "  SET \"version\" = 2, \"migration\" = 1\n"
+                      "  WHERE \"name\" = ''");
+          return false;
+        }
+      }
+    }
+    else
+    {
+      switch (pass)
+      {
+        case 1:
+        {
+          return true;
+        }
+        case 2:
+        {
+          db.execute ("UPDATE \"schema_version\"\n"
+                      "  SET \"migration\" = 0\n"
+                      "  WHERE \"name\" = ''");
+          return false;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  static const schema_catalog_migrate_entry
+  migrate_schema_entry_2_ (
+    id_sqlite,
+    "",
+    2ULL,
+    &migrate_schema_2);
 }
 
 #include <odb/post.hxx>

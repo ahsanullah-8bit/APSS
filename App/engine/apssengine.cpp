@@ -1,7 +1,5 @@
 #include <filesystem>
-
-#include "apssengine.h"
-#include <opencv2/opencv.hpp>
+#include <memory>
 
 #include <QDir>
 #include <QVideoSink>
@@ -10,21 +8,24 @@
 #include <QSqlQuery>
 #include <QSqlError>
 
+#include <onnxruntime_cxx_api.h>
+#include <opencv2/opencv.hpp>
 #include <odb/core.hxx>
 #include <odb/database.hxx>
 #include <odb/transaction.hxx>
 #include <odb/session.hxx>
 #include <odb/schema-catalog.hxx>
 #include <odb/sqlite/database.hxx>
-#include <qcontainerfwd.h>
-#include <qloggingcategory.h>
 
-#include "apss.h"
-#include "camera/cameraprocessor.h"
-#include "camera/cameracapture.h"
-#include "detectors/objectdetectorsession.h"
-#include "detectors/lpdetectorsession.h"
-#include "utils/framemanager.h"
+#include <apss.h>
+#include <camera/cameraprocessor.h>
+#include <camera/cameracapture.h>
+#include <detectors/objectdetectorsession.h>
+#include <detectors/lpdetectorsession.h>
+#include <detectors/lprsession.h>
+#include <output/trackedobjectprocessor.h>
+#include <utils/framemanager.h>
+#include "apssengine.h"
 
 Q_STATIC_LOGGING_CATEGORY(logger, "apss.engine")
 
@@ -128,14 +129,27 @@ void APSSEngine::stop()
             }
         }
 
-        // lp
-        m_lpdetector->requestInterruption();
-        m_inUnifiedLPDetectorQ.abort();
-        if (m_lpdetector->wait(500)) {
-            qCWarning(logger) << "Gracefull termination timed-out for detector thread"
-                              << m_lpdetector->objectName() << ", forcing termination";
-            m_lpdetector->terminate();
-            m_lpdetector->wait();
+        // Stop License Plate Detectors
+        for (const auto &det : m_lpdetectors) {
+            det->requestInterruption();
+            m_inUnifiedLPDetectorQ.abort();
+            if (det->wait(500)) {
+                qCWarning(logger) << "Gracefull termination timed-out for detector thread"
+                                  << det->objectName().append(',') << "forcing termination";
+                det->terminate();
+                det->wait();
+            }
+        }
+
+        // Stop License Plate Recognizer
+        auto [lpr_worker, lpr_thread] = m_lprWorkerThread;
+        if (lpr_thread && lpr_worker) {
+            lpr_thread->quit();
+            if (lpr_thread->wait(1000)) {
+                qCWarning(logger) << "Gracefull termination timed-out for" << lpr_thread->objectName() << "thread, forcing termination";
+                lpr_thread->terminate();
+                lpr_thread->wait();
+            }
         }
 
         m_trackedObjectsProcessor->requestInterruption();
@@ -301,6 +315,12 @@ void APSSEngine::initRecordingManager()
 
 void APSSEngine::startDetectors()
 {
+    // Initialize the global Ort::Env
+    Ort::ThreadingOptions threading_options;
+    threading_options.SetGlobalIntraOpNumThreads(2);
+    threading_options.SetGlobalInterOpNumThreads(1);
+    m_globalOrtEnv = std::make_shared<Ort::Env>(threading_options, ORT_LOGGING_LEVEL_WARNING, "Global_ONNX");
+
     for (const auto&[name, config] : m_config->cameras)
         m_cameraWaitConditions.emplace(QString::fromStdString(name), new QWaitCondition());
 
@@ -315,17 +335,36 @@ void APSSEngine::startDetectors()
         qCInfo(logger) << "Detector" << name << "has started:" << m_detectors[_name]->isRunning();
     }
 
-    // lp detector
+    // License Plate detectors
     PredictorConfig lpdetconfig;
     lpdetconfig.model = ModelConfig();
     lpdetconfig.model->path = "models/yolo11n-pose-1700_320.onnx";
     lpdetconfig.batch_size = 1;
 
-    m_lpdetector = QSharedPointer<QThread>(new LPDetectorSession(m_inUnifiedLPDetectorQ,
+    int n = m_config->predictors.size() > 2 ? m_config->predictors.size() / 2 : 1;
+    for (int i = 0; i < n; ++i) {
+        QString det_name = QString("lp_det_%1").arg(i);
+        m_lpdetectors[det_name] = QSharedPointer<QThread>(new LPDetectorSession(m_inUnifiedLPDetectorQ,
                                                                  m_cameraWaitConditions,
                                                                  lpdetconfig,
-                                                                 m_config->lpr.has_value() ? m_config->lpr.value() : LicensePlateConfig()));
-    m_lpdetector->start();
+                                                                 m_config->lpr ? m_config->lpr.value() : LicensePlateConfig()));
+        m_lpdetectors[det_name]->start();
+    }
+
+    // License Plate Recognizer
+    if (m_config->lpr && m_config->lpr->enabled) {
+        auto *lpr_thread = new QThread(this);
+        auto *lpr_worker = new LPRSessionWorker(m_globalOrtEnv, m_db, m_config->lpr.value());
+    
+        connect(lpr_thread, &QThread::started, lpr_worker, &LPRSessionWorker::init);
+        connect(lpr_worker, &LPRSessionWorker::destroyed, lpr_thread, &QThread::quit);
+        connect(lpr_thread, &QThread::finished, lpr_thread, &QThread::deleteLater);
+    
+        m_lprWorkerThread = {lpr_worker, lpr_thread};
+        lpr_thread->start();
+    } else {
+        m_lprWorkerThread = { nullptr, nullptr };
+    }
 }
 
 void APSSEngine::startDetectedFramesProcessor()
@@ -334,6 +373,8 @@ void APSSEngine::startDetectedFramesProcessor()
     m_trackedObjectsProcessor = processor;
 
     connect(m_trackedObjectsProcessor.get(), &TrackedObjectProcessor::frameChanged, this, &APSSEngine::onFrameChanged);
+    if (m_lprWorkerThread.first)
+        connect(processor.get(), &TrackedObjectProcessor::eventCompleted, m_lprWorkerThread.first, &LPRSessionWorker::process);
     // connect(m_trackedObjectsProcessor.get(), &TrackedObjectProcessor::frameChangedWithEvents, m_recordingsManager.first, &RecordingsManager::onRecordFrame);
 
     m_trackedObjectsProcessor->start();

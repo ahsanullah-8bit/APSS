@@ -6,19 +6,19 @@
 
 namespace odb
 {
-  // FramePrediction
+  // Prediction
   //
 
   inline
-  access::object_traits< ::FramePrediction >::id_type
-  access::object_traits< ::FramePrediction >::
+  access::object_traits< ::APSS::ODB::Prediction >::id_type
+  access::object_traits< ::APSS::ODB::Prediction >::
   id (const object_type& o)
   {
     return o.id;
   }
 
   inline
-  void access::object_traits< ::FramePrediction >::
+  void access::object_traits< ::APSS::ODB::Prediction >::
   callback (database& db, object_type& x, callback_event e)
   {
     ODB_POTENTIALLY_UNUSED (db);
@@ -27,7 +27,7 @@ namespace odb
   }
 
   inline
-  void access::object_traits< ::FramePrediction >::
+  void access::object_traits< ::APSS::ODB::Prediction >::
   callback (database& db, const object_type& x, callback_event e)
   {
     ODB_POTENTIALLY_UNUSED (db);
@@ -40,11 +40,11 @@ namespace odb
 
 namespace odb
 {
-  // FramePrediction
+  // Prediction
   //
 
   inline
-  void access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   erase (database& db, const object_type& obj)
   {
     callback (db, obj, callback_event::pre_erase);
@@ -53,13 +53,15 @@ namespace odb
   }
 
   inline
-  void access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   load_ (statements_type& sts,
          object_type& obj,
-         bool)
+         bool,
+         const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (sts);
     ODB_POTENTIALLY_UNUSED (obj);
+    ODB_POTENTIALLY_UNUSED (svm);
   }
 }
 

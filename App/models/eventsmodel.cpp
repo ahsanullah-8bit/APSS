@@ -6,25 +6,24 @@
 #include <QtSql/QSqlError>
 #include <QLoggingCategory>
 #include <QUrl>
+#include <cstddef>
+#include <cstdint>
 #include <qfileinfo.h>
 #include <QDir>
+#include <qloggingcategory.h>
+#include <qnamespace.h>
+#include <qtpreprocessorsupport.h>
 
 Q_STATIC_LOGGING_CATEGORY(logger, "apss.models.event")
 
 EventsModel::EventsModel(const QSqlDatabase &db, QObject *parent)
     : QSqlTableModel(parent, db)
 {
-    // QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", "event_reader_conn");
-    // db.setDatabaseName("apss.db");
-
-    // if (!db.open()) {
-    //     qCCritical(logger) << "Failed to open a database connection:" << db.lastError().text();
-    // } else {
     setTable("Event");
     // no edit strategy
     // no header
+    setSort(4, Qt::DescendingOrder);
     select();
-    // }
 }
 
 QVariant EventsModel::data(const QModelIndex &index, int role) const
@@ -64,14 +63,14 @@ QVariant EventsModel::data(const QModelIndex &index, int role) const
         return static_cast<int>(QSqlTableModel::data(createIndex(index.row(), 7)).toFloat() * 100);
     case Score:     // 8
         return QSqlTableModel::data(createIndex(index.row(), 8));
-    case Thumbnail: { // 11
-        QString path = QSqlTableModel::data(createIndex(index.row(), 11)).toString();
+    case Thumbnail: { // 9
+        QString path = QSqlTableModel::data(createIndex(index.row(), 9)).toString();
         return QUrl::fromLocalFile(path);
     }
     case ReviewClip: // custom
         return QVariant();
     case LicensePlatePath: {
-        QString path = QSqlTableModel::data(createIndex(index.row(), 11)).toString();
+        QString path = QSqlTableModel::data(createIndex(index.row(), 9)).toString();
         QFileInfo file(path);
         QString file_name = QString("%1_lp.jpg").arg(file.baseName());
         path = file.dir().filePath(file_name);
@@ -149,4 +148,15 @@ QString EventsModel::formatRange(const QDateTime &startTime, const QDateTime &en
         .arg(sTime)
         .arg(endTime.toString("MMM d yyyy"))
         .arg(eTime);
+}
+
+void EventsModel::newEvent(size_t id)
+{
+    select();
+}
+
+void EventsModel::eventUpdated(size_t id, int updateType)
+{
+    Q_UNUSED(updateType);
+    selectRow(static_cast<int>(id));
 }

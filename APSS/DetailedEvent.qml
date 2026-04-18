@@ -2,8 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-Dialog {
-    id: rootDialog
+Popup {
+    id: rootPopup
 
     property url thumbnail
     property string label
@@ -13,8 +13,9 @@ Dialog {
     property string licensePlateText
     property string licensePlateImageSource
 
-    standardButtons: Dialog.Ok
     modal: true
+    focus: true
+    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
     RowLayout {
         anchors.fill: parent
@@ -34,22 +35,22 @@ Dialog {
 
             Text {
                 id: label_
-                text: "Type: " + rootDialog.label
+                text: "Type: " + rootPopup.label
             }
 
             Text {
                 id: camera_
-                text: "Camera: " + rootDialog.camera
+                text: "Camera: " + rootPopup.camera
             }
 
             Text {
                 id: time_
-                text: "Time: " + rootDialog.time
+                text: "Time: " + rootPopup.time
             }
 
             Text {
                 id: topScore_
-                text: "Top Score: " + rootDialog.topScore + "%"
+                text: "Top Score: " + rootPopup.topScore + "%"
             }
 
             // additional
@@ -64,7 +65,7 @@ Dialog {
 
             Text {
                 id: licensePlateText_
-                text: "License Plate: " + rootDialog.licensePlateText
+                text: "License Plate: " + rootPopup.licensePlateText
             }
 
             Image {
@@ -73,7 +74,7 @@ Dialog {
                 Layout.fillHeight: true
 
                 fillMode: Image.PreserveAspectFit
-                source: rootDialog.licensePlateImageSource
+                source: rootPopup.licensePlateImageSource
                 sourceSize {
                     width: licensePlate_.width
                     height: licensePlate_.height
@@ -88,7 +89,7 @@ Dialog {
             Layout.fillHeight: true
 
             fillMode: Image.PreserveAspectFit
-            source: rootDialog.thumbnail
+            source: rootPopup.thumbnail
             sourceSize {
                 width: img.width
                 height: img.height

@@ -6,7 +6,7 @@
 
 #include <odb/pre.hxx>
 
-#include "frameprediction-odb.hxx"
+#include "prediction-odb.hxx"
 
 #include <cassert>
 #include <cstring>  // std::memcpy
@@ -25,10 +25,10 @@
 
 namespace odb
 {
-  // FramePrediction
+  // Prediction
   //
 
-  struct access::object_traits_impl< ::FramePrediction, id_sqlite >::extra_statement_cache_type
+  struct access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::extra_statement_cache_type
   {
     extra_statement_cache_type (
       sqlite::connection&,
@@ -40,8 +40,8 @@ namespace odb
     }
   };
 
-  access::object_traits_impl< ::FramePrediction, id_sqlite >::id_type
-  access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::id_type
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   id (const id_image_type& i)
   {
     sqlite::database* db (0);
@@ -60,8 +60,8 @@ namespace odb
     return id;
   }
 
-  access::object_traits_impl< ::FramePrediction, id_sqlite >::id_type
-  access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::id_type
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   id (const image_type& i)
   {
     sqlite::database* db (0);
@@ -80,12 +80,14 @@ namespace odb
     return id;
   }
 
-  bool access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   grow (image_type& i,
-        bool* t)
+        bool* t,
+        const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (t);
+    ODB_POTENTIALLY_UNUSED (svm);
 
     bool grew (false);
 
@@ -93,47 +95,60 @@ namespace odb
     //
     t[0UL] = false;
 
-    // frame_id
+    // eventId
     //
-    if (t[1UL])
-    {
-      i.frame_id_value.capacity (i.frame_id_size);
-      grew = true;
-    }
+    t[1UL] = false;
 
-    // video_timestamp
+    // frameId
     //
     if (t[2UL])
     {
-      i.video_timestamp_value.capacity (i.video_timestamp_size);
+      i.frameId_value.capacity (i.frameId_size);
       grew = true;
     }
 
-    // stream_timestamp
+    // videoTimestamp
     //
     if (t[3UL])
     {
-      i.stream_timestamp_value.capacity (i.stream_timestamp_size);
+      i.videoTimestamp_value.capacity (i.videoTimestamp_size);
+      grew = true;
+    }
+
+    // streamTimestamp
+    //
+    if (t[4UL])
+    {
+      i.streamTimestamp_value.capacity (i.streamTimestamp_size);
       grew = true;
     }
 
     // data
     //
-    if (t[4UL])
+    if (t[5UL])
     {
       i.data_value.capacity (i.data_size);
       grew = true;
     }
 
+    // hasSubPredictions
+    //
+    if (svm >= schema_version_migration (2ULL, true))
+    {
+      t[6UL] = false;
+    }
+
     return grew;
   }
 
-  void access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   bind (sqlite::bind* b,
         image_type& i,
-        sqlite::statement_kind sk)
+        sqlite::statement_kind sk,
+        const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (sk);
+    ODB_POTENTIALLY_UNUSED (svm);
 
     using namespace sqlite;
 
@@ -149,37 +164,44 @@ namespace odb
       n++;
     }
 
-    // frame_id
+    // eventId
+    //
+    b[n].type = sqlite::bind::integer;
+    b[n].buffer = &i.eventId_value;
+    b[n].is_null = &i.eventId_null;
+    n++;
+
+    // frameId
     //
     b[n].type = sqlite::image_traits<
       ::QString,
       sqlite::id_text>::bind_value;
-    b[n].buffer = i.frame_id_value.data ();
-    b[n].size = &i.frame_id_size;
-    b[n].capacity = i.frame_id_value.capacity ();
-    b[n].is_null = &i.frame_id_null;
+    b[n].buffer = i.frameId_value.data ();
+    b[n].size = &i.frameId_size;
+    b[n].capacity = i.frameId_value.capacity ();
+    b[n].is_null = &i.frameId_null;
     n++;
 
-    // video_timestamp
+    // videoTimestamp
     //
     b[n].type = sqlite::image_traits<
       ::QDateTime,
       sqlite::id_text>::bind_value;
-    b[n].buffer = i.video_timestamp_value.data ();
-    b[n].size = &i.video_timestamp_size;
-    b[n].capacity = i.video_timestamp_value.capacity ();
-    b[n].is_null = &i.video_timestamp_null;
+    b[n].buffer = i.videoTimestamp_value.data ();
+    b[n].size = &i.videoTimestamp_size;
+    b[n].capacity = i.videoTimestamp_value.capacity ();
+    b[n].is_null = &i.videoTimestamp_null;
     n++;
 
-    // stream_timestamp
+    // streamTimestamp
     //
     b[n].type = sqlite::image_traits<
       ::QDateTime,
       sqlite::id_text>::bind_value;
-    b[n].buffer = i.stream_timestamp_value.data ();
-    b[n].size = &i.stream_timestamp_size;
-    b[n].capacity = i.stream_timestamp_value.capacity ();
-    b[n].is_null = &i.stream_timestamp_null;
+    b[n].buffer = i.streamTimestamp_value.data ();
+    b[n].size = &i.streamTimestamp_size;
+    b[n].capacity = i.streamTimestamp_value.capacity ();
+    b[n].is_null = &i.streamTimestamp_null;
     n++;
 
     // data
@@ -192,9 +214,20 @@ namespace odb
     b[n].capacity = i.data_value.capacity ();
     b[n].is_null = &i.data_null;
     n++;
+
+    // hasSubPredictions
+    //
+    if (svm >= schema_version_migration (2ULL, true))
+    {
+      b[n].type = sqlite::bind::integer;
+      b[n].buffer = &i.hasSubPredictions_value;
+      b[n].is_null = &i.hasSubPredictions_null;
+    }
+
+    n++;
   }
 
-  void access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   bind (sqlite::bind* b, id_image_type& i)
   {
     std::size_t n (0);
@@ -203,14 +236,16 @@ namespace odb
     b[n].is_null = &i.id_null;
   }
 
-  bool access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   init (image_type& i,
         const object_type& o,
-        sqlite::statement_kind sk)
+        sqlite::statement_kind sk,
+        const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (o);
     ODB_POTENTIALLY_UNUSED (sk);
+    ODB_POTENTIALLY_UNUSED (svm);
 
     using namespace sqlite;
 
@@ -233,61 +268,77 @@ namespace odb
       i.id_null = is_null;
     }
 
-    // frame_id
+    // eventId
+    //
+    {
+      ::size_t const& v =
+        o.eventId;
+
+      bool is_null (false);
+      sqlite::value_traits<
+          ::size_t,
+          sqlite::id_integer >::set_image (
+        i.eventId_value,
+        is_null,
+        v);
+      i.eventId_null = is_null;
+    }
+
+    // frameId
     //
     {
       ::QString const& v =
-        o.frame_id;
+        o.frameId;
 
       bool is_null (true);
-      std::size_t cap (i.frame_id_value.capacity ());
+      std::size_t cap (i.frameId_value.capacity ());
       sqlite::value_traits<
           ::QString,
           sqlite::id_text >::set_image (
-        i.frame_id_value,
-        i.frame_id_size,
+        i.frameId_value,
+        i.frameId_size,
         is_null,
         v);
-      i.frame_id_null = is_null;
-      grew = grew || (cap != i.frame_id_value.capacity ());
+      i.frameId_null = is_null;
+      grew = grew || (cap != i.frameId_value.capacity ());
     }
 
-    // video_timestamp
+    // videoTimestamp
     //
     {
       ::QDateTime const& v =
-        o.video_timestamp;
+        o.videoTimestamp;
 
       bool is_null (true);
-      std::size_t cap (i.video_timestamp_value.capacity ());
+      std::size_t cap (i.videoTimestamp_value.capacity ());
       sqlite::value_traits<
           ::QDateTime,
           sqlite::id_text >::set_image (
-        i.video_timestamp_value,
-        i.video_timestamp_size,
+        i.videoTimestamp_value,
+        i.videoTimestamp_size,
         is_null,
         v);
-      i.video_timestamp_null = is_null;
-      grew = grew || (cap != i.video_timestamp_value.capacity ());
+      i.videoTimestamp_null = is_null;
+      grew = grew || (cap != i.videoTimestamp_value.capacity ());
     }
 
-    // stream_timestamp
+    // streamTimestamp
     //
     {
       ::QDateTime const& v =
-        o.stream_timestamp;
+        o.streamTimestamp;
 
       bool is_null (true);
-      std::size_t cap (i.stream_timestamp_value.capacity ());
+      std::size_t cap (i.streamTimestamp_value.capacity ());
       sqlite::value_traits<
           ::QDateTime,
           sqlite::id_text >::set_image (
-        i.stream_timestamp_value,
-        i.stream_timestamp_size,
+        i.streamTimestamp_value,
+        i.streamTimestamp_size,
         is_null,
         v);
-      i.stream_timestamp_null = is_null;
-      grew = grew || (cap != i.stream_timestamp_value.capacity ());
+      i.streamTimestamp_null = is_null;
+      grew = grew || (cap != i.streamTimestamp_value.capacity ());
     }
 
     // data
@@ -309,17 +360,38 @@ namespace odb
       grew = grew || (cap != i.data_value.capacity ());
     }
 
+    // hasSubPredictions
+    //
+    if (svm >= schema_version_migration (2ULL, true))
+    {
+      {
+        bool const& v =
+          o.hasSubPredictions;
+
+        bool is_null (false);
+        sqlite::value_traits<
+            bool,
+            sqlite::id_integer >::set_image (
+          i.hasSubPredictions_value,
+          is_null,
+          v);
+        i.hasSubPredictions_null = is_null;
+      }
+    }
+
     return grew;
   }
 
-  void access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   init (object_type& o,
         const image_type& i,
-        database* db)
+        database* db,
+        const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (o);
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (db);
+    ODB_POTENTIALLY_UNUSED (svm);
 
     // id
     //
@@ -335,49 +407,63 @@ namespace odb
         i.id_null);
     }
 
-    // frame_id
+    // eventId
+    //
+    {
+      ::size_t& v =
+        o.eventId;
+
+      sqlite::value_traits<
+          ::size_t,
+          sqlite::id_integer >::set_value (
+        v,
+        i.eventId_value,
+        i.eventId_null);
+    }
+
+    // frameId
     //
     {
       ::QString& v =
-        o.frame_id;
+        o.frameId;
 
       sqlite::value_traits<
           ::QString,
           sqlite::id_text >::set_value (
         v,
-        i.frame_id_value,
-        i.frame_id_size,
-        i.frame_id_null);
+        i.frameId_value,
+        i.frameId_size,
+        i.frameId_null);
     }
 
-    // video_timestamp
+    // videoTimestamp
     //
     {
       ::QDateTime& v =
-        o.video_timestamp;
+        o.videoTimestamp;
 
       sqlite::value_traits<
           ::QDateTime,
           sqlite::id_text >::set_value (
         v,
-        i.video_timestamp_value,
-        i.video_timestamp_size,
-        i.video_timestamp_null);
+        i.videoTimestamp_value,
+        i.videoTimestamp_size,
+        i.videoTimestamp_null);
     }
 
-    // stream_timestamp
+    // streamTimestamp
     //
     {
       ::QDateTime& v =
-        o.stream_timestamp;
+        o.streamTimestamp;
 
       sqlite::value_traits<
           ::QDateTime,
           sqlite::id_text >::set_value (
         v,
-        i.stream_timestamp_value,
-        i.stream_timestamp_size,
-        i.stream_timestamp_null);
+        i.streamTimestamp_value,
+        i.streamTimestamp_size,
+        i.streamTimestamp_null);
     }
 
     // data
@@ -394,9 +480,24 @@ namespace odb
         i.data_size,
         i.data_null);
     }
+
+    // hasSubPredictions
+    //
+    if (svm >= schema_version_migration (2ULL, true))
+    {
+      bool& v =
+        o.hasSubPredictions;
+
+      sqlite::value_traits<
+          bool,
+          sqlite::id_integer >::set_value (
+        v,
+        i.hasSubPredictions_value,
+        i.hasSubPredictions_null);
+    }
   }
 
-  void access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   init (id_image_type& i, const id_type& id)
   {
     {
@@ -411,55 +512,63 @@ namespace odb
     }
   }
 
-  const char access::object_traits_impl< ::FramePrediction, id_sqlite >::persist_statement[] =
-  "INSERT INTO \"FramePrediction\" "
-  "(\"id\", "
-  "\"frame_id\", "
-  "\"video_timestamp\", "
-  "\"stream_timestamp\", "
-  "\"data\") "
-  "VALUES "
-  "(?, ?, ?, ?, ?)";
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::persist_statement[] =
+  "INSERT INTO \"Prediction\"\n"
+  "(\"id\",\n"
+  "\"eventId\",\n"
+  "\"frameId\",\n"
+  "\"videoTimestamp\",\n"
+  "\"streamTimestamp\",\n"
+  "\"data\",\n"
+  "\"hasSubPredictions\")\n"
+  "VALUES\n"
+  "(?,\n?,\n?,\n?,\n?,\n?,\n?)";
 
-  const char access::object_traits_impl< ::FramePrediction, id_sqlite >::find_statement[] =
-  "SELECT "
-  "\"FramePrediction\".\"id\", "
-  "\"FramePrediction\".\"frame_id\", "
-  "\"FramePrediction\".\"video_timestamp\", "
-  "\"FramePrediction\".\"stream_timestamp\", "
-  "\"FramePrediction\".\"data\" "
-  "FROM \"FramePrediction\" "
-  "WHERE \"FramePrediction\".\"id\"=?";
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::find_statement[] =
+  "SELECT\n"
+  "\"Prediction\".\"id\",\n"
+  "\"Prediction\".\"eventId\",\n"
+  "\"Prediction\".\"frameId\",\n"
+  "\"Prediction\".\"videoTimestamp\",\n"
+  "\"Prediction\".\"streamTimestamp\",\n"
+  "\"Prediction\".\"data\",\n"
+  "\"Prediction\".\"hasSubPredictions\"\n"
+  "FROM \"Prediction\"\n"
+  "WHERE \"Prediction\".\"id\"=?";
 
-  const char access::object_traits_impl< ::FramePrediction, id_sqlite >::update_statement[] =
-  "UPDATE \"FramePrediction\" "
-  "SET "
-  "\"frame_id\"=?, "
-  "\"video_timestamp\"=?, "
-  "\"stream_timestamp\"=?, "
-  "\"data\"=? "
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::update_statement[] =
+  "UPDATE \"Prediction\"\n"
+  "SET\n"
+  "\"eventId\"=?,\n"
+  "\"frameId\"=?,\n"
+  "\"videoTimestamp\"=?,\n"
+  "\"streamTimestamp\"=?,\n"
+  "\"data\"=?,\n"
+  "\"hasSubPredictions\"=?\n"
   "WHERE \"id\"=?";
 
-  const char access::object_traits_impl< ::FramePrediction, id_sqlite >::erase_statement[] =
-  "DELETE FROM \"FramePrediction\" "
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::erase_statement[] =
+  "DELETE FROM \"Prediction\" "
   "WHERE \"id\"=?";
 
-  const char access::object_traits_impl< ::FramePrediction, id_sqlite >::query_statement[] =
-  "SELECT "
-  "\"FramePrediction\".\"id\", "
-  "\"FramePrediction\".\"frame_id\", "
-  "\"FramePrediction\".\"video_timestamp\", "
-  "\"FramePrediction\".\"stream_timestamp\", "
-  "\"FramePrediction\".\"data\" "
-  "FROM \"FramePrediction\"";
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::query_statement[] =
+  "SELECT\n"
+  "\"Prediction\".\"id\",\n"
+  "\"Prediction\".\"eventId\",\n"
+  "\"Prediction\".\"frameId\",\n"
+  "\"Prediction\".\"videoTimestamp\",\n"
+  "\"Prediction\".\"streamTimestamp\",\n"
+  "\"Prediction\".\"data\",\n"
+  "\"Prediction\".\"hasSubPredictions\"\n"
+  "FROM \"Prediction\"";
 
-  const char access::object_traits_impl< ::FramePrediction, id_sqlite >::erase_query_statement[] =
-  "DELETE FROM \"FramePrediction\"";
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::erase_query_statement[] =
+  "DELETE FROM \"Prediction\"";
 
-  const char access::object_traits_impl< ::FramePrediction, id_sqlite >::table_name[] =
-  "\"FramePrediction\"";
+  const char access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::table_name[] =
+  "\"Prediction\"";
 
-  void access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   persist (database& db, object_type& obj)
   {
     using namespace sqlite;
@@ -468,6 +577,7 @@ namespace odb
       sqlite::transaction::current ().connection (db));
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     callback (db,
               static_cast<const object_type&> (obj),
@@ -476,7 +586,7 @@ namespace odb
     image_type& im (sts.image ());
     binding& imb (sts.insert_image_binding ());
 
-    if (init (im, obj, statement_insert))
+    if (init (im, obj, statement_insert, svm))
       im.version++;
 
     im.id_null = true;
@@ -484,7 +594,7 @@ namespace odb
     if (im.version != sts.insert_image_version () ||
         imb.version == 0)
     {
-      bind (imb.bind, im, statement_insert);
+      bind (imb.bind, im, statement_insert, svm);
       sts.insert_image_version (im.version);
       imb.version++;
     }
@@ -511,7 +621,7 @@ namespace odb
               callback_event::post_persist);
   }
 
-  void access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   update (database& db, const object_type& obj)
   {
     ODB_POTENTIALLY_UNUSED (db);
@@ -526,11 +636,13 @@ namespace odb
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
 
+    const schema_version_migration& svm (sts.version_migration ());
+
     id_image_type& idi (sts.id_image ());
     init (idi, id (obj));
 
     image_type& im (sts.image ());
-    if (init (im, obj, statement_update))
+    if (init (im, obj, statement_update, svm))
       im.version++;
 
     bool u (false);
@@ -538,7 +650,7 @@ namespace odb
     if (im.version != sts.update_image_version () ||
         imb.version == 0)
     {
-      bind (imb.bind, im, statement_update);
+      bind (imb.bind, im, statement_update, svm);
       sts.update_image_version (im.version);
       imb.version++;
       u = true;
@@ -563,14 +675,14 @@ namespace odb
     }
 
     update_statement& st (sts.update_statement ());
-    if (st.execute () == 0)
+    if (!st.empty () && st.execute () == 0)
       throw object_not_persistent ();
 
     callback (db, obj, callback_event::post_update);
     pointer_cache_traits::update (db, obj);
   }
 
-  void access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   erase (database& db, const id_type& id)
   {
     using namespace sqlite;
@@ -597,8 +709,8 @@ namespace odb
     pointer_cache_traits::erase (db, id);
   }
 
-  access::object_traits_impl< ::FramePrediction, id_sqlite >::pointer_type
-  access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::pointer_type
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   find (database& db, const id_type& id)
   {
     using namespace sqlite;
@@ -614,12 +726,13 @@ namespace odb
       sqlite::transaction::current ().connection (db));
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     statements_type::auto_lock l (sts);
 
     if (l.locked ())
     {
-      if (!find_ (sts, &id))
+      if (!find_ (sts, &id, svm))
         return pointer_type ();
     }
 
@@ -638,9 +751,9 @@ namespace odb
       ODB_POTENTIALLY_UNUSED (st);
 
       callback (db, obj, callback_event::pre_load);
-      init (obj, sts.image (), &db);
-      load_ (sts, obj, false);
-      sts.load_delayed (0);
+      init (obj, sts.image (), &db, svm);
+      load_ (sts, obj, false, svm);
+      sts.load_delayed (&svm);
       l.unlock ();
       callback (db, obj, callback_event::post_load);
       pointer_cache_traits::load (ig.position ());
@@ -653,7 +766,7 @@ namespace odb
     return p;
   }
 
-  bool access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   find (database& db, const id_type& id, object_type& obj)
   {
     using namespace sqlite;
@@ -662,11 +775,12 @@ namespace odb
       sqlite::transaction::current ().connection (db));
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     statements_type::auto_lock l (sts);
     assert (l.locked ()) /* Must be a top-level call. */;
 
-    if (!find_ (sts, &id))
+    if (!find_ (sts, &id, svm))
       return false;
 
     select_statement& st (sts.find_statement ());
@@ -677,9 +791,9 @@ namespace odb
     reference_cache_traits::insert_guard ig (pos);
 
     callback (db, obj, callback_event::pre_load);
-    init (obj, sts.image (), &db);
-    load_ (sts, obj, false);
-    sts.load_delayed (0);
+    init (obj, sts.image (), &db, svm);
+    load_ (sts, obj, false, svm);
+    sts.load_delayed (&svm);
     l.unlock ();
     callback (db, obj, callback_event::post_load);
     reference_cache_traits::load (pos);
@@ -687,7 +801,7 @@ namespace odb
     return true;
   }
 
-  bool access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   reload (database& db, object_type& obj)
   {
     using namespace sqlite;
@@ -696,29 +810,31 @@ namespace odb
       sqlite::transaction::current ().connection (db));
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     statements_type::auto_lock l (sts);
     assert (l.locked ()) /* Must be a top-level call. */;
 
     const id_type& id (object_traits_impl::id (obj));
-    if (!find_ (sts, &id))
+    if (!find_ (sts, &id, svm))
       return false;
 
     select_statement& st (sts.find_statement ());
     ODB_POTENTIALLY_UNUSED (st);
 
     callback (db, obj, callback_event::pre_load);
-    init (obj, sts.image (), &db);
-    load_ (sts, obj, true);
-    sts.load_delayed (0);
+    init (obj, sts.image (), &db, svm);
+    load_ (sts, obj, true, svm);
+    sts.load_delayed (&svm);
     l.unlock ();
     callback (db, obj, callback_event::post_load);
     return true;
   }
 
-  bool access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   find_ (statements_type& sts,
-         const id_type* id)
+         const id_type* id,
+         const schema_version_migration& svm)
   {
     using namespace sqlite;
 
@@ -739,7 +855,7 @@ namespace odb
     if (im.version != sts.select_image_version () ||
         imb.version == 0)
     {
-      bind (imb.bind, im, statement_select);
+      bind (imb.bind, im, statement_select, svm);
       sts.select_image_version (im.version);
       imb.version++;
     }
@@ -752,12 +868,12 @@ namespace odb
 
     if (r == select_statement::truncated)
     {
-      if (grow (im, sts.select_image_truncated ()))
+      if (grow (im, sts.select_image_truncated (), svm))
         im.version++;
 
       if (im.version != sts.select_image_version ())
       {
-        bind (imb.bind, im, statement_select);
+        bind (imb.bind, im, statement_select, svm);
         sts.select_image_version (im.version);
         imb.version++;
         st.refetch ();
@@ -767,8 +883,8 @@ namespace odb
     return r != select_statement::no_data;
   }
 
-  result< access::object_traits_impl< ::FramePrediction, id_sqlite >::object_type >
-  access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  result< access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::object_type >
+  access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   query (database& db, const query_base_type& q)
   {
     using namespace sqlite;
@@ -780,6 +896,7 @@ namespace odb
 
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     image_type& im (sts.image ());
     binding& imb (sts.select_image_binding ());
@@ -787,7 +904,7 @@ namespace odb
     if (im.version != sts.select_image_version () ||
         imb.version == 0)
     {
-      bind (imb.bind, im, statement_select);
+      bind (imb.bind, im, statement_select, svm);
       sts.select_image_version (im.version);
       imb.version++;
     }
@@ -795,7 +912,7 @@ namespace odb
     std::string text (query_statement);
     if (!q.empty ())
     {
-      text += " ";
+      text += "\n";
       text += q.clause ();
     }
 
@@ -804,7 +921,7 @@ namespace odb
       new (shared) select_statement (
         conn,
         text,
-        false,
+        true,
         true,
         q.parameters_binding (),
         imb));
@@ -813,12 +930,12 @@ namespace odb
 
     shared_ptr< odb::object_result_impl<object_type> > r (
       new (shared) sqlite::object_result_impl<object_type> (
-        q, st, sts, 0));
+        q, st, sts, &svm));
 
     return result<object_type> (r);
   }
 
-  unsigned long long access::object_traits_impl< ::FramePrediction, id_sqlite >::
+  unsigned long long access::object_traits_impl< ::APSS::ODB::Prediction, id_sqlite >::
   erase_query (database& db, const query_base_type& q)
   {
     using namespace sqlite;

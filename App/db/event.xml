@@ -1,4 +1,10 @@
 <changelog xmlns="http://www.codesynthesis.com/xmlns/odb/changelog" database="sqlite" version="1">
+  <changeset version="2">
+    <alter-table name="Event">
+      <add-column name="licensePlateResults" type="TEXT" null="true"/>
+    </alter-table>
+  </changeset>
+
   <model version="1">
     <table name="Event" kind="object">
       <column name="id" type="INTEGER" null="false"/>
@@ -10,11 +16,8 @@
       <column name="trackerId" type="INTEGER" null="false"/>
       <column name="topScore" type="REAL" null="true"/>
       <column name="score" type="REAL" null="true"/>
-      <column name="falsePositive" type="INTEGER" null="false"/>
-      <column name="zones" type="TEXT" null="true"/>
       <column name="thumbnail" type="TEXT" null="true"/>
       <column name="hasClip" type="INTEGER" null="false"/>
-      <column name="data" type="TEXT" null="true"/>
       <primary-key auto="true">
         <column name="id"/>
       </primary-key>

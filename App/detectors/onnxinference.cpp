@@ -1,11 +1,12 @@
 #include <filesystem>
 
-#include "onnxinference.h"
+#include <detectors/image.h>
 
-#include "image.h"
+#include "onnxinference.h"
 
 ONNXInference::ONNXInference(const PredictorConfig &config,
                              const std::shared_ptr<Ort::Env> &env,
+                             const std::shared_ptr<Ort::SessionOptions> &sessionOptions,
                              const std::shared_ptr<CustomAllocator> &allocator,
                              const std::shared_ptr<Ort::MemoryInfo> &memoryInfo)
     : m_env(env)
@@ -29,51 +30,53 @@ ONNXInference::ONNXInference(const PredictorConfig &config,
         throw std::runtime_error("Model is not available in the specified directory. Please download a model first and try again!");
 
     try {
-        Ort::SessionOptions sessionOptions;
-        int intraop_threads = std::min(4, static_cast<int>(std::thread::hardware_concurrency()));
-        sessionOptions.SetIntraOpNumThreads(intraop_threads);
-        sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_BASIC);
+        if (!sessionOptions) {
+            int intraop_threads = std::min(2, static_cast<int>(std::thread::hardware_concurrency()));
+            sessionOptions->SetIntraOpNumThreads(intraop_threads);
+            sessionOptions->SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_BASIC);
 
-        m_availableEPProviders = Ort::GetAvailableProviders();
+            m_availableEPProviders = Ort::GetAvailableProviders();
 
 #ifdef APSS_SUPPORT_CUDA_EP
-        if (std::find(m_availableEPProviders.begin(), m_availableEPProviders.end(), "CUDAExecutionProvider")
-            != m_availableEPProviders.end()) {
+            if (std::find(m_availableEPProviders.begin(), m_availableEPProviders.end(), "CUDAExecutionProvider")
+                != m_availableEPProviders.end()) {
 
-            OrtCUDAProviderOptions cudaOptions;
-            sessionOptions.AppendExecutionProvider_CUDA(cudaOptions);
+                OrtCUDAProviderOptions cudaOptions;
+                sessionOptions->AppendExecutionProvider_CUDA(cudaOptions);
 
-            m_selectedEPProviders.emplace_back("CUDAExecutionProvider");
-        } else {
-            qWarning() << std::format("Inference device {} not available", "CUDAExecutionProvider");
-        }
+                m_selectedEPProviders.emplace_back("CUDAExecutionProvider");
+            } else {
+                qWarning() << std::format("Inference device {} not available", "CUDAExecutionProvider");
+            }
 #endif
 
 #ifdef APSS_SUPPORT_OPENVINO_EP
-        if (std::find(m_availableEPProviders.begin(), m_availableEPProviders.end(), "OpenVINOExecutionProvider")
-            != m_availableEPProviders.end()) {
+            if (std::find(m_availableEPProviders.begin(), m_availableEPProviders.end(), "OpenVINOExecutionProvider")
+                != m_availableEPProviders.end()) {
 
-            std::unordered_map<std::string, std::string> options;
-            options["device_type"] = "AUTO:GPU,CPU";
-            options["precision"] = "ACCURACY";
-            options["num_of_threads"] = "4";
-            options["disable_dynamic_shapes"] = "false";
-            sessionOptions.AppendExecutionProvider_OpenVINO_V2(options);
+                std::unordered_map<std::string, std::string> options;
+                options["device_type"] = "AUTO:GPU,CPU";
+                options["precision"] = "ACCURACY";
+                options["num_of_threads"] = "2";
+                options["disable_dynamic_shapes"] = "false";
+                sessionOptions->AppendExecutionProvider_OpenVINO_V2(options);
 
-            m_selectedEPProviders.emplace_back("OpenVINOExecutionProvider");
-        }
-        else {
-            qWarning() << std::format("Inference device {} not available", "OpenVINOExecutionProvider");
-        }
+                m_selectedEPProviders.emplace_back("OpenVINOExecutionProvider");
+            }
+            else {
+                qWarning() << std::format("Inference device {} not available", "OpenVINOExecutionProvider");
+            }
 #endif
-        m_selectedEPProviders.emplace_back("CPUExecutionProvider");
+            m_selectedEPProviders.emplace_back("CPUExecutionProvider");
+
+        }
 
 #ifdef _WIN32
         std::wstring modelPath(model_path.begin(), model_path.end());
 #else
         std::string modelPath(model_path);
 #endif
-        m_session = Ort::Session(*m_env, modelPath.c_str(), sessionOptions);
+        m_session = Ort::Session(*m_env, modelPath.c_str(), *sessionOptions);
 
         if (!m_allocator)
             m_allocator = std::make_shared<CustomAllocator>(Ort::Allocator(m_session, *m_memoryInfo));

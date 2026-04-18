@@ -1,14 +1,16 @@
 #pragma once
 
+#include <memory>
+
 #include <QObject>
 #include <QThread>
 
 #include <tbb_patched.h>
 
 #include <config/detectorconfig.h>
-#include "config/predictorconfig.h"
-#include "detectors/objectdetector.h"
-#include "utils/eventspersecond.h"
+#include <config/predictorconfig.h>
+#include <detectors/objectdetector.h>
+#include <utils/eventspersecond.h>
 #include <utils/frame.h>
 
 class ObjectDetectorSession : public QThread
@@ -19,6 +21,7 @@ public:
                                    SharedFrameBoundedQueue &inFrameQueue,
                                    QHash<QString, QSharedPointer<QWaitCondition>> &cameraWaitConditions,
                                    const PredictorConfig &config,
+                                   std::shared_ptr<Ort::Env> env = nullptr,
                                    QObject *parent = nullptr);
     QSharedPointer<ObjectDetector> detector();
     const EventsPerSecond &eps() const;
@@ -30,6 +33,7 @@ protected:
     void run() override;
 
 private:
+    std::shared_ptr<Ort::Env> m_env;
 
     // New interface
     QString m_name;

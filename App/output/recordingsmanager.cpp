@@ -13,7 +13,7 @@
 #include <opencv2/videoio/videoio.hpp>
 
 #include <camera/cameracapture.h>
-#include <db/recording-odb.hxx>
+// #include <db/recording-odb.hxx>
 #include <output/recordingsmanager.h>
 
 using namespace std::chrono;
@@ -146,13 +146,13 @@ void RecordingsManager::onRecordFrame(SharedFrame frame, const QList<int> &activ
 
         if (!activeEvents.contains(id)) {
             QMetaObject::invokeMethod(it->remuxer, "close");
-            Recording recording;
-            recording.setId(QString("%1_%2").arg(frame->camera(), it->startTime.toString(Qt::ISODateWithMs)));
-            recording.setCamera(frame->camera());
-            recording.setPath(it->remuxer->path());
-            recording.setStartTime(it->startTime);
-            recording.setEndTime(frame->timestamp());
-            recording.setDuration(static_cast<float>(it->startTime.msecsTo(frame->timestamp())));
+            // Recording recording;
+            // recording.setId(QString("%1_%2").arg(frame->camera(), it->startTime.toString(Qt::ISODateWithMs)));
+            // recording.setCamera(frame->camera());
+            // recording.setPath(it->remuxer->path());
+            // recording.setStartTime(it->startTime);
+            // recording.setEndTime(frame->timestamp());
+            // recording.setDuration(static_cast<float>(it->startTime.msecsTo(frame->timestamp())));
 
             qDebug(logger) << "Recording saved";
             // persist the recording to the database

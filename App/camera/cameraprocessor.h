@@ -4,13 +4,12 @@
 #include <QThread>
 #include <QDateTime>
 
-#include "camerametrics.h"
-#include "config/cameraconfig.h"
-#include "config/modelconfig.h"
-#include "detectors/paddleocr.h"
-#include "track/tracker.h"
-#include "utils/frame.h"
-#include "utils/prediction.h"
+#include <camera/camerametrics.h>
+#include <config/cameraconfig.h>
+#include <config/modelconfig.h>
+#include <track/tracker.h>
+#include <utils/frame.h>
+#include <utils/prediction.h>
 
 // This class handles object detection and tracking on frames coming from a single camera
 // feed. The detection is done through several stages:
@@ -61,7 +60,6 @@ protected:
 private:
     QString m_cameraName;
     CameraConfig m_config;
-    // PaddleOCREngine m_ocrEngine;
     SharedFrameBoundedQueue &m_inDetectorFrameQueue;
     SharedFrameBoundedQueue &m_inLPDetectorFrameQueue;
     QSharedPointer<QWaitCondition> m_waitCondition;

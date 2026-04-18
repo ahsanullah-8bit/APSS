@@ -20,7 +20,6 @@ extern "C" {
 
 #include <tbb_patched.h>
 #include <apss.h>
-#include <detectors/licensed/utility.h>
 #include <config/platerecognizerconfig.h>
 #include <utils/prediction.h>
 
@@ -37,7 +36,6 @@ using SharedPacket = QSharedPointer<AVPacket>;
 class Frame {
 public:
     using TimePoint = std::chrono::time_point<std::chrono::system_clock>;
-    // using TypePredictionsHash = QHash<Prediction::Type, PredictionList>;
 
     Frame() = default;
     Frame(const QString &camera, size_t frameIndx, cv::Mat data,
@@ -59,11 +57,8 @@ public:
     cv::Mat data() const;
     QDateTime timestamp() const;
     PredictionList predictions() const;
-    // PredictionList predictions(const Prediction::Type target) const;
     bool hasExpired() const;
     bool hasBeenProcessed() const;
-    // std::vector<PaddleOCR::OCRPredictResultList> ocrResults() const;
-    // std::optional<ANPRSnapshot> anprSnapshot() const;
 
     void setData(cv::Mat newData);
     void setTimestamp(const QDateTime &newTimestamp);
@@ -73,9 +68,6 @@ public:
     void addPredictions(PredictionList &&newPredictions);
     void setHasExpired(bool newHasExpired);
     void setHasBeenProcessed(bool newHasBeenProcessed);
-    // void setOcrResults(const std::vector<PaddleOCR::OCRPredictResultList> &newOcrResults);
-    // void setOcrResults(std::vector<PaddleOCR::OCRPredictResultList> &&newOcrResults);
-    // void setAnprSnapshot(std::optional<ANPRSnapshot> newAnprSnapshot);
 
     // static helpers
     static QString makeFrameId(const QString &camera, size_t frameIndx);
@@ -89,10 +81,7 @@ private:
     QDateTime m_timestamp;
     std::atomic_bool m_hasExpired = false;
     std::atomic_bool m_hasBeenProcessed = false;
-    // QHash<Prediction::Type, PredictionList> m_predictions;
     PredictionList m_predictions;
-    // std::vector<PaddleOCR::OCRPredictResultList> m_ocrResults;
-    // std::optional<ANPRSnapshot> m_anprSnapshot; // Comprehensive ANPR data
 
     mutable std::shared_mutex m_mtx;
 };

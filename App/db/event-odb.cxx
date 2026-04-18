@@ -28,7 +28,7 @@ namespace odb
   // Event
   //
 
-  struct access::object_traits_impl< ::Event, id_sqlite >::extra_statement_cache_type
+  struct access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::extra_statement_cache_type
   {
     extra_statement_cache_type (
       sqlite::connection&,
@@ -40,8 +40,8 @@ namespace odb
     }
   };
 
-  access::object_traits_impl< ::Event, id_sqlite >::id_type
-  access::object_traits_impl< ::Event, id_sqlite >::
+  access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::id_type
+  access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   id (const id_image_type& i)
   {
     sqlite::database* db (0);
@@ -60,8 +60,8 @@ namespace odb
     return id;
   }
 
-  access::object_traits_impl< ::Event, id_sqlite >::id_type
-  access::object_traits_impl< ::Event, id_sqlite >::
+  access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::id_type
+  access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   id (const image_type& i)
   {
     sqlite::database* db (0);
@@ -73,259 +73,240 @@ namespace odb
           ::size_t,
           sqlite::id_integer >::set_value (
         id,
-        i.m_id_value,
-        i.m_id_null);
+        i.id_value,
+        i.id_null);
     }
 
     return id;
   }
 
-  bool access::object_traits_impl< ::Event, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   grow (image_type& i,
-        bool* t)
+        bool* t,
+        const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (t);
+    ODB_POTENTIALLY_UNUSED (svm);
 
     bool grew (false);
 
-    // m_id
+    // id
     //
     t[0UL] = false;
 
-    // m_label
+    // label
     //
     if (t[1UL])
     {
-      i.m_label_value.capacity (i.m_label_size);
+      i.label_value.capacity (i.label_size);
       grew = true;
     }
 
-    // m_subLabel
+    // subLabel
     //
     if (t[2UL])
     {
-      i.m_subLabel_value.capacity (i.m_subLabel_size);
+      i.subLabel_value.capacity (i.subLabel_size);
       grew = true;
     }
 
-    // m_camera
+    // camera
     //
     if (t[3UL])
     {
-      i.m_camera_value.capacity (i.m_camera_size);
+      i.camera_value.capacity (i.camera_size);
       grew = true;
     }
 
-    // m_startTime
+    // startTime
     //
     if (t[4UL])
     {
-      i.m_startTime_value.capacity (i.m_startTime_size);
+      i.startTime_value.capacity (i.startTime_size);
       grew = true;
     }
 
-    // m_endTime
+    // endTime
     //
     if (t[5UL])
     {
-      i.m_endTime_value.capacity (i.m_endTime_size);
+      i.endTime_value.capacity (i.endTime_size);
       grew = true;
     }
 
-    // m_trackerId
+    // trackerId
     //
     t[6UL] = false;
 
-    // m_topScore
+    // topScore
     //
     t[7UL] = false;
 
-    // m_score
+    // score
     //
     t[8UL] = false;
 
-    // m_falsePositive
+    // thumbnail
     //
-    t[9UL] = false;
-
-    // m_zones
-    //
-    if (t[10UL])
+    if (t[9UL])
     {
-      i.m_zones_value.capacity (i.m_zones_size);
+      i.thumbnail_value.capacity (i.thumbnail_size);
       grew = true;
     }
 
-    // m_thumbnail
+    // hasClip
     //
-    if (t[11UL])
-    {
-      i.m_thumbnail_value.capacity (i.m_thumbnail_size);
-      grew = true;
-    }
+    t[10UL] = false;
 
-    // m_hasClip
+    // licensePlateResults
     //
-    t[12UL] = false;
-
-    // m_data
-    //
-    if (t[13UL])
+    if (svm >= schema_version_migration (2ULL, true))
     {
-      i.m_data_value.capacity (i.m_data_size);
-      grew = true;
+      if (t[11UL])
+      {
+        i.licensePlateResults_value.capacity (i.licensePlateResults_size);
+        grew = true;
+      }
     }
 
     return grew;
   }
 
-  void access::object_traits_impl< ::Event, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   bind (sqlite::bind* b,
         image_type& i,
-        sqlite::statement_kind sk)
+        sqlite::statement_kind sk,
+        const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (sk);
+    ODB_POTENTIALLY_UNUSED (svm);
 
     using namespace sqlite;
 
     std::size_t n (0);
 
-    // m_id
+    // id
     //
     if (sk != statement_update)
     {
       b[n].type = sqlite::bind::integer;
-      b[n].buffer = &i.m_id_value;
-      b[n].is_null = &i.m_id_null;
+      b[n].buffer = &i.id_value;
+      b[n].is_null = &i.id_null;
       n++;
     }
 
-    // m_label
+    // label
     //
     b[n].type = sqlite::image_traits<
       ::QString,
       sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_label_value.data ();
-    b[n].size = &i.m_label_size;
-    b[n].capacity = i.m_label_value.capacity ();
-    b[n].is_null = &i.m_label_null;
+    b[n].buffer = i.label_value.data ();
+    b[n].size = &i.label_size;
+    b[n].capacity = i.label_value.capacity ();
+    b[n].is_null = &i.label_null;
     n++;
 
-    // m_subLabel
+    // subLabel
     //
     b[n].type = sqlite::image_traits<
       ::QString,
       sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_subLabel_value.data ();
-    b[n].size = &i.m_subLabel_size;
-    b[n].capacity = i.m_subLabel_value.capacity ();
-    b[n].is_null = &i.m_subLabel_null;
+    b[n].buffer = i.subLabel_value.data ();
+    b[n].size = &i.subLabel_size;
+    b[n].capacity = i.subLabel_value.capacity ();
+    b[n].is_null = &i.subLabel_null;
     n++;
 
-    // m_camera
+    // camera
     //
     b[n].type = sqlite::image_traits<
       ::QString,
       sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_camera_value.data ();
-    b[n].size = &i.m_camera_size;
-    b[n].capacity = i.m_camera_value.capacity ();
-    b[n].is_null = &i.m_camera_null;
+    b[n].buffer = i.camera_value.data ();
+    b[n].size = &i.camera_size;
+    b[n].capacity = i.camera_value.capacity ();
+    b[n].is_null = &i.camera_null;
     n++;
 
-    // m_startTime
+    // startTime
     //
     b[n].type = sqlite::image_traits<
       ::QDateTime,
       sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_startTime_value.data ();
-    b[n].size = &i.m_startTime_size;
-    b[n].capacity = i.m_startTime_value.capacity ();
-    b[n].is_null = &i.m_startTime_null;
+    b[n].buffer = i.startTime_value.data ();
+    b[n].size = &i.startTime_size;
+    b[n].capacity = i.startTime_value.capacity ();
+    b[n].is_null = &i.startTime_null;
     n++;
 
-    // m_endTime
+    // endTime
     //
     b[n].type = sqlite::image_traits<
       ::QDateTime,
       sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_endTime_value.data ();
-    b[n].size = &i.m_endTime_size;
-    b[n].capacity = i.m_endTime_value.capacity ();
-    b[n].is_null = &i.m_endTime_null;
+    b[n].buffer = i.endTime_value.data ();
+    b[n].size = &i.endTime_size;
+    b[n].capacity = i.endTime_value.capacity ();
+    b[n].is_null = &i.endTime_null;
     n++;
 
-    // m_trackerId
+    // trackerId
     //
     b[n].type = sqlite::bind::integer;
-    b[n].buffer = &i.m_trackerId_value;
-    b[n].is_null = &i.m_trackerId_null;
+    b[n].buffer = &i.trackerId_value;
+    b[n].is_null = &i.trackerId_null;
     n++;
 
-    // m_topScore
+    // topScore
     //
     b[n].type = sqlite::bind::real;
-    b[n].buffer = &i.m_topScore_value;
-    b[n].is_null = &i.m_topScore_null;
+    b[n].buffer = &i.topScore_value;
+    b[n].is_null = &i.topScore_null;
     n++;
 
-    // m_score
+    // score
     //
     b[n].type = sqlite::bind::real;
-    b[n].buffer = &i.m_score_value;
-    b[n].is_null = &i.m_score_null;
+    b[n].buffer = &i.score_value;
+    b[n].is_null = &i.score_null;
     n++;
 
-    // m_falsePositive
+    // thumbnail
+    //
+    b[n].type = sqlite::image_traits<
+      ::QString,
+      sqlite::id_text>::bind_value;
+    b[n].buffer = i.thumbnail_value.data ();
+    b[n].size = &i.thumbnail_size;
+    b[n].capacity = i.thumbnail_value.capacity ();
+    b[n].is_null = &i.thumbnail_null;
+    n++;
+
+    // hasClip
     //
     b[n].type = sqlite::bind::integer;
-    b[n].buffer = &i.m_falsePositive_value;
-    b[n].is_null = &i.m_falsePositive_null;
+    b[n].buffer = &i.hasClip_value;
+    b[n].is_null = &i.hasClip_null;
     n++;
 
-    // m_zones
+    // licensePlateResults
     //
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_zones_value.data ();
-    b[n].size = &i.m_zones_size;
-    b[n].capacity = i.m_zones_value.capacity ();
-    b[n].is_null = &i.m_zones_null;
-    n++;
+    if (svm >= schema_version_migration (2ULL, true))
+    {
+      b[n].type = sqlite::image_traits<
+        ::QString,
+        sqlite::id_text>::bind_value;
+      b[n].buffer = i.licensePlateResults_value.data ();
+      b[n].size = &i.licensePlateResults_size;
+      b[n].capacity = i.licensePlateResults_value.capacity ();
+      b[n].is_null = &i.licensePlateResults_null;
+    }
 
-    // m_thumbnail
-    //
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_thumbnail_value.data ();
-    b[n].size = &i.m_thumbnail_size;
-    b[n].capacity = i.m_thumbnail_value.capacity ();
-    b[n].is_null = &i.m_thumbnail_null;
-    n++;
-
-    // m_hasClip
-    //
-    b[n].type = sqlite::bind::integer;
-    b[n].buffer = &i.m_hasClip_value;
-    b[n].is_null = &i.m_hasClip_null;
-    n++;
-
-    // m_data
-    //
-    b[n].type = sqlite::image_traits<
-      ::QString,
-      sqlite::id_text>::bind_value;
-    b[n].buffer = i.m_data_value.data ();
-    b[n].size = &i.m_data_size;
-    b[n].capacity = i.m_data_value.capacity ();
-    b[n].is_null = &i.m_data_null;
     n++;
   }
 
-  void access::object_traits_impl< ::Event, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   bind (sqlite::bind* b, id_image_type& i)
   {
     std::size_t n (0);
@@ -334,486 +315,430 @@ namespace odb
     b[n].is_null = &i.id_null;
   }
 
-  bool access::object_traits_impl< ::Event, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   init (image_type& i,
         const object_type& o,
-        sqlite::statement_kind sk)
+        sqlite::statement_kind sk,
+        const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (o);
     ODB_POTENTIALLY_UNUSED (sk);
+    ODB_POTENTIALLY_UNUSED (svm);
 
     using namespace sqlite;
 
     bool grew (false);
 
-    // m_id
+    // id
     //
     if (sk == statement_insert)
     {
       ::size_t const& v =
-        o.m_id;
+        o.id;
 
       bool is_null (false);
       sqlite::value_traits<
           ::size_t,
           sqlite::id_integer >::set_image (
-        i.m_id_value,
+        i.id_value,
         is_null,
         v);
-      i.m_id_null = is_null;
+      i.id_null = is_null;
     }
 
-    // m_label
+    // label
     //
     {
       ::QString const& v =
-        o.m_label;
+        o.label;
 
       bool is_null (true);
-      std::size_t cap (i.m_label_value.capacity ());
+      std::size_t cap (i.label_value.capacity ());
       sqlite::value_traits<
           ::QString,
           sqlite::id_text >::set_image (
-        i.m_label_value,
-        i.m_label_size,
+        i.label_value,
+        i.label_size,
         is_null,
         v);
-      i.m_label_null = is_null;
-      grew = grew || (cap != i.m_label_value.capacity ());
+      i.label_null = is_null;
+      grew = grew || (cap != i.label_value.capacity ());
     }
 
-    // m_subLabel
+    // subLabel
     //
     {
       ::QString const& v =
-        o.m_subLabel;
+        o.subLabel;
 
       bool is_null (true);
-      std::size_t cap (i.m_subLabel_value.capacity ());
+      std::size_t cap (i.subLabel_value.capacity ());
       sqlite::value_traits<
           ::QString,
           sqlite::id_text >::set_image (
-        i.m_subLabel_value,
-        i.m_subLabel_size,
+        i.subLabel_value,
+        i.subLabel_size,
         is_null,
         v);
-      i.m_subLabel_null = is_null;
-      grew = grew || (cap != i.m_subLabel_value.capacity ());
+      i.subLabel_null = is_null;
+      grew = grew || (cap != i.subLabel_value.capacity ());
     }
 
-    // m_camera
+    // camera
     //
     {
       ::QString const& v =
-        o.m_camera;
+        o.camera;
 
       bool is_null (true);
-      std::size_t cap (i.m_camera_value.capacity ());
+      std::size_t cap (i.camera_value.capacity ());
       sqlite::value_traits<
           ::QString,
           sqlite::id_text >::set_image (
-        i.m_camera_value,
-        i.m_camera_size,
+        i.camera_value,
+        i.camera_size,
         is_null,
         v);
-      i.m_camera_null = is_null;
-      grew = grew || (cap != i.m_camera_value.capacity ());
+      i.camera_null = is_null;
+      grew = grew || (cap != i.camera_value.capacity ());
     }
 
-    // m_startTime
+    // startTime
     //
     {
       ::QDateTime const& v =
-        o.m_startTime;
+        o.startTime;
 
       bool is_null (true);
-      std::size_t cap (i.m_startTime_value.capacity ());
+      std::size_t cap (i.startTime_value.capacity ());
       sqlite::value_traits<
           ::QDateTime,
           sqlite::id_text >::set_image (
-        i.m_startTime_value,
-        i.m_startTime_size,
+        i.startTime_value,
+        i.startTime_size,
         is_null,
         v);
-      i.m_startTime_null = is_null;
-      grew = grew || (cap != i.m_startTime_value.capacity ());
+      i.startTime_null = is_null;
+      grew = grew || (cap != i.startTime_value.capacity ());
     }
 
-    // m_endTime
+    // endTime
     //
     {
       ::QDateTime const& v =
-        o.m_endTime;
+        o.endTime;
 
       bool is_null (true);
-      std::size_t cap (i.m_endTime_value.capacity ());
+      std::size_t cap (i.endTime_value.capacity ());
       sqlite::value_traits<
           ::QDateTime,
           sqlite::id_text >::set_image (
-        i.m_endTime_value,
-        i.m_endTime_size,
+        i.endTime_value,
+        i.endTime_size,
         is_null,
         v);
-      i.m_endTime_null = is_null;
-      grew = grew || (cap != i.m_endTime_value.capacity ());
+      i.endTime_null = is_null;
+      grew = grew || (cap != i.endTime_value.capacity ());
     }
 
-    // m_trackerId
+    // trackerId
     //
     {
       int const& v =
-        o.m_trackerId;
+        o.trackerId;
 
       bool is_null (false);
       sqlite::value_traits<
           int,
           sqlite::id_integer >::set_image (
-        i.m_trackerId_value,
+        i.trackerId_value,
         is_null,
         v);
-      i.m_trackerId_null = is_null;
+      i.trackerId_null = is_null;
     }
 
-    // m_topScore
+    // topScore
     //
     {
       float const& v =
-        o.m_topScore;
+        o.topScore;
 
       bool is_null (true);
       sqlite::value_traits<
           float,
           sqlite::id_real >::set_image (
-        i.m_topScore_value,
+        i.topScore_value,
         is_null,
         v);
-      i.m_topScore_null = is_null;
+      i.topScore_null = is_null;
     }
 
-    // m_score
+    // score
     //
     {
       float const& v =
-        o.m_score;
+        o.score;
 
       bool is_null (true);
       sqlite::value_traits<
           float,
           sqlite::id_real >::set_image (
-        i.m_score_value,
+        i.score_value,
         is_null,
         v);
-      i.m_score_null = is_null;
+      i.score_null = is_null;
     }
 
-    // m_falsePositive
+    // thumbnail
+    //
+    {
+      ::QString const& v =
+        o.thumbnail;
+
+      bool is_null (true);
+      std::size_t cap (i.thumbnail_value.capacity ());
+      sqlite::value_traits<
+          ::QString,
+          sqlite::id_text >::set_image (
+        i.thumbnail_value,
+        i.thumbnail_size,
+        is_null,
+        v);
+      i.thumbnail_null = is_null;
+      grew = grew || (cap != i.thumbnail_value.capacity ());
+    }
+
+    // hasClip
     //
     {
       bool const& v =
-        o.m_falsePositive;
+        o.hasClip;
 
       bool is_null (false);
       sqlite::value_traits<
           bool,
           sqlite::id_integer >::set_image (
-        i.m_falsePositive_value,
+        i.hasClip_value,
         is_null,
         v);
-      i.m_falsePositive_null = is_null;
+      i.hasClip_null = is_null;
     }
 
-    // m_zones
+    // licensePlateResults
     //
+    if (svm >= schema_version_migration (2ULL, true))
     {
-      ::QString const& v =
-        o.m_zones;
+      {
+        ::QString const& v =
+          o.licensePlateResults;
 
-      bool is_null (true);
-      std::size_t cap (i.m_zones_value.capacity ());
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_zones_value,
-        i.m_zones_size,
-        is_null,
-        v);
-      i.m_zones_null = is_null;
-      grew = grew || (cap != i.m_zones_value.capacity ());
-    }
-
-    // m_thumbnail
-    //
-    {
-      ::QString const& v =
-        o.m_thumbnail;
-
-      bool is_null (true);
-      std::size_t cap (i.m_thumbnail_value.capacity ());
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_thumbnail_value,
-        i.m_thumbnail_size,
-        is_null,
-        v);
-      i.m_thumbnail_null = is_null;
-      grew = grew || (cap != i.m_thumbnail_value.capacity ());
-    }
-
-    // m_hasClip
-    //
-    {
-      bool const& v =
-        o.m_hasClip;
-
-      bool is_null (false);
-      sqlite::value_traits<
-          bool,
-          sqlite::id_integer >::set_image (
-        i.m_hasClip_value,
-        is_null,
-        v);
-      i.m_hasClip_null = is_null;
-    }
-
-    // m_data
-    //
-    {
-      ::QString const& v =
-        o.m_data;
-
-      bool is_null (true);
-      std::size_t cap (i.m_data_value.capacity ());
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_image (
-        i.m_data_value,
-        i.m_data_size,
-        is_null,
-        v);
-      i.m_data_null = is_null;
-      grew = grew || (cap != i.m_data_value.capacity ());
+        bool is_null (true);
+        std::size_t cap (i.licensePlateResults_value.capacity ());
+        sqlite::value_traits<
+            ::QString,
+            sqlite::id_text >::set_image (
+          i.licensePlateResults_value,
+          i.licensePlateResults_size,
+          is_null,
+          v);
+        i.licensePlateResults_null = is_null;
+        grew = grew || (cap != i.licensePlateResults_value.capacity ());
+      }
     }
 
     return grew;
   }
 
-  void access::object_traits_impl< ::Event, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   init (object_type& o,
         const image_type& i,
-        database* db)
+        database* db,
+        const schema_version_migration& svm)
   {
     ODB_POTENTIALLY_UNUSED (o);
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (db);
+    ODB_POTENTIALLY_UNUSED (svm);
 
-    // m_id
+    // id
     //
     {
       ::size_t& v =
-        o.m_id;
+        o.id;
 
       sqlite::value_traits<
           ::size_t,
           sqlite::id_integer >::set_value (
         v,
-        i.m_id_value,
-        i.m_id_null);
+        i.id_value,
+        i.id_null);
     }
 
-    // m_label
+    // label
     //
     {
       ::QString& v =
-        o.m_label;
+        o.label;
 
       sqlite::value_traits<
           ::QString,
           sqlite::id_text >::set_value (
         v,
-        i.m_label_value,
-        i.m_label_size,
-        i.m_label_null);
+        i.label_value,
+        i.label_size,
+        i.label_null);
     }
 
-    // m_subLabel
+    // subLabel
     //
     {
       ::QString& v =
-        o.m_subLabel;
+        o.subLabel;
 
       sqlite::value_traits<
           ::QString,
           sqlite::id_text >::set_value (
         v,
-        i.m_subLabel_value,
-        i.m_subLabel_size,
-        i.m_subLabel_null);
+        i.subLabel_value,
+        i.subLabel_size,
+        i.subLabel_null);
     }
 
-    // m_camera
+    // camera
     //
     {
       ::QString& v =
-        o.m_camera;
+        o.camera;
 
       sqlite::value_traits<
           ::QString,
           sqlite::id_text >::set_value (
         v,
-        i.m_camera_value,
-        i.m_camera_size,
-        i.m_camera_null);
+        i.camera_value,
+        i.camera_size,
+        i.camera_null);
     }
 
-    // m_startTime
+    // startTime
     //
     {
       ::QDateTime& v =
-        o.m_startTime;
+        o.startTime;
 
       sqlite::value_traits<
           ::QDateTime,
           sqlite::id_text >::set_value (
         v,
-        i.m_startTime_value,
-        i.m_startTime_size,
-        i.m_startTime_null);
+        i.startTime_value,
+        i.startTime_size,
+        i.startTime_null);
     }
 
-    // m_endTime
+    // endTime
     //
     {
       ::QDateTime& v =
-        o.m_endTime;
+        o.endTime;
 
       sqlite::value_traits<
           ::QDateTime,
           sqlite::id_text >::set_value (
         v,
-        i.m_endTime_value,
-        i.m_endTime_size,
-        i.m_endTime_null);
+        i.endTime_value,
+        i.endTime_size,
+        i.endTime_null);
     }
 
-    // m_trackerId
+    // trackerId
     //
     {
       int& v =
-        o.m_trackerId;
+        o.trackerId;
 
       sqlite::value_traits<
           int,
           sqlite::id_integer >::set_value (
         v,
-        i.m_trackerId_value,
-        i.m_trackerId_null);
+        i.trackerId_value,
+        i.trackerId_null);
     }
 
-    // m_topScore
+    // topScore
     //
     {
       float& v =
-        o.m_topScore;
+        o.topScore;
 
       sqlite::value_traits<
           float,
           sqlite::id_real >::set_value (
         v,
-        i.m_topScore_value,
-        i.m_topScore_null);
+        i.topScore_value,
+        i.topScore_null);
     }
 
-    // m_score
+    // score
     //
     {
       float& v =
-        o.m_score;
+        o.score;
 
       sqlite::value_traits<
           float,
           sqlite::id_real >::set_value (
         v,
-        i.m_score_value,
-        i.m_score_null);
+        i.score_value,
+        i.score_null);
     }
 
-    // m_falsePositive
+    // thumbnail
+    //
+    {
+      ::QString& v =
+        o.thumbnail;
+
+      sqlite::value_traits<
+          ::QString,
+          sqlite::id_text >::set_value (
+        v,
+        i.thumbnail_value,
+        i.thumbnail_size,
+        i.thumbnail_null);
+    }
+
+    // hasClip
     //
     {
       bool& v =
-        o.m_falsePositive;
+        o.hasClip;
 
       sqlite::value_traits<
           bool,
           sqlite::id_integer >::set_value (
         v,
-        i.m_falsePositive_value,
-        i.m_falsePositive_null);
+        i.hasClip_value,
+        i.hasClip_null);
     }
 
-    // m_zones
+    // licensePlateResults
     //
+    if (svm >= schema_version_migration (2ULL, true))
     {
       ::QString& v =
-        o.m_zones;
+        o.licensePlateResults;
 
       sqlite::value_traits<
           ::QString,
           sqlite::id_text >::set_value (
         v,
-        i.m_zones_value,
-        i.m_zones_size,
-        i.m_zones_null);
-    }
-
-    // m_thumbnail
-    //
-    {
-      ::QString& v =
-        o.m_thumbnail;
-
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_thumbnail_value,
-        i.m_thumbnail_size,
-        i.m_thumbnail_null);
-    }
-
-    // m_hasClip
-    //
-    {
-      bool& v =
-        o.m_hasClip;
-
-      sqlite::value_traits<
-          bool,
-          sqlite::id_integer >::set_value (
-        v,
-        i.m_hasClip_value,
-        i.m_hasClip_null);
-    }
-
-    // m_data
-    //
-    {
-      ::QString& v =
-        o.m_data;
-
-      sqlite::value_traits<
-          ::QString,
-          sqlite::id_text >::set_value (
-        v,
-        i.m_data_value,
-        i.m_data_size,
-        i.m_data_null);
+        i.licensePlateResults_value,
+        i.licensePlateResults_size,
+        i.licensePlateResults_null);
     }
   }
 
-  void access::object_traits_impl< ::Event, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   init (id_image_type& i, const id_type& id)
   {
     {
@@ -828,91 +753,83 @@ namespace odb
     }
   }
 
-  const char access::object_traits_impl< ::Event, id_sqlite >::persist_statement[] =
-  "INSERT INTO \"Event\" "
-  "(\"id\", "
-  "\"label\", "
-  "\"subLabel\", "
-  "\"camera\", "
-  "\"startTime\", "
-  "\"endTime\", "
-  "\"trackerId\", "
-  "\"topScore\", "
-  "\"score\", "
-  "\"falsePositive\", "
-  "\"zones\", "
-  "\"thumbnail\", "
-  "\"hasClip\", "
-  "\"data\") "
-  "VALUES "
-  "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  const char access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::persist_statement[] =
+  "INSERT INTO \"Event\"\n"
+  "(\"id\",\n"
+  "\"label\",\n"
+  "\"subLabel\",\n"
+  "\"camera\",\n"
+  "\"startTime\",\n"
+  "\"endTime\",\n"
+  "\"trackerId\",\n"
+  "\"topScore\",\n"
+  "\"score\",\n"
+  "\"thumbnail\",\n"
+  "\"hasClip\",\n"
+  "\"licensePlateResults\")\n"
+  "VALUES\n"
+  "(?,\n?,\n?,\n?,\n?,\n?,\n?,\n?,\n?,\n?,\n?,\n?)";
 
-  const char access::object_traits_impl< ::Event, id_sqlite >::find_statement[] =
-  "SELECT "
-  "\"Event\".\"id\", "
-  "\"Event\".\"label\", "
-  "\"Event\".\"subLabel\", "
-  "\"Event\".\"camera\", "
-  "\"Event\".\"startTime\", "
-  "\"Event\".\"endTime\", "
-  "\"Event\".\"trackerId\", "
-  "\"Event\".\"topScore\", "
-  "\"Event\".\"score\", "
-  "\"Event\".\"falsePositive\", "
-  "\"Event\".\"zones\", "
-  "\"Event\".\"thumbnail\", "
-  "\"Event\".\"hasClip\", "
-  "\"Event\".\"data\" "
-  "FROM \"Event\" "
+  const char access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::find_statement[] =
+  "SELECT\n"
+  "\"Event\".\"id\",\n"
+  "\"Event\".\"label\",\n"
+  "\"Event\".\"subLabel\",\n"
+  "\"Event\".\"camera\",\n"
+  "\"Event\".\"startTime\",\n"
+  "\"Event\".\"endTime\",\n"
+  "\"Event\".\"trackerId\",\n"
+  "\"Event\".\"topScore\",\n"
+  "\"Event\".\"score\",\n"
+  "\"Event\".\"thumbnail\",\n"
+  "\"Event\".\"hasClip\",\n"
+  "\"Event\".\"licensePlateResults\"\n"
+  "FROM \"Event\"\n"
   "WHERE \"Event\".\"id\"=?";
 
-  const char access::object_traits_impl< ::Event, id_sqlite >::update_statement[] =
-  "UPDATE \"Event\" "
-  "SET "
-  "\"label\"=?, "
-  "\"subLabel\"=?, "
-  "\"camera\"=?, "
-  "\"startTime\"=?, "
-  "\"endTime\"=?, "
-  "\"trackerId\"=?, "
-  "\"topScore\"=?, "
-  "\"score\"=?, "
-  "\"falsePositive\"=?, "
-  "\"zones\"=?, "
-  "\"thumbnail\"=?, "
-  "\"hasClip\"=?, "
-  "\"data\"=? "
+  const char access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::update_statement[] =
+  "UPDATE \"Event\"\n"
+  "SET\n"
+  "\"label\"=?,\n"
+  "\"subLabel\"=?,\n"
+  "\"camera\"=?,\n"
+  "\"startTime\"=?,\n"
+  "\"endTime\"=?,\n"
+  "\"trackerId\"=?,\n"
+  "\"topScore\"=?,\n"
+  "\"score\"=?,\n"
+  "\"thumbnail\"=?,\n"
+  "\"hasClip\"=?,\n"
+  "\"licensePlateResults\"=?\n"
   "WHERE \"id\"=?";
 
-  const char access::object_traits_impl< ::Event, id_sqlite >::erase_statement[] =
+  const char access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::erase_statement[] =
   "DELETE FROM \"Event\" "
   "WHERE \"id\"=?";
 
-  const char access::object_traits_impl< ::Event, id_sqlite >::query_statement[] =
-  "SELECT "
-  "\"Event\".\"id\", "
-  "\"Event\".\"label\", "
-  "\"Event\".\"subLabel\", "
-  "\"Event\".\"camera\", "
-  "\"Event\".\"startTime\", "
-  "\"Event\".\"endTime\", "
-  "\"Event\".\"trackerId\", "
-  "\"Event\".\"topScore\", "
-  "\"Event\".\"score\", "
-  "\"Event\".\"falsePositive\", "
-  "\"Event\".\"zones\", "
-  "\"Event\".\"thumbnail\", "
-  "\"Event\".\"hasClip\", "
-  "\"Event\".\"data\" "
+  const char access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::query_statement[] =
+  "SELECT\n"
+  "\"Event\".\"id\",\n"
+  "\"Event\".\"label\",\n"
+  "\"Event\".\"subLabel\",\n"
+  "\"Event\".\"camera\",\n"
+  "\"Event\".\"startTime\",\n"
+  "\"Event\".\"endTime\",\n"
+  "\"Event\".\"trackerId\",\n"
+  "\"Event\".\"topScore\",\n"
+  "\"Event\".\"score\",\n"
+  "\"Event\".\"thumbnail\",\n"
+  "\"Event\".\"hasClip\",\n"
+  "\"Event\".\"licensePlateResults\"\n"
   "FROM \"Event\"";
 
-  const char access::object_traits_impl< ::Event, id_sqlite >::erase_query_statement[] =
+  const char access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::erase_query_statement[] =
   "DELETE FROM \"Event\"";
 
-  const char access::object_traits_impl< ::Event, id_sqlite >::table_name[] =
+  const char access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::table_name[] =
   "\"Event\"";
 
-  void access::object_traits_impl< ::Event, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   persist (database& db, object_type& obj)
   {
     using namespace sqlite;
@@ -921,6 +838,7 @@ namespace odb
       sqlite::transaction::current ().connection (db));
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     callback (db,
               static_cast<const object_type&> (obj),
@@ -929,15 +847,15 @@ namespace odb
     image_type& im (sts.image ());
     binding& imb (sts.insert_image_binding ());
 
-    if (init (im, obj, statement_insert))
+    if (init (im, obj, statement_insert, svm))
       im.version++;
 
-    im.m_id_null = true;
+    im.id_null = true;
 
     if (im.version != sts.insert_image_version () ||
         imb.version == 0)
     {
-      bind (imb.bind, im, statement_insert);
+      bind (imb.bind, im, statement_insert, svm);
       sts.insert_image_version (im.version);
       imb.version++;
     }
@@ -957,14 +875,14 @@ namespace odb
     if (!st.execute ())
       throw object_already_persistent ();
 
-    obj.m_id = id (sts.id_image ());
+    obj.id = id (sts.id_image ());
 
     callback (db,
               static_cast<const object_type&> (obj),
               callback_event::post_persist);
   }
 
-  void access::object_traits_impl< ::Event, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   update (database& db, const object_type& obj)
   {
     ODB_POTENTIALLY_UNUSED (db);
@@ -979,11 +897,13 @@ namespace odb
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
 
+    const schema_version_migration& svm (sts.version_migration ());
+
     id_image_type& idi (sts.id_image ());
     init (idi, id (obj));
 
     image_type& im (sts.image ());
-    if (init (im, obj, statement_update))
+    if (init (im, obj, statement_update, svm))
       im.version++;
 
     bool u (false);
@@ -991,7 +911,7 @@ namespace odb
     if (im.version != sts.update_image_version () ||
         imb.version == 0)
     {
-      bind (imb.bind, im, statement_update);
+      bind (imb.bind, im, statement_update, svm);
       sts.update_image_version (im.version);
       imb.version++;
       u = true;
@@ -1016,14 +936,14 @@ namespace odb
     }
 
     update_statement& st (sts.update_statement ());
-    if (st.execute () == 0)
+    if (!st.empty () && st.execute () == 0)
       throw object_not_persistent ();
 
     callback (db, obj, callback_event::post_update);
     pointer_cache_traits::update (db, obj);
   }
 
-  void access::object_traits_impl< ::Event, id_sqlite >::
+  void access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   erase (database& db, const id_type& id)
   {
     using namespace sqlite;
@@ -1050,8 +970,8 @@ namespace odb
     pointer_cache_traits::erase (db, id);
   }
 
-  access::object_traits_impl< ::Event, id_sqlite >::pointer_type
-  access::object_traits_impl< ::Event, id_sqlite >::
+  access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::pointer_type
+  access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   find (database& db, const id_type& id)
   {
     using namespace sqlite;
@@ -1067,12 +987,13 @@ namespace odb
       sqlite::transaction::current ().connection (db));
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     statements_type::auto_lock l (sts);
 
     if (l.locked ())
     {
-      if (!find_ (sts, &id))
+      if (!find_ (sts, &id, svm))
         return pointer_type ();
     }
 
@@ -1091,9 +1012,9 @@ namespace odb
       ODB_POTENTIALLY_UNUSED (st);
 
       callback (db, obj, callback_event::pre_load);
-      init (obj, sts.image (), &db);
-      load_ (sts, obj, false);
-      sts.load_delayed (0);
+      init (obj, sts.image (), &db, svm);
+      load_ (sts, obj, false, svm);
+      sts.load_delayed (&svm);
       l.unlock ();
       callback (db, obj, callback_event::post_load);
       pointer_cache_traits::load (ig.position ());
@@ -1106,7 +1027,7 @@ namespace odb
     return p;
   }
 
-  bool access::object_traits_impl< ::Event, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   find (database& db, const id_type& id, object_type& obj)
   {
     using namespace sqlite;
@@ -1115,11 +1036,12 @@ namespace odb
       sqlite::transaction::current ().connection (db));
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     statements_type::auto_lock l (sts);
     assert (l.locked ()) /* Must be a top-level call. */;
 
-    if (!find_ (sts, &id))
+    if (!find_ (sts, &id, svm))
       return false;
 
     select_statement& st (sts.find_statement ());
@@ -1130,9 +1052,9 @@ namespace odb
     reference_cache_traits::insert_guard ig (pos);
 
     callback (db, obj, callback_event::pre_load);
-    init (obj, sts.image (), &db);
-    load_ (sts, obj, false);
-    sts.load_delayed (0);
+    init (obj, sts.image (), &db, svm);
+    load_ (sts, obj, false, svm);
+    sts.load_delayed (&svm);
     l.unlock ();
     callback (db, obj, callback_event::post_load);
     reference_cache_traits::load (pos);
@@ -1140,7 +1062,7 @@ namespace odb
     return true;
   }
 
-  bool access::object_traits_impl< ::Event, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   reload (database& db, object_type& obj)
   {
     using namespace sqlite;
@@ -1149,29 +1071,31 @@ namespace odb
       sqlite::transaction::current ().connection (db));
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     statements_type::auto_lock l (sts);
     assert (l.locked ()) /* Must be a top-level call. */;
 
     const id_type& id (object_traits_impl::id (obj));
-    if (!find_ (sts, &id))
+    if (!find_ (sts, &id, svm))
       return false;
 
     select_statement& st (sts.find_statement ());
     ODB_POTENTIALLY_UNUSED (st);
 
     callback (db, obj, callback_event::pre_load);
-    init (obj, sts.image (), &db);
-    load_ (sts, obj, true);
-    sts.load_delayed (0);
+    init (obj, sts.image (), &db, svm);
+    load_ (sts, obj, true, svm);
+    sts.load_delayed (&svm);
     l.unlock ();
     callback (db, obj, callback_event::post_load);
     return true;
   }
 
-  bool access::object_traits_impl< ::Event, id_sqlite >::
+  bool access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   find_ (statements_type& sts,
-         const id_type* id)
+         const id_type* id,
+         const schema_version_migration& svm)
   {
     using namespace sqlite;
 
@@ -1192,7 +1116,7 @@ namespace odb
     if (im.version != sts.select_image_version () ||
         imb.version == 0)
     {
-      bind (imb.bind, im, statement_select);
+      bind (imb.bind, im, statement_select, svm);
       sts.select_image_version (im.version);
       imb.version++;
     }
@@ -1205,12 +1129,12 @@ namespace odb
 
     if (r == select_statement::truncated)
     {
-      if (grow (im, sts.select_image_truncated ()))
+      if (grow (im, sts.select_image_truncated (), svm))
         im.version++;
 
       if (im.version != sts.select_image_version ())
       {
-        bind (imb.bind, im, statement_select);
+        bind (imb.bind, im, statement_select, svm);
         sts.select_image_version (im.version);
         imb.version++;
         st.refetch ();
@@ -1220,8 +1144,8 @@ namespace odb
     return r != select_statement::no_data;
   }
 
-  result< access::object_traits_impl< ::Event, id_sqlite >::object_type >
-  access::object_traits_impl< ::Event, id_sqlite >::
+  result< access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::object_type >
+  access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   query (database& db, const query_base_type& q)
   {
     using namespace sqlite;
@@ -1233,6 +1157,7 @@ namespace odb
 
     statements_type& sts (
       conn.statement_cache ().find_object<object_type> ());
+    const schema_version_migration& svm (sts.version_migration ());
 
     image_type& im (sts.image ());
     binding& imb (sts.select_image_binding ());
@@ -1240,7 +1165,7 @@ namespace odb
     if (im.version != sts.select_image_version () ||
         imb.version == 0)
     {
-      bind (imb.bind, im, statement_select);
+      bind (imb.bind, im, statement_select, svm);
       sts.select_image_version (im.version);
       imb.version++;
     }
@@ -1248,7 +1173,7 @@ namespace odb
     std::string text (query_statement);
     if (!q.empty ())
     {
-      text += " ";
+      text += "\n";
       text += q.clause ();
     }
 
@@ -1257,7 +1182,7 @@ namespace odb
       new (shared) select_statement (
         conn,
         text,
-        false,
+        true,
         true,
         q.parameters_binding (),
         imb));
@@ -1266,12 +1191,12 @@ namespace odb
 
     shared_ptr< odb::object_result_impl<object_type> > r (
       new (shared) sqlite::object_result_impl<object_type> (
-        q, st, sts, 0));
+        q, st, sts, &svm));
 
     return result<object_type> (r);
   }
 
-  unsigned long long access::object_traits_impl< ::Event, id_sqlite >::
+  unsigned long long access::object_traits_impl< ::APSS::ODB::Event, id_sqlite >::
   erase_query (database& db, const query_base_type& q)
   {
     using namespace sqlite;

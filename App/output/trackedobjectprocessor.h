@@ -1,15 +1,17 @@
 #pragma once
 
+#include <utility>
+#include <vector>
 #include <cstddef>
 
 #include <QThread>
-#include <qcontainerfwd.h>
 
 #include <odb/sqlite/database.hxx>
-#include <db/event-odb.hxx>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
 
+#include <db/event-odb.hxx>
+#include <db/prediction-odb.hxx>
 #include <utils/frame.h>
 #include <utils/prediction.h>
 
@@ -29,12 +31,12 @@ public:
 
     struct TrackedEvent {
         size_t id;
-        Event event;
+        APSS::ODB::Event event;
         bool isPersisted = false;
         int lostCount = 0;
         int lastObjectBoxArea;
         cv::Mat bestPlate;
-        PredictionList predictions;
+        std::vector<std::pair<APSS::ODB::Prediction, Prediction>> predictions;
 
         struct {
             cv::Mat img;
@@ -51,6 +53,7 @@ public:
 signals:
     void eventPersisted(size_t id);
     void eventUpdated(size_t id, int updateType);
+    void eventCompleted(size_t id);
     void frameChanged(SharedFrame frame);
     void frameChangedWithEvents(SharedFrame frame, const QList<int> &activeEvents);
 
@@ -59,8 +62,12 @@ protected:
     void run() override;
 
 private:
-    QString cropAndSaveThumbnail(const QString &name, const SharedFrame frame, const Prediction &pred);
+    void processFrame(SharedFrame frame, QHash<int, TrackedEvent> &eventsHistory);
     std::pair<cv::Rect, bool> getSmartCropRect(cv::Rect object, cv::Size frameSize, float aspectRatio = 1.5f);
+    void updateThumbnails(TrackedEvent &event, const Prediction& object, SharedFrame frame);
+    void processLicensePlates(TrackedEvent& event, const Prediction& object, SharedFrame frame);
+    void cleanupLostTracks(QHash<int, TrackedEvent>& eventsHistory);
+    void finalizeAllEvents(QHash<QString, QHash<int, TrackedEvent>> &camerasHistory);
 
 private:
     SharedFrameBoundedQueue &m_frameQueue;

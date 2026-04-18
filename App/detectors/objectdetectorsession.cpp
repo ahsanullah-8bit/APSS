@@ -1,22 +1,29 @@
-#include "objectdetectorsession.h"
+#include <memory>
+#include <string>
+#include <utility>
+#include <unordered_map>
 
 #include <QDebug>
-
 #include <Eigen/Dense>
 #include <BYTETracker.h>
+#include <onnxruntime_cxx_api.h>
 
 #include <apss.h>
+#include <detectors/objectdetectorsession.h>
+#include <detectors/onnxinference.h>
 
 ObjectDetectorSession::ObjectDetectorSession(const QString &name,
                                              SharedFrameBoundedQueue &inFrameQueue,
                                              QHash<QString, QSharedPointer<QWaitCondition>> &cameraWaitConditions,
                                              const PredictorConfig &config,
+                                             std::shared_ptr<Ort::Env> env,
                                              QObject *parent)
     : QThread(parent)
     , m_name(name)
     , m_inFrameQueue(inFrameQueue)
     , m_cameraWaitConditions(cameraWaitConditions)
     , m_config(config)
+    , m_env(env)
     , m_detector{nullptr}
 {
     setObjectName(name);
@@ -58,7 +65,18 @@ void ObjectDetectorSession::stop()
 void ObjectDetectorSession::run() {
     qInfo() << "Starting" << objectName() << "thread";
 
-    m_detector = QSharedPointer<ObjectDetector>(new ObjectDetector(m_config));
+    std::unordered_map<std::string, std::string> ov_options;
+    ov_options["device_type"] = "GPU";
+    ov_options["precision"] = "ACCURACY";
+    ov_options["num_of_threads"] = "1";
+    ov_options["disable_dynamic_shapes"] = "false";
+    
+    std::shared_ptr<Ort::SessionOptions> session_options = std::make_shared<Ort::SessionOptions>();
+    session_options->DisablePerSessionThreads();
+    session_options->AppendExecutionProvider_OpenVINO_V2(ov_options);
+
+    std::unique_ptr<ONNXInference> infer = std::make_unique<ONNXInference>(m_config, m_env, session_options, nullptr, nullptr);
+    m_detector = QSharedPointer<ObjectDetector>(new ObjectDetector(m_config, std::move(infer)));
 
     m_eps.start();
 

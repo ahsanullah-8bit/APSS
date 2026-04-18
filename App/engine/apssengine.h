@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <QThread>
 #include <QHash>
 #include <QQmlEngine>
@@ -14,15 +16,18 @@
 #include <QSqlQuery>
 
 #include <odb/sqlite/database.hxx>
-#include <tbb_patched.h>
+#include <onnxruntime_cxx_api.h>
 
+#include <tbb_patched.h>
 #include <camera/camerametrics.h>
 #include <config/apssconfig.h>
+#include <detectors/lprsession.h>
 #include <events/zmqproxy.h>
 #include <models/camerametricsmodel.h>
 #include <output/recordingsmanager.h>
 #include <output/trackedobjectprocessor.h>
 #include <utils/frame.h>
+
 // This class will handle most of the stuff
 class APSSEngine : public QObject
 {
@@ -33,6 +38,9 @@ public:
     explicit APSSEngine(APSSConfig *config, QObject *parent = nullptr);
     ~APSSEngine();
     SharedCameraMetricsModel cameraMetricsModel() const;
+    QSharedPointer<TrackedObjectProcessor> trackedObjectProcessor() const {
+        return m_trackedObjectsProcessor;
+    }
 
 public slots:
     void start();
@@ -62,6 +70,7 @@ private:
     // void startAPSSWatchdog();
 
 private:
+    std::shared_ptr<Ort::Env> m_globalOrtEnv;
 
     QHash<QString, QVideoSink*> m_cameraOutputFeeds;
     SharedFrameBoundedQueue m_inUnifiedObjDetectorQ;
@@ -71,9 +80,9 @@ private:
     // New interface
     APSSConfig *m_config;
     std::atomic_bool m_stopEvent;
-    // SharedFrameBoundedQueue m_detectionQueue;
     QHash<QString, QSharedPointer<QThread>> m_detectors;
-    QSharedPointer<QThread> m_lpdetector;
+    QHash<QString, QSharedPointer<QThread>> m_lpdetectors;
+    QPair<LPRSessionWorker*, QThread*> m_lprWorkerThread;
     QHash<QString, SharedCameraMetrics> m_cameraMetrics;
     SharedCameraMetricsModel m_cameraMetricsModel;
 

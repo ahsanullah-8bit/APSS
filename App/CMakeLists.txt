@@ -2,29 +2,18 @@ add_library(APSSLib STATIC
     camera/cameracapture.cpp
     camera/camerametrics.cpp
     camera/cameraprocessor.cpp
-    camera/camerawatchdog.cpp
 
     db/event-odb.cxx
-	db/frameprediction-odb.cxx
-	db/recording-odb.cxx
+	db/prediction-odb.cxx
 
     detectors/image.cpp
 	detectors/lpdetectorsession.cpp
+    detectors/lprsession.cpp
 	detectors/objectdetector.cpp
 	detectors/objectdetectorsession.cpp
 	detectors/onnxinference.cpp
-	detectors/paddlecls.cpp
-	detectors/paddledet.cpp
-	detectors/paddleocr.cpp
-	detectors/paddlerec.cpp
 	detectors/poseestimator.cpp
 	detectors/predictor.cpp
-
-	# Licensed
-	detectors/licensed/clipper.cpp
-	detectors/licensed/postprocess_op.cpp
-	detectors/licensed/preprocess_op.cpp
-	detectors/licensed/utility.cpp
 
     engine/apssengine.cpp
 
@@ -65,6 +54,7 @@ target_link_libraries(APSSLib PUBLIC
     TBB::tbb
     Eigen3::Eigen
     bytetrackeigen
+    fmr_libfmr
     onnxruntime::onnxruntime
     reflectcpp::reflectcpp
     ${OpenCV_LIBS}
@@ -78,8 +68,7 @@ target_link_libraries(APSSLib PUBLIC
 # include_directories won't reveal the includes to this main target and we have to do it explicitly.
 target_sources(${CMAKE_PROJECT_NAME} PUBLIC
     db/event-schema.cxx
-    db/frameprediction-schema.cxx
-    db/recording-schema.cxx
+    db/prediction-schema.cxx
 
     main.cpp
 )
