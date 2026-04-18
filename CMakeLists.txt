@@ -14,12 +14,20 @@ set(CMAKE_AUTORCC ON)
 enable_testing()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-set(PKG_CONFIG_EXECUTABLE "${VCPKG_INSTALLED_DIR}/x64-windows/tools/pkgconf/pkgconf.exe")
+
+# Find Pkgconf
+find_program(PKG_CONFIG_EXECUTABLE
+    NAMES pkgconf pkg-config
+    HINTS ${PKG_CONFIG_EXECUTABLE} "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/pkgconf"
+    NO_DEFAULT_PATH
+)
+
+find_program(PKG_CONFIG_EXECUTABLE NAMES pkgconf pkg-config)
 
 include(cmake/helpers.cmake)
 apss_init_dependencies()
 
-find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Qml Quick Widgets Multimedia Sql)
+find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Qml Quick Multimedia Sql)
 find_package(onnxruntime CONFIG REQUIRED)
 find_package(OpenVINO CONFIG REQUIRED)
 find_package(OpenCV 4.10.0 CONFIG REQUIRED)
