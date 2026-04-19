@@ -15,7 +15,7 @@ https://github.com/user-attachments/assets/e5eb7593-71a2-498c-a61f-13891cfdb85c
 > * We're in a bit of hurry at the moment. So, this might turnout more spaghetti than I thought.
 
 ## Building from Source
-Building from source includes setting up vcpkg and some more configuration. I'm strictly following this approach till I find an easier way to resolve dependency issues. APSS uses vcpkg for some [packages](vcpkg.json) and uses prebuilt binaries for bigger and time-consuming dependencies through CMake's `FetchContent`.
+Building from source includes setting up VCPKG and some more configuration. I'm strictly following this approach till I find an easier way to resolve dependency issues. APSS uses VCPKG for some [packages](vcpkg.json) and uses prebuilt binaries for bigger and time-consuming dependencies through CMake's `FetchContent`.
 Prebuilt binaries are hosted in [v0.1 release](https://github.com/ahsanullah-8bit/APSS/releases/tag/v0.1).
 
 ### Prerequisites
@@ -24,22 +24,22 @@ Prebuilt binaries are hosted in [v0.1 release](https://github.com/ahsanullah-8bi
 * MSVC (last built with v18.2.1)
 * CMake
 * Ninja (or any other generator)
-* [vcpkg](https://learn.microsoft.com/en-us/vcpkg/get_started/overview)
+* [VCPKG](https://learn.microsoft.com/en-us/vcpkg/get_started/overview) (optional)
 * [ODB 2.5.0](https://github.com/codesynthesis-com/odb.git) Compiler
 * [pkgconf 2.4.3](https://github.com/pkgconf/pkgconf.git)
 
 > [!NOTE]
 > * I'd recommend using Qt's Online Installer to download Qt, Qt Creator, etc. It'll be easier to set all the options and just build and run.
-> * `pkgconf 2.4.3` is managed through vcpkg. 
-> * You can do the same for Qt, if you prefer that. It's not included in the [vcpkg.json](vcpkg.json) to allow customization.
+> * `pkgconf 2.4.3` is managed through VCPKG. If no VCPKG, you must set `-DPKG_CONFIG_EXECUTABLE=<path/to/pkgconf.exe>`
+> * You can use VCPKG for Qt, if you prefer that. It's not included in the [vcpkg.json](vcpkg.json) to allow customization.
 
 #### About the Models
 
-The [models.zip](https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/models.zip) in the release contains a starter set to get the pipeline running.
+The [models.zip](https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/models.zip) in the release contains a starter set to get the pipeline running. Unzip them into binary directory, the app explicitly looks for these models in a relative `models` directory.
 
 *  **The "Non-Custom" ones:** Standard exports for YOLO and PaddleOCR. I don't own these; they’re just there so you don't have to hunt them down. Feel free to swap them with your own weights.
 
-* **The "Custom" ones:** The `yolo11n-pose-` models are the ones I trained myself for license plate detection.
+* **The "Custom" ones:** The `yolo11n-pose-` models are the ones I trained myself for license plate detection. The `1700` and `3k` means the amount of images used during training.
 
 * **Disclaimer:** These were chosen because they were the only thing my laptop could run without melting. If you have the hardware, you should definitely try swapping the Nano models for something heavier.
 
@@ -51,6 +51,7 @@ The [models.zip](https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/
 * [ONNXRuntime v5.6](https://github.com/intel/onnxruntime.git) (v1.21)
 * [OpenVINO 2025.1](https://github.com/openvinotoolkit/openvino.git)
 * [ByteTrackEigen](https://github.com/ahsanullah-8bit/ByteTrackEigen.git)
+* [fmr](https://github.com/ahsanullah-8bit/fmr.git)
 * [ODB C++ 2.5.0](https://github.com/codesynthesis-com/odb.git) (libodb, qt, sqlite)
 * [OpenCV 4.10.0](https://github.com/opencv/opencv/tree/master) (fs, gstreamer, eigen, highgui, jpeg, png)
 * [oneTBB 2022.0.0](https://github.com/uxlfoundation/oneTBB.git)
@@ -64,8 +65,9 @@ The [models.zip](https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/
 > [!NOTE] 
 > * ONNXRuntime and OpenVINO are automated through `FetchContent`. If you've a custom build, pass `-Donnxruntime_DIR` or `-Donnxruntime_ROOT` (and so on) to CMake during configuration.
 > * Don't get confused in ONNXRuntime v5.6 (intel) and ONNXRuntime 1.21.1 (microsoft). They're basically the same thing. But when I was building it from source, the original (Microsoft) repo had not merged the PR for OpenVINO 2025.1 support yet. I'll be adding ONNXRuntime 1.22 Soon.
-> * ByteTrackEigen is a submodule. So you must use `--recursive` while cloning.
+> * ByteTrackEigen and fmr are git submodules. So you must use `--recursive` while cloning.
 > * The rest are managed by [vcpkg.json](vcpkg.json). Note however, **libodb 2.5.0** is added through the custom-ports. So, you must pass `-DVCPKG_OVERLAY_PORTS=./custom-ports` to CMake.
+> * If you don't want to use VCPKG, you must pass `<pkg_name>_DIR` or `<pkg_name>_ROOT` for your custom alternative, replacing `pkg_name` with the package name. Look at the [CMakeLists.txt](CMakeLists.txt), to see the names of each package `find_package(<pkg_name> ...)`.
 
 ### Build Using CMake
 
@@ -86,9 +88,8 @@ The [models.zip](https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/
 		* `-DCMAKE_TOOLCHAIN_FILE=<vcpkg_root>/scripts/buildsystems/vcpkg.cmake` sets up vcpkg toolchain file option **OR** setup Qt Creator's `Edit -> Preferences -> CMake -> General -> Package Manager Auto Setup`.
 		* `-DVCPKG_MANIFEST_MODE=ON` to turn on Manifest mode.
 		* `-DVCPKG_OVERLAY_PORTS=./custom-ports` for libodb ports.
-		* (Optional) `<pkg_name>_DIR` or `<pkg_name>_ROOT` to add your custom builds, replacing `pkg_name` with onnxruntime, OpenVINO, OpenCV, TBB, Eigen3, reflectcpp, gtest. etc.
 		* `-DQT_QMAKE_EXECUTABLE=<qt_root>/<version>/msvc2022_64/bin/qmake.exe` for Qt.  
-	* Full command
+	* Full command (with VCPKG)
 	```bash
 	cmake -S . -B build -G "Ninja" -DCMAKE_TOOLCHAIN_FILE="<vcpkg_dir>\scripts\buildsystems\vcpkg.cmake" -DVCPKG_MANIFEST_MODE=ON -DVCPKG_OVERLAY_PORTS=./custom-ports -DQT_QMAKE_EXECUTABLE="<qt_root/<version>/msvc2022_64/bin/qmake.exe"
 
@@ -101,7 +102,7 @@ The [models.zip](https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/
 	```
 
 > [!TIP]
-> If you use vcpkg and do frequent builds. I'd recommend looking into [Binary Caching using a Nuget Feed](https://learn.microsoft.com/en-us/vcpkg/consume/binary-caching-nuget) or alternatives.
+> If you use VCPKG and do frequent builds. I'd recommend looking into [Binary Caching using a Nuget Feed](https://learn.microsoft.com/en-us/vcpkg/consume/binary-caching-nuget) or alternatives.
 
 ## Thoughts & Technical Analysis
 
