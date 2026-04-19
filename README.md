@@ -1,5 +1,5 @@
 # AI Powered (Vehicle) Surveillance System
-A light-weight Vehicle Surveillance System for our BS Computer Science Final Year Project, at [Khushal Khan Khattak University, Karak, PK](https://kkkuk.edu.pk). This project is part obsession, part survival, and a fair amount of spaghetti code.
+A light-weight Vehicle Surveillance System by [Ahsan Ullah](https://github.com/ahsanullah-8bit) and [Muhammad Zohaib Shahid](https://github.com/muhammadzohaibshahid) for BS Computer Science Final Year Project, at [Khushal Khan Khattak University, Karak, PK](https://kkkuk.edu.pk). This project is part obsession, part survival, and a fair amount of spaghetti code.
 
 ## Motivation
 This project was heavily inspired by the architecture of [Frigate NVR](https://github.com/blakeblackshear/frigate.git) and how it works, as I never had any experience with such heavy video pipeline systems. In other words, we only had 6-7 months to make a light-weight surveillance system and could not acheive something that big in such a short period. So, I really didn't have the time to make mistakes and find out.
