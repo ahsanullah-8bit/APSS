@@ -35,7 +35,7 @@ Prebuilt binaries are hosted in [v0.1 release](https://github.com/ahsanullah-8bi
 
 #### About the Models
 
-The [models.zip](https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/models.zip) in the release contains a starter set to get the pipeline running. Unzip them into binary directory, the app explicitly looks for these models in a relative `models` directory.
+The [models.zip](https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/models.zip) in the release contains a starter set to get the pipeline running. Unzip them into the binary directory, the app explicitly looks for these models in a relative `models` directory.
 
 *  **The "Non-Custom" ones:** Standard exports for YOLO and PaddleOCR. I don't own these; they’re just there so you don't have to hunt them down. Feel free to swap them with your own weights.
 
@@ -67,7 +67,7 @@ The [models.zip](https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/
 > * Don't get confused in ONNXRuntime v5.6 (intel) and ONNXRuntime 1.21.1 (microsoft). They're basically the same thing. But when I was building it from source, the original (Microsoft) repo had not merged the PR for OpenVINO 2025.1 support yet. I'll be adding ONNXRuntime 1.22 Soon.
 > * ByteTrackEigen and fmr are git submodules. So you must use `--recursive` while cloning.
 > * The rest are managed by [vcpkg.json](vcpkg.json). Note however, **libodb 2.5.0** is added through the custom-ports. So, you must pass `-DVCPKG_OVERLAY_PORTS=./custom-ports` to CMake.
-> * If you don't want to use VCPKG, you must pass `<pkg_name>_DIR` or `<pkg_name>_ROOT` for your custom alternative, replacing `pkg_name` with the package name. Look at the [CMakeLists.txt](CMakeLists.txt), to see the names of each package `find_package(<pkg_name> ...)`.
+> * If you don't want to use VCPKG, you must pass `<pkg_name>_DIR` or `<pkg_name>_ROOT` for your custom alternative that has config targets, replacing `pkg_name` with the package name. Look at the [CMakeLists.txt](CMakeLists.txt), to see the names of each package `find_package(<pkg_name> ...)`. For `pkgconf` related packages, `FFMPEG` and `ODB`, you must add their paths to `CMAKE_PREFIX_PATH`.
 
 ### Build Using CMake
 
@@ -108,17 +108,17 @@ The [models.zip](https://github.com/ahsanullah-8bit/APSS/releases/download/v0.1/
 
 ### The Setup
 This project was built and tested on a **Lenovo V14 G3 IAP** (i5-1235U, 8GB RAM). Resource constraints on this mobile chipset significantly influenced the ability to properly debug and test new things.
-* 12th Gen Intel Core i5-1235(U)
-* 8GB DDR4 RAM
-* I think that's enough unboxing...
 
 ### Known Limitations & Challenges
 While the core logic is functional, several components faced bottlenecks due to the trade-off between real-time performance and stability. Adding one extra feature would result in a nightmare of debugging and, that is after loading 5 models at once in most cases.
 
-* **Object Detection:** I've only used and tested the [YOLO11n](https://docs.ultralytics.com/models/yolo11) model, which is efficient but the accuracy is lower to that of larger variants. Moving to a Medium or Larg model on proper hardware would likely solve majority of detection misses.
+* **Object Detection:** I've only used and tested the [YOLO11n](https://docs.ultralytics.com/models/yolo11) model, which is efficient but the accuracy is lower compared to larger variants. Moving to a Medium or Large model on proper hardware would likely solve majority of detection misses.
 
 * **Object Tracking:** The custom C++ ByteTrack implementation occasionally has jitters. It's not clear if this a logic bug or a side effect of the lower confidence scores provided by the nano YOLO detection model.
 * **Recording:** I've tried 2 ways of recording and both reached certain limits at some point. First try was re-encoding, then just remuxing the packets.
 	* **Clip/Event:** Recording per-event footage clips (similar to Frigate NVR). The system couldn't keep up.
 	* **Whole Footage + Tagging:** Recording the whole footage and somehow tagging the events into that footage. It seemed pretty much impossible with my kind of expertise. You've to keep track of the frames recorded and associate the predictions occured at each frame during review.
 * **Tests:** Tests are "broken" at the moment. Since the project was accepted as-is, I'm stepping away from it for now. The presentation only lasted 2 minutes, and honestly, the project is probably going to stay in 'maintenance mode' indefinitely. It was a massive learning experience, but it’s time to let it rest.
+
+> [!NOTE]
+> We used videos for testing from youtube and other places. Because we couldn't find a proper footage from all the datasets online and the university refused to give a sample footage.
